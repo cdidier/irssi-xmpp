@@ -1,0 +1,11 @@
+Makefile:.PHONY: clean user-install
+Makefile:user-install:
+fe-xmpp.c:    if (!user->ressources)
+fe-xmpp.c:    ressource_list = user->ressources;
+fe-xmpp.c:    if (user->error)
+fe-xmpp.c:    if (user->subscription != XMPP_SUBSCRIPTION_BOTH)
+fe-xmpp.c:            xmpp_subscription[user->subscription]);
+fe-xmpp.c:        XMPPTXT_ROSTER_NICK, first_show, user->jid, ressource_str);
+xmpp-completion.c:    for(ressource_list = user->ressources; ressource_list != NULL;
+xmpp-completion.c:            if (g_strncasecmp(user->jid, nick, len) == 0)
+xmpp-completion.c:                list = g_list_append(list, (gpointer) g_strdup(user->jid));

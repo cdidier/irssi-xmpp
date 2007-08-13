@@ -1,0 +1,189 @@
+irssi-xmpp
+http://cybione.org/src/irssi-xmpp/
+
+About:
+======
+
+irssi-xmpp is an irssi plugin to connect to the Jabber network.
+
+Installation:
+=============
+
+Requirement:
+    o Loudmouth 1.x (http://www.loudmouth-project.org/)
+    o Irssi and its sources unpacked and configured (http://irssi.org/)
+    o GNU make
+
+Procedure:
+    $ export IRSSI_INCLUDE=/path/to/irssi/sources
+	$ make
+	$ make user-install
+
+Note: On non-Linux systems (e.g. *BSD) you might need to use "gmake" instead of
+"make".
+
+Running irssi-xmpp:
+===================
+
+Usage:
+    /LOAD xmpp
+
+Simply load the module in irssi. Currently you cannot load it automaticly,
+unless using a script or something like that.
+
+The module must be placed in "~/.irssi/modules/", or you should load it with
+the full path.
+
+You can unload it using:
+    /UNLOAD xmpp
+
+Connection:
+===========
+
+Usage:
+    /SERVER [-ssl] -xmppnet <network> <address> <port> <password> <jid>
+
+The "jid" is your Jabber ID (something like "username@server"). You can add
+"/<ressource>" at the end of the "jid" to set your own ressource.
+
+If 0 is specified as port, the default port will be user (5222 for a regular
+connection or 5223 for SSL).
+
+You can put these things in your config file (The config file can be found
+here : "~.irssi/config"):
+
+To create a XMPP network, add to chatnets section,
+    <network> = { type = "XMPP"; nick = "<jid>"; };
+
+Then you can add this to servers section:
+    { address = "<address>"; port="<port>"; use_ssl = "{yes|no}"; chatnet = "<network>"; password = "password"; };
+
+Or in irssi, you can type this:
+	/SERVER ADD -xmppnet <network> <address> <port> <password> <jid>
+
+Now you can connect to your jabber account by typing:
+    /CONNECT <network>
+
+Register:
+=========
+
+Currently, you cannot register an account with irssi-xmpp. You must do that
+with another client.
+
+General commands:
+=================
+
+/QUERY <jid>[/<ressource>]
+    Starts a private conversation with the JID. If the user is online and 
+    the ressource isn't specified, the convestion window will be on the
+    ressource with the highest priority.
+    
+/MSG <jid>[/<ressource>] <message>
+    Send a message to a jid.
+
+/AWAY [away|chat|dnd|xa] <reason>
+    This command marks you as being "away". If the away mode is'nt specified,
+    the "xmpp_default_away_mode" setting will be used. You can remove your away
+    status by using AWAY with no arguments.
+
+/ROSTER
+    Show your contacts in a list.
+
+/ROSTER ADD <jid>
+    Add a JID to your contact list.
+
+/ROSTER REMOVE <jid>
+    Remove a JID from your contact list. The subscriptions will be removed too.
+
+/ROSTER NAME <jid> <name>
+    Change the name (or nickname) of a JID.
+
+/ROSTER GROUP <jid> <group>
+    Change the group of a JID.
+
+/QUOTE <data>
+    Sends server raw data without parsing. You need to make sure the value is
+    valid XML yourself.
+
+Subscription commands:
+======================
+
+/ROSTER ACCEPT <jid>
+    Accept a subscription request, so the contact'll be able to see your
+    presence.
+
+/ROSTER DENY <jid>
+    Deny a subscription, so the contact won't see your presence anymore.
+
+/ROSTER SUBSCRIBE <jid>
+    Send a subscription request to a JID. If the contact accepts your request,
+    you'll be able to see his/her presence.
+
+/ROSTER UNSUBSCRIBE <jid>
+    Unsubscribe to the contact's presence, so you won't see his/her presence
+    anymore.
+    
+Settings:
+=========
+
+/SET xmpp_priority <number>
+    Set the priority of your connection. It's a number between -128 and 127.
+    You must reconnect for this change to take effect. (default: 0)
+
+/SET xmpp_send_version ON/OFF
+    Send informations of your client: name (irssi-xmpp), version and operating
+    system. (default: ON)
+
+/SET xmpp_default_away_mode {away|chat|dnd|xa}
+    Set the default away mode when you just type "/AWAY <message>".
+    (default: away)
+
+/SET roster_show_offline ON/OFF
+    Show offline contacts in the roster. (default: ON)
+
+/SET roster_show_offline_unsuscribed ON/OFF
+    Show unsuscribed contacts in the roster when they are offline. (default: ON)
+    
+/SET roster_default_group <group>
+    Set the default group where the contacts will be displayed if the group name
+    is unspecified. (default: General)
+
+/SET roster_add_send_subscribe ON/OFF
+    Send a subscribe request to the contact when adding his/her to the roster.
+    (default: ON)
+
+Subscriptions status:
+=====================
+
+both: The contact and you can see each other's presence. (not displayed)
+from: The contact can see your presence.  
+to: You can see the contact's presence.
+none: The contact and you cannot see each other's presence.
+
+Away status:
+===========
+
+away: Away
+chat: Free for chat
+dnd: Do not disturb
+xa: Not available
+
+Unimplemented commands:
+=======================
+
+(next release ?)
+/WHOIS
+/WHOIS <jid>
+
+Bugs/Suggestions:
+=================
+
+Send me a mail or use jabber.
+
+Author:
+=======
+
+Colin "cdidier" DIDIER (Email: errtu@cybione.org, JID: errtu@im.cybione.org)
+
+irssi-xmpp was inspired by irssi-jabber, another jabber module for irssi which
+was written by Chistian Häggström. (http://kalvdans.no-ip.org/trac/irssi-jabber)

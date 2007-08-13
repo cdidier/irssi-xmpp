@@ -1,0 +1,10 @@
+More complete list soon...
+
+To discuss with irssi's developpers:
+    - implement own message levels
+    - format strings without printing them (strdup_formattext ?)
+
+When message levels will be implemented:
+    /WINDOW NEW HIDE
+    /WINDOW SERVER -sticky <network>
+    /WINDOW LEVEL <irssi-xmpp MSGLEVEL>

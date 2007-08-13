@@ -1,0 +1,41 @@
+0.14 - ??/08/2007
+
+    -
+
+0.13 - 12/08/2007
+
+    - the roster can now manage contacts
+    - the roster can deal with contact subscriptions
+    - add setting "roster_add_send_subscribe" to send a subscribe request
+    when adding a contact to the roster
+    - add setting "xmpp_priority" to set the priority of your connection,
+    must reconnect to take effect
+    - bulletproof username, server, ressource and jid, when using /server or
+    /connect (fit to the "Connection" part of the README)
+    - drop "lorder|tsort" in Makefiles, may compile on every linux distributions
+
+0.12 - 09/08/2007
+
+    - add SSL support
+    - add new connection status messages
+    - full JIDs and ressources completion
+    - open queries with the highest ressource if not specified
+    - show unsuscribed users in the roster
+    - add setting "roster_show_offline_unsuscribed" to show/hide unsuscribed
+    users when they are offline if "roster_show_offline" is OFF
+    - add setting "roster_default_group" to set the name of the default group
+    - don't show empty groups in the roster
+    - add setting "xmpp_default_away_mode" to set the away mode to use when whe
+    symply type /away <reason>
+
+0.11 - 08/08/2007
+
+	- add autocompletion for JIDs (and partial for ressources)
+	- add setting "roster_show_offline"
+	- add setting "xmpp_send_version"
+	- fix sorting users in the roster
+	- fix version informations
+
+0.10 - 07/08/2007
+
+	- first public release
