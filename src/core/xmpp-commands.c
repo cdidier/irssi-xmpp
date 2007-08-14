@@ -36,7 +36,8 @@ const gchar *xmpp_commands[] = {
         "accept",
         "deny",
         "subscribe",
-        "unsubscribe"
+        "unsubscribe",
+    "whois"
 };
 
 static void
@@ -370,12 +371,48 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
         g_free(error);
     }
 
-
 cmd_roster_end:
     g_free(jid_recoded);
     g_strfreev(str);
 }
 
+void
+cmd_whois(const char *data, XMPP_SERVER_REC *server)
+{
+    LmMessage *msg;
+    LmMessageNode *vcard_node;
+    gchar *jid_recoded, *jid = NULL;
+
+    CMD_XMPP_SERVER(server);
+
+    if (data[0] == '\0') {
+        signal_emit("error command", 2,
+            GINT_TO_POINTER(CMDERR_NOT_ENOUGH_PARAMS),
+            xmpp_commands[XMPP_COMMAND_WHOIS]);
+        return;
+    }
+
+    if (!xmpp_jid_have_address(data)) {
+        signal_emit("error command", 2,
+            GINT_TO_POINTER(CMDERR_OPTION_UNKNOWN), data);
+        return;
+    }
+
+    jid = xmpp_jid_strip_ressource(data);
+    jid_recoded = xmpp_recode(jid, XMPP_RECODE_OUT);
+
+    msg = lm_message_new_with_sub_type(jid_recoded, LM_MESSAGE_TYPE_IQ,
+        LM_MESSAGE_SUB_TYPE_GET);
+    vcard_node =lm_message_node_add_child(lm_message_get_node(msg), "vCard",
+        NULL);
+    lm_message_node_set_attribute(vcard_node, "xmlns", "vcard-temp");
+
+    lm_connection_send(server->lmconn, msg, NULL);
+    lm_message_unref(msg);
+
+    g_free(jid);
+    g_free(jid_recoded);
+}
 
 void
 xmpp_commands_init(void)
@@ -383,6 +420,7 @@ xmpp_commands_init(void)
     command_bind_xmpp("away", NULL, (SIGNAL_FUNC) cmd_away);
     command_bind_xmpp("quote", NULL, (SIGNAL_FUNC) cmd_quote);
     command_bind_xmpp("roster", NULL, (SIGNAL_FUNC) cmd_roster);
+    command_bind_xmpp("whois", NULL, (SIGNAL_FUNC) cmd_whois);
 
     command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
@@ -402,4 +440,5 @@ xmpp_commands_deinit(void)
      command_unbind("away", (SIGNAL_FUNC) cmd_away);
      command_unbind("quote", (SIGNAL_FUNC) cmd_quote);
      command_unbind("roster", (SIGNAL_FUNC) cmd_roster);
+     command_unbind("whois", (SIGNAL_FUNC) cmd_whois);
 }

@@ -8,7 +8,7 @@ CFLAGS+=	-fPIC \
 			-I${IRSSI_INCLUDE}/src \
 			-I${IRSSI_INCLUDE}/src/core \
 			`pkg-config --cflags loudmouth-1.0` \
-			-DUOFF_T_LONG #-ggdb -DDEBUG
+			-DUOFF_T_LONG -ggdb -DDEBUG
 LDFLAGS+=	-shared \
 			`pkg-config --libs loudmouth-1.0`
 
