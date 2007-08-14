@@ -26,7 +26,8 @@
 #include "xmpp-servers.h"
 
 #include "xmpp-completion.h"
-#include "fe-xmpp-roster.h"
+#include "fe-xmpp-rosters.h"
+#include "fe-xmpp-queries.h"
 
 #include "printtext.h"
 #include "themes.h"
@@ -73,7 +74,7 @@ fe_xmpp_init(void)
     signal_add("server connect status", (SIGNAL_FUNC) sig_print_status);
     signal_add("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
-    fe_xmpp_roster_init();
+    fe_xmpp_rosters_init();
     fe_xmpp_queries_init();
     xmpp_completion_init();
 
@@ -87,7 +88,7 @@ fe_xmpp_deinit(void)
     signal_remove("server connect status", (SIGNAL_FUNC) sig_print_status);
     signal_remove("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
-    fe_xmpp_roster_deinit();
+    fe_xmpp_rosters_deinit();
     fe_xmpp_queries_deinit();
     xmpp_completion_deinit();
 

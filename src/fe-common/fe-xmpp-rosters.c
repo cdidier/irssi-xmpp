@@ -159,7 +159,7 @@ event_unsubscribed(XMPP_SERVER_REC *server, char *jid)
 }
 
 void
-fe_xmpp_roster_init(void)
+fe_xmpp_rosters_init(void)
 {
     signal_add("xmpp event roster group", (SIGNAL_FUNC) event_roster_group);
     signal_add("xmpp event roster nick", (SIGNAL_FUNC) event_roster_nick);
@@ -174,7 +174,7 @@ fe_xmpp_roster_init(void)
 }
 
 void
-fe_xmpp_roster_deinit(void)
+fe_xmpp_rosters_deinit(void)
 {
     signal_remove("xmpp event roster group", (SIGNAL_FUNC) event_roster_group);
     signal_remove("xmpp event roster nick", (SIGNAL_FUNC) event_roster_nick);

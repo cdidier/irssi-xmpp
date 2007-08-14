@@ -25,7 +25,7 @@ event_raise_query(XMPP_SERVER_REC *server, QUERY_REC *query)
 {
     WINDOW_REC *window;
     
-    g_return_if_fail(window != NULL);
+    g_return_if_fail(query != NULL);
 
     window = window_item_window(query);
 
