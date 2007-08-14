@@ -54,12 +54,13 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
         if (ressource->name != NULL)
            rec->name = g_strdup_printf("%s/%s", nick, ressource->name);
 
+        /* test if the query already exist */
         rec_tmp = xmpp_query_find(server, rec->name);
         if (rec_tmp != NULL) {
             g_free(rec->name);
             g_free(rec);
-            rec = rec_tmp;
-            goto query_raise;
+            signal_emit("xmpp event raise query", 2, server, rec_tmp);
+            return NULL;
         }
     }
 
@@ -71,8 +72,4 @@ query_pass_ressource:
     query_init(rec, automatic);
 
     return rec;
-
-query_raise:
-    signal_emit("xmpp event raise query", 2, server, rec);
-    return NULL;
 }
