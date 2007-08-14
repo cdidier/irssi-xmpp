@@ -74,6 +74,7 @@ fe_xmpp_init(void)
     signal_add("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
     fe_xmpp_roster_init();
+    fe_xmpp_queries_init();
     xmpp_completion_init();
 
     module_register("xmpp", "fe");
@@ -87,6 +88,7 @@ fe_xmpp_deinit(void)
     signal_remove("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
     fe_xmpp_roster_deinit();
+    fe_xmpp_queries_deinit();
     xmpp_completion_deinit();
 
     theme_unregister();

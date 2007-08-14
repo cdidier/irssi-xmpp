@@ -17,16 +17,19 @@
  */
 
 #include "module.h"
+#include "signals.h"
 
 #include "xmpp-queries.h"
 #include "xmpp-servers.h"
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 
+#include <string.h>
+
 QUERY_REC *
 xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 {
-    QUERY_REC *rec;
+    QUERY_REC *rec, *rec_tmp;
     XMPP_SERVER_REC *server;
     XmppRosterUser *user;
     XmppRosterRessource *ressource;
@@ -40,24 +43,36 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
     /* if unspecified, open queries with the highest ressource */
     if (!xmpp_jid_have_ressource(nick)) {
         server = XMPP_SERVER(server_find_tag(server_tag));
-        if (!server)
+        if (server == NULL)
             goto query_pass_ressource;
 
         user = xmpp_find_user_from_groups(server->roster, nick, NULL);
-        if (!user || !user->ressources)
+        if ((user == NULL) || (user->ressources == NULL))
             goto query_pass_ressource;
 
-        ressource = (XmppRosterRessource *) user->ressources->data;
-        if (ressource->name)
+        ressource = user->ressources->data;
+        if (ressource->name != NULL)
            rec->name = g_strdup_printf("%s/%s", nick, ressource->name);
+
+        rec_tmp = xmpp_query_find(server, rec->name);
+        if (rec_tmp != NULL) {
+            g_free(rec->name);
+            g_free(rec);
+            rec = rec_tmp;
+            goto query_raise;
+        }
     }
 
 query_pass_ressource:
-    if (!rec->name)
+    if (rec->name == NULL)
         rec->name = g_strdup(nick);
 
     rec->server_tag = g_strdup(server_tag);
     query_init(rec, automatic);
 
     return rec;
+
+query_raise:
+    signal_emit("xmpp event raise query", 2, server, rec);
+    return NULL;
 }

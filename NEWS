@@ -1,6 +1,7 @@
 0.14 - ??/08/2007
 
-    -
+    - 
+    - don't create a new query window if there's already one
 
 0.13 - 12/08/2007
 
