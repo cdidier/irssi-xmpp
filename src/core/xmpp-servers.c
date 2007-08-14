@@ -111,18 +111,18 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
             server->connrec->port = LM_CONNECTION_DEFAULT_PORT;
     }
     
-    /* Don't use irssi's sockets */
+    /* don't use irssi's sockets */
     server->connrec->no_connect = TRUE;
 
     str = server->connrec->nick;
 
     server->ressource = xmpp_jid_get_ressource(server->connrec->nick);
-    if (!server->ressource)
+    if (server->ressource == NULL)
         server->ressource = g_strdup("irssi-xmpp");
 
     server->connrec->nick = xmpp_jid_get_username(str);
 
-    /* Store the full jid */
+    /* store the full jid */
     if (xmpp_jid_have_address(str))
         server->connrec->realname = xmpp_jid_strip_ressource(str);
     else
@@ -138,7 +138,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
     server_connect_init((SERVER_REC *) server);
 
-    /* Init loudmouth connection structure */
+    /* init loudmouth connection structure */
     server->lmconn = lm_connection_new(NULL);
     lm_connection_set_server(server->lmconn, server->connrec->address);
     lm_connection_set_port(server->lmconn, server->connrec->port);
@@ -197,6 +197,7 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 
     switch (reason) {
     case LM_DISCONNECT_REASON_OK:
+        g_debug("ok");
         return;
     case LM_DISCONNECT_REASON_PING_TIME_OUT:
         msg = "Connection to the server timed out.";
@@ -274,8 +275,8 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
         goto err_open;
 
     if (!lm_connection_authenticate(connection, server->connrec->nick,
-            server->connrec->password, server->ressource,
-            (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
+                server->connrec->password, server->ressource,
+                (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
         goto err_open;
 
     lookup_servers = g_slist_remove(lookup_servers, server);
@@ -315,7 +316,6 @@ xmpp_server_connect(SERVER_REC *server)
         lm_ssl_unref(ssl);
     } 
 
-
     /* Proxy */
 
     xmpp_register_handlers(xmppserver);
@@ -353,7 +353,7 @@ sig_connected(XMPP_SERVER_REC *server)
     server->get_nick_flags = (void *) get_nick_flags;
     server->send_message = send_message;
     
-    /* Connection to server finished, fill the rest of the fields */
+    /* connection to server finished, fill the rest of the fields */
     server->connected = TRUE;
     server->connect_time = time(NULL);
 

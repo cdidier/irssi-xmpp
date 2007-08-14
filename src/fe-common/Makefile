@@ -2,7 +2,7 @@ LIB= fe_xmpp
 SRCS= fe-xmpp.c module-formats.c xmpp-completion.c fe-xmpp-rosters.c fe-xmpp-queries.c
 OBJS= $(SRCS:.c=.o)
 
-CFLAGS+=	-std=c99 -Wall -W \
+CFLAGS+=	-std=c99 \
 			-I${IRSSI_INCLUDE} \
 			-I${IRSSI_INCLUDE}/src \
 			-I${IRSSI_INCLUDE}/src/core \
@@ -11,6 +11,10 @@ CFLAGS+=	-std=c99 -Wall -W \
 			`pkg-config --cflags loudmouth-1.0` \
 			-DUOFF_T_LONG
 LDFLAGS+= `pkg-config --libs loudmouth-1.0`
+
+ifeq ($(DEBUG), yes)
+CFLAGS+=	-Wall -W -ggdb -DDEBUG
+endif
 
 all: $(LIB)
 
