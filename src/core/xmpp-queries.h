@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #ifndef __XMPP_QUERIES_H
 #define __XMPP_QUERIES_H
 

@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #ifndef __XMPP_ROSTER_H
 #define __XMPP_ROSTER_H
 

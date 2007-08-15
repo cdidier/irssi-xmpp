@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #ifndef __XMPP_PROTOCOL_H
 #define __XMPP_PROTOCOL_H
 
