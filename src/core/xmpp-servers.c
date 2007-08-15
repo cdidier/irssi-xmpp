@@ -18,9 +18,8 @@
 
 #include "module.h"
 #include "signals.h"
-#include "rawlog.h"
-#include "channels-setup.h"
-#include "net-sendbuffer.h"
+/*#include "channels-setup.h"*/
+#include "servers-reconnect.h"
 #include "settings.h"
 
 #include "xmpp-servers.h"
@@ -191,29 +190,33 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
     gpointer user_data)
 {
     XMPP_SERVER_REC *server;
-    const char *msg;
+    const gchar *msg;
         
     server = XMPP_SERVER(user_data);
 
     switch (reason) {
     case LM_DISCONNECT_REASON_OK:
-        g_debug("ok");
+        /* normal deconnection */
         return;
     case LM_DISCONNECT_REASON_PING_TIME_OUT:
-        msg = "Connection to the server timed out.";
+        msg = "Connection timed out";
         break;
     case LM_DISCONNECT_REASON_HUP:
-        msg = "Connection was hung up.";
+        msg = "Connection hung up";
         break;
     case LM_DISCONNECT_REASON_ERROR:
-        msg = "Error";
+        msg = "Connection lost";
         break;
     case LM_DISCONNECT_REASON_UNKNOWN:
     default:
         msg = "Unknown error";
     }
 
-    signal_emit("server disconnected", 2, server, msg);
+    signal_emit("server quit", 2, server, msg);
+
+    /* do reconnect here ! */
+
+    signal_emit("server disconnected", 1, server);
 }
 
 static void
@@ -254,7 +257,7 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 
     lm_connection_send(server->lmconn, msg, NULL);
     lm_message_unref(msg);
-
+    
 	server->show = XMPP_PRESENCE_AVAILABLE;
     return;
 
@@ -384,7 +387,7 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 }
 
 static void
-sig_connect_failed(XMPP_SERVER_REC *server, gchar *msg)
+sig_server_connect_failed(XMPP_SERVER_REC *server, gchar *msg)
 {
     if (!IS_XMPP_SERVER(server))
         return;
@@ -397,7 +400,7 @@ xmpp_servers_init(void)
 {
     signal_add_first("server connected", (SIGNAL_FUNC) sig_connected);
     signal_add("server disconnected", (SIGNAL_FUNC) sig_server_disconnected);
-    signal_add("server connect failed", (SIGNAL_FUNC) sig_connect_failed);
+    signal_add("server connect failed", (SIGNAL_FUNC) sig_server_connect_failed);
     signal_add("server connect copy", (SIGNAL_FUNC) sig_server_connect_copy);
 }
 
@@ -407,7 +410,7 @@ xmpp_servers_deinit(void)
     signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
     signal_remove("server disconnected",
         (SIGNAL_FUNC) sig_server_disconnected);
-    signal_remove("server connect failed", (SIGNAL_FUNC) sig_connect_failed);
+    signal_remove("server connect failed", (SIGNAL_FUNC) sig_server_connect_failed);
     signal_remove("server connect copy",
         (SIGNAL_FUNC) sig_server_connect_copy);
 }
