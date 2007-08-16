@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #include "formats.h"
 
 enum {

@@ -1,3 +1,5 @@
+/* $Id$ */
+
 #ifndef __XMPP_H
 #define __XMPP_H
 
@@ -8,6 +10,6 @@ typedef struct _XMPP_CHANNEL_REC XMPP_CHANNEL_REC;
 #define XMPP_PROTOCOL (chat_protocol_lookup("XMPP"))
 
 #define IRSSI_XMPP_PACKAGE "irssi-xmpp"
-#define IRSSI_XMPP_VERSION "0.14"
+#define IRSSI_XMPP_VERSION "0.14-dev"
 
 #endif
