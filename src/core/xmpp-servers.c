@@ -212,14 +212,15 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
         msg = "Connection hung up";
         break;
     case LM_DISCONNECT_REASON_ERROR:
-        msg = "Connection lost";
+        msg = NULL;
         break;
     case LM_DISCONNECT_REASON_UNKNOWN:
     default:
         msg = "Unknown error";
     }
 
-    signal_emit("server quit", 2, server, msg);
+    if (msg)
+        signal_emit("server quit", 2, server, msg);
 
     /* do reconnect here ! */
 

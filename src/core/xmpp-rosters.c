@@ -150,6 +150,9 @@ xmpp_find_user_from_groups(GSList *groups, const gchar *jid,
 {
     GSList *group_list, *group_tmp, *user_list = NULL;
 
+    if (groups == NULL)
+        return NULL;
+
     group_list = groups;
     while (!user_list && group_list) {
         user_list = g_slist_find_custom(
