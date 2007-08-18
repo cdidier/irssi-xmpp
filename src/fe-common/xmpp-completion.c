@@ -128,29 +128,10 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 }
 
 static void
-sig_complete_command_subscription(GList **list, WINDOW_REC *window,
-    const char *word, const char *args, int *want_space)
-{
-    gint len;
-
-    g_return_if_fail(list != NULL);
-    g_return_if_fail(window != NULL);
-    g_return_if_fail(word != NULL);
-    g_return_if_fail(args != NULL);
-
-    *list = NULL;
-    len = strlen(word);
-
-    if (args[0] != '\0')
-        return;
-
-}
-
-static void
 sig_complete_command_roster(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
-    gint len;
+    int len, i;
 
     g_return_if_fail(list != NULL);
     g_return_if_fail(window != NULL);
@@ -163,53 +144,20 @@ sig_complete_command_roster(GList **list, WINDOW_REC *window,
     if (args[0] != '\0')
         return;
 
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ADD], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ADD]));
+    for (i=0; xmpp_command_roster[i] != NULL; i++) {
 
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_REMOVE], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_REMOVE]));
+        if (g_ascii_strncasecmp(word, xmpp_command_roster[i], len) == 0)
+            *list = g_list_append(*list,
+                (gpointer) g_strdup(xmpp_command_roster[i]));
 
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_NAME], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_NAME]));
+    }
 
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_GROUP], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-           xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_GROUP]));
-
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ACCEPT], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ACCEPT]));
-
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_DENY], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_DENY]));
-
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_SUBSCRIBE], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_SUBSCRIBE]));
-
-    if (g_ascii_strncasecmp(word,
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_UNSUBSCRIBE], len) == 0)
-        *list = g_list_append(*list, (gpointer) g_strdup(
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_UNSUBSCRIBE]));
 }
 
 void
 xmpp_completion_init(void)
 {
     signal_add("complete word", (SIGNAL_FUNC) sig_complete_word);
-    signal_add("complete command subscription",
-            (SIGNAL_FUNC) sig_complete_command_subscription);
     signal_add("complete command roster",
             (SIGNAL_FUNC) sig_complete_command_roster);
 }
@@ -218,8 +166,6 @@ void
 xmpp_completion_deinit(void)
 {
     signal_remove("complete word", (SIGNAL_FUNC) sig_complete_word);
-    signal_remove("complete command subscription",
-            (SIGNAL_FUNC) sig_complete_command_subscription);
     signal_remove("complete command roster",
             (SIGNAL_FUNC) sig_complete_command_roster);
 }

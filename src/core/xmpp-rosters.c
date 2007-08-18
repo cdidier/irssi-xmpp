@@ -36,7 +36,8 @@ const gchar *xmpp_presence_show[] = {
     "dnd",
     "away",
     "+",
-    "chat"
+    "chat",
+    NULL
 };
 
 const gchar *xmpp_subscription[] = {
@@ -44,7 +45,8 @@ const gchar *xmpp_subscription[] = {
     "none",
     "to",
     "from",
-    "both"
+    "both",
+    NULL
 };
 
 const gchar *xmpp_service_name = "Agents/Transports";

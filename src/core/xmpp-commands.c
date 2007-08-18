@@ -31,15 +31,20 @@ const gchar *xmpp_commands[] = {
     "away",
     "quote",
     "roster",
-        "add",
-        "remove",
-        "name",
-        "group",
-        "accept",
-        "deny",
-        "subscribe",
-        "unsubscribe",
-    "whois"
+    "whois",
+    NULL
+};
+
+const gchar *xmpp_command_roster[] = {
+    "add",
+    "remove",
+    "name",
+    "group",
+    "accept",
+    "deny",
+    "subscribe",
+    "unsubscribe",
+    NULL
 };
 
 static void
@@ -198,7 +203,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER ADD <jid> */
     if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ADD]) == 0) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_ADD]) == 0) {
 
         msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
                 LM_MESSAGE_SUB_TYPE_SET);
@@ -222,7 +227,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER REMOVE <jid> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_REMOVE]) == 0) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_REMOVE]) == 0) {
 
         user = xmpp_find_user_from_groups(server->roster, str[1], NULL);
         if (!user) {
@@ -246,7 +251,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER RENAME <jid> <name> */
     } else if (g_ascii_strcasecmp(str[0], 
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_NAME]) == 0) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_NAME]) == 0) {
 
         user = xmpp_find_user_from_groups(server->roster, str[1], &group);
         if (!user) {
@@ -284,7 +289,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER MOVE <jid> <group> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_GROUP]) == 0) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_GROUP]) == 0) {
 
         user = xmpp_find_user_from_groups(server->roster, str[1], NULL);
         if (!user) {
@@ -322,7 +327,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER ACCEPT <jid> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_ACCEPT]) == 0 ) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_ACCEPT]) == 0 ) {
 
         msg = lm_message_new_with_sub_type(jid_recoded,
             LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBED);
@@ -331,7 +336,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER DENY <jid> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_DENY]) == 0 ) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_DENY]) == 0 ) {
 
         msg = lm_message_new_with_sub_type(jid_recoded,
             LM_MESSAGE_TYPE_PRESENCE,LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED);
@@ -340,7 +345,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER SUBSCRIBE <jid> <status> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_SUBSCRIBE]) == 0 ) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_SUBSCRIBE]) == 0 ) {
 
         msg = lm_message_new_with_sub_type(jid_recoded,
             LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBE);
@@ -357,7 +362,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER UNSUBSCRIBE <jid> */
     } else if (g_ascii_strcasecmp(str[0],
-            xmpp_commands[XMPP_COMMAND_ROSTER_PARAM_UNSUBSCRIBE]) == 0 ) {
+            xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_UNSUBSCRIBE]) == 0 ) {
 
         msg = lm_message_new_with_sub_type(jid_recoded,
             LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE);
