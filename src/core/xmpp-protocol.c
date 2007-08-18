@@ -66,22 +66,6 @@ avoid_recode:
 }
 
 gchar *
-xmpp_jid_get_username(const gchar *jid)
-{
-   gchar *pos = g_utf8_strchr(jid, -1, '@');
-   if (pos)
-       return g_strndup(jid, pos - jid);
-   else {
-        /* if server unspecified, strip ressource part */
-        pos = g_utf8_strchr(jid, -1, '/');
-        if (pos)
-            return g_strndup(jid, pos - jid);
-        else
-            return g_strdup(jid);
-    }
-}
-
-gchar *
 xmpp_jid_get_ressource(const gchar *jid)
 {
     gchar *pos = g_utf8_strchr(jid, -1, '/');
@@ -99,6 +83,16 @@ xmpp_jid_strip_ressource(const gchar *jid)
         return g_strndup(jid, pos - jid);
     else
         return g_strdup(jid);
+}
+
+gchar *
+xmpp_jid_get_username(const gchar *jid)
+{
+   gchar *pos = g_utf8_strchr(jid, -1, '@');
+   if (pos)
+       return g_strndup(jid, pos - jid);
+   else
+       return xmpp_jid_strip_ressource(jid);
 }
 
 gboolean

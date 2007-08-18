@@ -435,6 +435,7 @@ xmpp_commands_init(void)
     settings_add_int("xmpp", "xmpp_priority", 0);
     settings_add_bool("xmpp", "xmpp_send_version", TRUE);
     settings_add_str("xmpp", "xmpp_default_away_mode", "away");
+    settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
     settings_add_bool("xmpp", "roster_show_offline", TRUE);
     settings_add_bool("xmpp", "roster_show_offline_unsuscribed", TRUE);
     settings_add_str("xmpp", "roster_default_group", "General");
