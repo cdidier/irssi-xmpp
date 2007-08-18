@@ -219,12 +219,14 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
         msg = "Unknown error";
     }
 
-    if (msg)
-        signal_emit("server quit", 2, server, msg);
-
     /* do reconnect here ! */
 
-    signal_emit("server disconnected", 1, server);
+    if (server->connected) {
+        if (msg)
+            signal_emit("server quit", 2, server, msg);
+        signal_emit("server disconnected", 1, server);
+    } else
+      signal_emit("server connect failed", 2, server, msg);
 }
 
 static void
