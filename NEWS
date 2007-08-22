@@ -1,9 +1,12 @@
 0.14 - ??/08/2007
 
+    - you don't need to reconnect anymore when you change the setting
+    "xmpp_priority"
     - set the JID as nick in irssi by default and add setting
     "xmpp_set_nick_as_username" to use the left part of a JID as nick
     - display disconnection error messages correctly
     - don't create a new query window if there's already one
+    - lots of bug fixes and code cleanups
 
 0.13 - 12/08/2007
 
