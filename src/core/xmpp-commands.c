@@ -50,22 +50,29 @@ const gchar *xmpp_command_roster[] = {
 static void
 cmd_away(const char *data, XMPP_SERVER_REC *server)
 {
-    gchar **str, **prefix;
-    gchar *show;
-    const gchar *reason = NULL;
-    gboolean have_prefix = FALSE, default_mode = FALSE;
+    gchar **str, **str_prefixed = NULL;
+    const gchar *show, *reason;
+    gboolean default_mode = FALSE;
 
     CMD_XMPP_SERVER(server);
 
     str = g_strsplit(data, " ", 2);
-    prefix = str;
-    show = prefix[0];
-    if (show)
-        reason = prefix[1];
+
+    if (data[0] == '\0')
+         show = NULL;
+    else if ((g_ascii_strcasecmp(str[0], "-one") != 0
+            && g_ascii_strcasecmp(str[0], "-all") != 0)) {
+        show = str[0];
+        reason = str[1];
+    } else if (str[1] != NULL) {
+        str_prefixed = g_strsplit(str[1], " ", 2);
+        show = str_prefixed[0];
+        reason = str_prefixed[1];
+    }
 
 parse_cmd_away:
 
-    if (!prefix || show == '\0')
+    if ((show == NULL) || (show[0] == '\0'))
         xmpp_set_presence(server, XMPP_PRESENCE_AVAILABLE, NULL);
 
     else if (g_ascii_strcasecmp(show,
@@ -84,35 +91,19 @@ parse_cmd_away:
             xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0)
         xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason);
 
-    else if (!default_mode) {
-
-        if ((g_ascii_strcasecmp(prefix[0], "-one") == 0
-             || g_ascii_strcasecmp(prefix[0], "-all") == 0)
-            && !have_prefix) {
-            
-            if (!str[1])
-                xmpp_set_presence(server, XMPP_PRESENCE_AVAILABLE, NULL);
-            else {
-                have_prefix = TRUE;
-                prefix = g_strsplit(str[1], " ", 2);
-                show = prefix[0];
-                goto parse_cmd_away;
-            }
-        } else {
-            default_mode = TRUE;
-            show = (gchar *) settings_get_str("xmpp_default_away_mode");
-//            reason = prefix[0];
-            reason = data;
-            goto parse_cmd_away;
-        }
-
-    } else if (have_prefix)
+    else if (default_mode)
         xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason);
-    else
-        xmpp_set_presence(server, XMPP_PRESENCE_AWAY, data);
 
-    if (have_prefix)
-        g_strfreev(prefix);
+    else {
+        reason = show;
+        show = settings_get_str("xmpp_default_away_mode");
+        default_mode = TRUE;
+
+        goto parse_cmd_away;
+    }
+
+    if (str_prefixed != NULL)
+        g_strfreev(str_prefixed);
     g_strfreev(str);
 }
 
