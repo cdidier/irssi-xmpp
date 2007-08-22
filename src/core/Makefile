@@ -1,5 +1,5 @@
 LIB= xmpp_core
-SRCS= xmpp-core.c xmpp-servers.c xmpp-commands.c xmpp-queries.c xmpp-protocol.c xmpp-rosters.c
+SRCS= xmpp-core.c xmpp-commands.c xmpp-protocol.c xmpp-queries.c xmpp-rosters.c xmpp-servers.c xmpp-settings.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-fPIC -std=c99 \
