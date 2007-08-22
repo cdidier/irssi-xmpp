@@ -163,31 +163,31 @@ event_unsubscribed(XMPP_SERVER_REC *server, char *jid)
 void
 fe_xmpp_rosters_init(void)
 {
-    signal_add("xmpp event roster group", (SIGNAL_FUNC) event_roster_group);
-    signal_add("xmpp event roster nick", (SIGNAL_FUNC) event_roster_nick);
-    signal_add("xmpp event begin of roster",
+    signal_add("xmpp roster group", (SIGNAL_FUNC) event_roster_group);
+    signal_add("xmpp roster nick", (SIGNAL_FUNC) event_roster_nick);
+    signal_add("xmpp begin of roster",
         (SIGNAL_FUNC) event_begin_of_roster);
-    signal_add("xmpp event end of roster", (SIGNAL_FUNC) event_end_of_roster);
-    signal_add("xmpp event not in roster", (SIGNAL_FUNC) event_not_in_roster);
-    signal_add("xmpp event subscribe", (SIGNAL_FUNC) event_subscribe);
-    signal_add("xmpp event subscribed", (SIGNAL_FUNC) event_subscribed);
-    signal_add("xmpp event unsubscribe", (SIGNAL_FUNC) event_unsubscribe);
-    signal_add("xmpp event unsubscribed", (SIGNAL_FUNC) event_unsubscribed);
+    signal_add("xmpp end of roster", (SIGNAL_FUNC) event_end_of_roster);
+    signal_add("xmpp not in roster", (SIGNAL_FUNC) event_not_in_roster);
+    signal_add("xmpp jid subscribe", (SIGNAL_FUNC) event_subscribe);
+    signal_add("xmpp jid subscribed", (SIGNAL_FUNC) event_subscribed);
+    signal_add("xmpp jid unsubscribe", (SIGNAL_FUNC) event_unsubscribe);
+    signal_add("xmpp jid unsubscribed", (SIGNAL_FUNC) event_unsubscribed);
 }
 
 void
 fe_xmpp_rosters_deinit(void)
 {
-    signal_remove("xmpp event roster group", (SIGNAL_FUNC) event_roster_group);
-    signal_remove("xmpp event roster nick", (SIGNAL_FUNC) event_roster_nick);
-    signal_remove("xmpp event begin of roster",
+    signal_remove("xmpp roster group", (SIGNAL_FUNC) event_roster_group);
+    signal_remove("xmpp roster nick", (SIGNAL_FUNC) event_roster_nick);
+    signal_remove("xmpp begin of roster",
         (SIGNAL_FUNC) event_begin_of_roster);
-    signal_remove("xmpp event end of roster",
+    signal_remove("xmpp end of roster",
         (SIGNAL_FUNC) event_end_of_roster);
-    signal_remove("xmpp event not in roster",
+    signal_remove("xmpp not in roster",
         (SIGNAL_FUNC) event_not_in_roster);
-    signal_remove("xmpp event subscribe", (SIGNAL_FUNC) event_subscribe);
-    signal_remove("xmpp event subscribed", (SIGNAL_FUNC) event_subscribed);
-    signal_remove("xmpp event unsubscribe", (SIGNAL_FUNC) event_unsubscribe);
-    signal_remove("xmpp event unsubscribed", (SIGNAL_FUNC) event_unsubscribed);
+    signal_remove("xmpp jid subscribe", (SIGNAL_FUNC) event_subscribe);
+    signal_remove("xmpp jid subscribed", (SIGNAL_FUNC) event_subscribed);
+    signal_remove("xmpp jid unsubscribe", (SIGNAL_FUNC) event_unsubscribe);
+    signal_remove("xmpp jid unsubscribed", (SIGNAL_FUNC) event_unsubscribed);
 }

@@ -160,31 +160,31 @@ xmpp_server_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 
     switch (status) {
     case LM_SSL_STATUS_NO_CERT_FOUND:
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: No certificate found!");
         break;
     case LM_SSL_STATUS_UNTRUSTED_CERT:
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: Certificate is not trusted!");
         break;
     case LM_SSL_STATUS_CERT_EXPIRED:
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: Certificate has expired!");
         break;
     case LM_SSL_STATUS_CERT_NOT_ACTIVATED:
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: Certificate has not been activated!");
         break;
     case LM_SSL_STATUS_CERT_HOSTNAME_MISMATCH:
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: Certificate hostname does not match expected hostname!");
         break;
     case LM_SSL_STATUS_CERT_FINGERPRINT_MISMATCH: 
-        signal_emit("server connect status", 2, server,
+        signal_emit("xmpp server status", 2, server,
             "SSL: Certificate fingerprint does not match expected fingerprint!");
         break;
     case LM_SSL_STATUS_GENERIC_ERROR:
-        /*signal_emit("server connect status", 2, server,
+        /*signal_emit("xmpp server status", 2, server,
             "SSL: Generic SSL error!");*/
         break;
     }
@@ -243,11 +243,11 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
     if (!success)
         goto err_auth;
 
-    signal_emit("server connect status", 2, server,
+    signal_emit("xmpp server status", 2, server,
         "Authenticated successfully.");
 
     /* fetch the roster */
-    signal_emit("server connect status", 2, server, "Requesting the roster.");
+    signal_emit("xmpp server status", 2, server, "Requesting the roster.");
     msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
         LM_MESSAGE_SUB_TYPE_GET);
     query = lm_message_node_add_child(lm_message_get_node(msg), "query", NULL);
@@ -256,7 +256,7 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
     lm_message_unref(msg);
 
     /* set presence available */
-    signal_emit("server connect status", 2, server,
+    signal_emit("xmpp server status", 2, server,
         "Sending available presence message.");
     msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
         LM_MESSAGE_SUB_TYPE_AVAILABLE);
@@ -318,7 +318,7 @@ xmpp_server_connect(SERVER_REC *server)
     /* SSL */
     if (xmppserver->connrec->use_ssl) {
         if (!lm_ssl_is_supported ()) {
-            signal_emit("server connect status", 2, server,
+            signal_emit("xmpp server status", 2, server,
                 "SSL is not supported in this build.");
             goto err_connect;
         }

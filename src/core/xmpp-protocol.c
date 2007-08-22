@@ -141,7 +141,7 @@ xmpp_send_message_chat(XMPP_SERVER_REC *server, const gchar *to_jid,
     lm_message_unref(msg);
 
     if (error) {
-        signal_emit("message error", 2, server, error->message);
+        signal_emit("xmpp message error", 3, server, to_jid, error->message);
         g_free(error);
     }
 
@@ -282,7 +282,7 @@ xmpp_handle_message(LmMessageHandler *handler, LmConnection *connection,
     return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 
 err_handle_message:
-    signal_emit("message error", 2, server,
+    signal_emit("xmpp message error", 3, server,
         lm_message_node_get_attribute(root, "from"),
         lm_message_node_get_attribute(
             lm_message_node_get_child(root, "error"), "code"));
@@ -329,22 +329,22 @@ xmpp_handle_presence(LmMessageHandler *handler, LmConnection *connection,
             status = xmpp_recode(lm_message_node_get_value(status_node),
                 XMPP_RECODE_IN);
 
-        signal_emit("xmpp event subscribe", 3, server, jid, status);
+        signal_emit("xmpp jid subscribe", 3, server, jid, status);
 
     } else if (lm_message_get_sub_type(msg)
                 == LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE) {
 
-        signal_emit("xmpp event unsubscribe", 2, server, jid);
+        signal_emit("xmpp jid unsubscribe", 2, server, jid);
 
     } else if (lm_message_get_sub_type(msg)
                 == LM_MESSAGE_SUB_TYPE_SUBSCRIBED) {
 
-        signal_emit("xmpp event subscribed", 2, server, jid);
+        signal_emit("xmpp jid subscribed", 2, server, jid);
 
     } else if (lm_message_get_sub_type(msg)
                 == LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED) {
 
-        signal_emit("xmpp event unsubscribed", 2, server, jid);
+        signal_emit("xmpp jid unsubscribed", 2, server, jid);
 
     /* the user change his presence */
     } else if (!lm_message_node_get_attribute(root, "type")) {

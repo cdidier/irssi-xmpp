@@ -35,13 +35,6 @@
 #include "themes.h"
 
 static void
-sig_print_status(XMPP_SERVER_REC *server, char *msg)
-{
-    printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-        XMPPTXT_DEFAULT_EVENT, NULL, msg, NULL);
-}
-
-static void
 sig_print_error(XMPP_SERVER_REC *server, char *msg)
 {
     printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
@@ -49,10 +42,17 @@ sig_print_error(XMPP_SERVER_REC *server, char *msg)
 }
 
 static void
-sig_message_error(XMPP_SERVER_REC *server, char *msg)
+event_server_status(XMPP_SERVER_REC *server, char *msg)
 {
     printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-        XMPPTXT_DEFAULT_EVENT, NULL, "Cannot deliver message to:", msg);
+        XMPPTXT_DEFAULT_EVENT, NULL, msg, NULL);
+}
+
+static void
+event_message_error(XMPP_SERVER_REC *server, char *jid)
+{
+    printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+        XMPPTXT_MESSAGE_NOT_DELIVERED, jid);
 }
 
 static void
@@ -72,8 +72,8 @@ fe_xmpp_init(void)
 {
     theme_register(fecommon_xmpp_formats);
 
-    signal_add("message error", (SIGNAL_FUNC) sig_message_error);
-    signal_add("server connect status", (SIGNAL_FUNC) sig_print_status);
+    signal_add("xmpp message error", (SIGNAL_FUNC) event_message_error);
+    signal_add("xmpp server status", (SIGNAL_FUNC) event_server_status);
     signal_add("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
     fe_xmpp_rosters_init();
@@ -86,8 +86,8 @@ fe_xmpp_init(void)
 void
 fe_xmpp_deinit(void)
 {
-    signal_remove("message error", (SIGNAL_FUNC) sig_message_error);
-    signal_remove("server connect status", (SIGNAL_FUNC) sig_print_status);
+    signal_remove("xmpp message error", (SIGNAL_FUNC) event_message_error);
+    signal_remove("xmpp server status", (SIGNAL_FUNC) event_server_status);
     signal_remove("server add fill", (SIGNAL_FUNC) sig_server_add_fill);
 
     fe_xmpp_rosters_deinit();

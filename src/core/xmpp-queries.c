@@ -61,7 +61,7 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
         if (rec_tmp != NULL) {
             g_free(rec->name);
             g_free(rec);
-            signal_emit("xmpp event raise query", 2, server, rec_tmp);
+            signal_emit("xmpp window raise query", 2, server, rec_tmp);
             return NULL;
         }
     }

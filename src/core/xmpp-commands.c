@@ -131,7 +131,7 @@ cmd_roster_show_users(gpointer data, gpointer user_data)
     XmppRosterUser *user = (XmppRosterUser *) data;
 
     if (xmpp_roster_show_user(user))
-        signal_emit("xmpp event roster nick", 2, server, user);
+        signal_emit("xmpp roster nick", 2, server, user);
 }
 
 static void
@@ -155,7 +155,7 @@ cmd_roster_show_groups(gpointer data, gpointer user_data)
         group->users = g_slist_sort(group->users,
             (GCompareFunc) xmpp_sort_user_func);
 
-    	signal_emit("xmpp event roster group", 2, server, group->name);
+    	signal_emit("xmpp roster group", 2, server, group->name);
 
         g_slist_foreach(group->users, (GFunc) cmd_roster_show_users, server);
     }
@@ -177,9 +177,9 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
     /* /ROSTER */
     if (data[0] == '\0') {
-    	signal_emit("xmpp event begin of roster", 1, server);
+    	signal_emit("xmpp begin of roster", 1, server);
         g_slist_foreach(server->roster, (GFunc) cmd_roster_show_groups, server);
-    	signal_emit("xmpp event end of roster", 1, server);
+    	signal_emit("xmpp end of roster", 1, server);
 
         return;
     }
@@ -231,7 +231,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
         user = xmpp_find_user_from_groups(server->roster, str[1], NULL);
         if (!user) {
-            signal_emit("xmpp event not in roster", 2, server, str[1]);
+            signal_emit("xmpp not in roster", 2, server, str[1]);
             goto cmd_roster_end;
         }
 
@@ -255,7 +255,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
         user = xmpp_find_user_from_groups(server->roster, str[1], &group);
         if (!user) {
-            signal_emit("xmpp event not in roster", 2, server, str[1]);
+            signal_emit("xmpp not in roster", 2, server, str[1]);
             goto cmd_roster_end;
         }
 
@@ -293,7 +293,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
         user = xmpp_find_user_from_groups(server->roster, str[1], NULL);
         if (!user) {
-            signal_emit("xmpp event not in roster", 2, server, str[1]);
+            signal_emit("xmpp not in roster", 2, server, str[1]);
             goto cmd_roster_end;
         }
 
@@ -374,7 +374,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
             GINT_TO_POINTER(CMDERR_OPTION_UNKNOWN), str[0]);
 
     if (error) {
-        signal_emit("message error", 2, server, error->message);
+        signal_emit("xmpp message error", 3, server, str[1], error->message);
         g_free(error);
     }
 

@@ -40,11 +40,11 @@ event_raise_query(XMPP_SERVER_REC *server, QUERY_REC *query)
 void
 fe_xmpp_queries_init(void)
 {
-    signal_add("xmpp event raise query", (SIGNAL_FUNC) event_raise_query);
+    signal_add("xmpp window raise query", (SIGNAL_FUNC) event_raise_query);
 }
 
 void
 fe_xmpp_queries_deinit(void)
 {   
-    signal_remove("xmpp event raise query", (SIGNAL_FUNC) event_raise_query);
+    signal_remove("xmpp window raise query", (SIGNAL_FUNC) event_raise_query);
 }

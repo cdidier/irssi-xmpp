@@ -45,6 +45,10 @@ FORMAT_REC fecommon_xmpp_formats[] = {
     { "unsuscribed", "{nick $0} doesn't want you to see his/her presence anymore.", 1 , { 0 } },
 
     /* ---- */
+    { NULL, "Message", 0 },
+    { "message_not_delivered", "Cannot deliver message to: {nick $0}", 1,  { 0 } },
+
+    /* ---- */
     { NULL, "Misc", 0 },
 
     { "default_event", "$1 $2", 3, { 0, 0, 0 } },
