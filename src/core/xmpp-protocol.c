@@ -366,7 +366,7 @@ xmpp_handle_presence(LmMessageHandler *handler, LmConnection *connection,
         else
             priority = NULL;
 
-        xmpp_roster_update_presence(server, jid, show, status, priority);
+        xmpp_roster_presence_update(server, jid, show, status, priority);
 
     }
 

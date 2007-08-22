@@ -383,15 +383,15 @@ xmpp_roster_update(XMPP_SERVER_REC *server, LmMessageNode *query)
 }
 
 void
-xmpp_roster_update_presence(XMPP_SERVER_REC *server, const gchar *complete_jid,
+xmpp_roster_presence_update(XMPP_SERVER_REC *server, const gchar *full_jid,
     const gchar *show, const gchar *status, const gchar *priority)
 {
     gchar *jid, *ressource_jid;
     XmppRosterUser *user;
     XmppRosterRessource *ressource;
 
-    jid = xmpp_jid_strip_ressource(complete_jid);
-    ressource_jid = xmpp_jid_get_ressource(complete_jid);
+    jid = xmpp_jid_strip_ressource(full_jid);
+    ressource_jid = xmpp_jid_get_ressource(full_jid);
     
     user = xmpp_find_user_from_groups(server->roster, jid, NULL);
     if (!user)
@@ -442,18 +442,20 @@ xmpp_roster_update_presence(XMPP_SERVER_REC *server, const gchar *complete_jid,
     user->ressources = g_slist_sort(user->ressources,
         (GCompareFunc) xmpp_sort_ressource_func);
 
+    signal_emit("xmpp jid presence change", 4, server, full_jid,
+            ressource->show, ressource->status);
 
     g_free(jid);
     g_free(ressource_jid);
 }
 
 void
-xmpp_roster_presence_error(XMPP_SERVER_REC *server, const gchar *complete_jid)
+xmpp_roster_presence_error(XMPP_SERVER_REC *server, const gchar *full_jid)
 {
     gchar *jid;
     XmppRosterUser *user;
 
-    jid = xmpp_jid_strip_ressource(complete_jid);
+    jid = xmpp_jid_strip_ressource(full_jid);
 
     user = xmpp_find_user_from_groups(server->roster, jid, NULL);
     if (!user)
@@ -466,15 +468,15 @@ xmpp_roster_presence_error(XMPP_SERVER_REC *server, const gchar *complete_jid)
 
 void
 xmpp_roster_presence_unavailable(XMPP_SERVER_REC *server,
-    const gchar *complete_jid, const gchar *status)
+    const gchar *full_jid, const gchar *status)
 {
     gchar *jid, *ressource_jid;
     GSList *ressource_list;
     XmppRosterUser *user;
     XmppRosterRessource *ressource;
 
-    jid = xmpp_jid_strip_ressource(complete_jid);
-    ressource_jid = xmpp_jid_get_ressource(complete_jid);
+    jid = xmpp_jid_strip_ressource(full_jid);
+    ressource_jid = xmpp_jid_get_ressource(full_jid);
     
     user = xmpp_find_user_from_groups(server->roster, jid, NULL);
     if (!user)
@@ -483,6 +485,8 @@ xmpp_roster_presence_unavailable(XMPP_SERVER_REC *server,
     ressource = xmpp_find_ressource_from_user(user, ressource_jid);
     if (!ressource)
         return;
+
+    signal_emit("xmpp jid presence unavailable", 2, server, full_jid);
 
     user->ressources = g_slist_remove(user->ressources, ressource);
     xmpp_roster_cleanup_ressource(ressource, NULL);
