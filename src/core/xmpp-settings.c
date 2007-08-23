@@ -32,7 +32,7 @@ read_settings(void)
     GSList *tmp;
     XMPP_SERVER_REC *server;
     
-    for (tmp = servers; tmp != NULL; tmp = servers->next) {
+    for (tmp = servers; tmp != NULL; tmp = tmp->next) {
 
         server = XMPP_SERVER(tmp->data);
         if (server == NULL)
