@@ -34,25 +34,25 @@
 static CHATNET_REC *
 create_chatnet(void)
 {
-    return g_new0(CHATNET_REC, 1);
+	return g_new0(CHATNET_REC, 1);
 }
 
 static SERVER_SETUP_REC *
 create_server_setup(void)
 {
-    return g_new0(SERVER_SETUP_REC, 1);
+	return g_new0(SERVER_SETUP_REC, 1);
 }
 
 static SERVER_CONNECT_REC *
 create_server_connect(void)
 {
-    return (SERVER_CONNECT_REC *) g_new0(XMPP_SERVER_CONNECT_REC, 1);
+	return (SERVER_CONNECT_REC *) g_new0(XMPP_SERVER_CONNECT_REC, 1);
 }
 
 static CHANNEL_SETUP_REC *
 create_channel_setup(void)
 {
-    return g_new0(CHANNEL_SETUP_REC, 1);
+	return g_new0(CHANNEL_SETUP_REC, 1);
 }
 
 static void
@@ -63,43 +63,43 @@ destroy_server_connect(SERVER_CONNECT_REC *conn)
 void
 xmpp_core_init(void)
 {
-    CHAT_PROTOCOL_REC *rec;
+	CHAT_PROTOCOL_REC *rec;
 
-    rec = g_new0(CHAT_PROTOCOL_REC, 1);
-    rec->name = "XMPP";
-    rec->fullname = "XMPP, Extensible messaging and presence protocol";
-    rec->chatnet = "xmppnet";
+	rec = g_new0(CHAT_PROTOCOL_REC, 1);
+	rec->name = "XMPP";
+	rec->fullname = "XMPP, Extensible messaging and presence protocol";
+	rec->chatnet = "xmppnet";
 
-    rec->case_insensitive = TRUE;
+	rec->case_insensitive = TRUE;
 
-    rec->create_chatnet = create_chatnet;
-    rec->create_server_setup = create_server_setup;
-    rec->create_server_connect = create_server_connect;
-    rec->create_channel_setup = create_channel_setup;
-    rec->destroy_server_connect = destroy_server_connect;
+	rec->create_chatnet = create_chatnet;
+	rec->create_server_setup = create_server_setup;
+	rec->create_server_connect = create_server_connect;
+	rec->create_channel_setup = create_channel_setup;
+	rec->destroy_server_connect = destroy_server_connect;
 
-    rec->server_init_connect = xmpp_server_init_connect;
-    rec->server_connect = xmpp_server_connect;
-/*    rec->channel_create = xmpp_channel_create;*/
-    rec->query_create = xmpp_query_create;
+	rec->server_init_connect = xmpp_server_init_connect;
+	rec->server_connect = xmpp_server_connect;
+	/* rec->channel_create = xmpp_channel_create; */
+	rec->query_create = xmpp_query_create;
 
-    chat_protocol_register(rec);
-    g_free(rec);
+	chat_protocol_register(rec);
+	g_free(rec);
 
-    xmpp_servers_init();
-    xmpp_settings_init();
-    xmpp_commands_init();
+	xmpp_servers_init();
+	xmpp_settings_init();
+	xmpp_commands_init();
 
-    module_register("xmpp", "core");
+	module_register("xmpp", "core");
 }
 
 void
 xmpp_core_deinit(void) 
 {
-    xmpp_servers_deinit();
-    xmpp_settings_deinit();
-    xmpp_commands_deinit();
+	xmpp_servers_deinit();
+	xmpp_settings_deinit();
+	xmpp_commands_deinit();
 
-    signal_emit("chat protocol deinit", 1, chat_protocol_find("XMPP"));
-    chat_protocol_unregister("XMPP");
+	signal_emit("chat protocol deinit", 1, chat_protocol_find("XMPP"));
+	chat_protocol_unregister("XMPP");
 }
