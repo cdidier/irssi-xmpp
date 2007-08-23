@@ -95,7 +95,7 @@ parse_cmd_away:
         xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason);
 
     else {
-        reason = show;
+        reason = (str_prefixed != NULL) ? str[1] : data;
         show = settings_get_str("xmpp_default_away_mode");
         default_mode = TRUE;
 
