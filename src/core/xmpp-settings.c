@@ -60,11 +60,11 @@ xmpp_settings_init(void)
 	settings_add_str("xmpp", "roster_default_group", "General");
 	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);
 
-	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
+	signal_add("setup changed", (SIGNAL_FUNC)read_settings);
 }
 
 void
 xmpp_settings_deinit(void)
 {
-	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
+	signal_remove("setup changed", (SIGNAL_FUNC)read_settings);
 }
