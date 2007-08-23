@@ -307,14 +307,19 @@ xmpp_handle_presence(LmMessageHandler *handler, LmConnection *connection,
 {
 	XMPP_SERVER_REC *server;
 	LmMessageNode *root, *show_node, *status_node, *priority_node;
-	gchar *jid, *status;
+	gchar *jid_recoded, *status;
 	LmMessageSubType msg_type;
 
 	server = XMPP_SERVER(user_data);
 	root = lm_message_get_node(msg);
 
-	jid = xmpp_recode(lm_message_node_get_attribute(root, "from"),
+#ifdef DEBUG
+	printtext(server, NULL, MSGLEVEL_CRAP, "PRESENCE: %s", lm_message_node_to_string(lm_message_get_node(msg)));
+#endif
+
+	jid_recoded = xmpp_recode(lm_message_node_get_attribute(root, "from"),
 	    XMPP_RECODE_IN);
+	status = NULL;
 
 	msg_type = lm_message_get_sub_type(msg);
 	switch (msg_type) {
@@ -326,73 +331,71 @@ xmpp_handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			status = xmpp_recode(lm_message_node_get_value(
 			    status_node), XMPP_RECODE_IN);
 
-		xmpp_roster_presence_unavailable(server, jid, status);
+		xmpp_roster_presence_unavailable(server, jid_recoded, status);
 
 		g_free(status);
 		break;
 
 	/* an error occured when the server try to get the pressence of an user */
 	case LM_MESSAGE_SUB_TYPE_ERROR:
-		xmpp_roster_presence_error(server, jid);
+		xmpp_roster_presence_error(server, jid_recoded);
 		break;
 
 	/* the user wants to add you in his/her roster */
 	case LM_MESSAGE_SUB_TYPE_SUBSCRIBE:
 		status_node = lm_message_node_get_child(root, "status");
 		if (status_node)
-			status = xmpp_recode(lm_message_node_get_value(status_node),
-				XMPP_RECODE_IN);
+			status = xmpp_recode(
+			    lm_message_node_get_value(status_node),
+			    XMPP_RECODE_IN);
 
-		signal_emit("xmpp jid subscribe", 3, server, jid, status);
+		signal_emit("xmpp jid subscribe", 3, server, jid_recoded,
+		    status);
 
 		g_free(status);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE:
-		signal_emit("xmpp jid unsubscribe", 2, server, jid);
+		signal_emit("xmpp jid unsubscribe", 2, server, jid_recoded);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_SUBSCRIBED:
-		signal_emit("xmpp jid subscribed", 2, server, jid);
+		signal_emit("xmpp jid subscribed", 2, server, jid_recoded);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED:
-		signal_emit("xmpp jid unsubscribed", 2, server, jid);
+		signal_emit("xmpp jid unsubscribed", 2, server, jid_recoded);
+		break;
+
+	/* the user change his presence */
+	case LM_MESSAGE_SUB_TYPE_AVAILABLE:
+
+		status_node = lm_message_node_get_child(root, "status");
+		if (status_node != NULL)
+			status = xmpp_recode(
+			    lm_message_node_get_value(status_node),
+			    XMPP_RECODE_IN);
+
+		show_node = lm_message_node_get_child(root, "show");
+		priority_node = lm_message_node_get_child(root, "priority");
+
+		xmpp_roster_presence_update(server, jid_recoded,
+		    (show_node != NULL) ?
+		        lm_message_node_get_value(show_node) : NULL,
+		    status,
+		    (priority_node != NULL) ?
+		        lm_message_node_get_value(priority_node) : NULL);
+
+		g_free(status);
 		break;
 
 	default:
-
-		/* the user change his presence */
-		if (!lm_message_node_get_attribute(root, "type")) {
-
-			status_node = lm_message_node_get_child(root, "status");
-			if (status_node != NULL)
-				status = xmpp_recode(
-				    lm_message_node_get_value(status_node),
-				    XMPP_RECODE_IN);
-
-			show_node = lm_message_node_get_child(root, "show");
-			priority_node = lm_message_node_get_child(root,
-			    "priority");
-
-			xmpp_roster_presence_update(server, jid,
-			    ((show_node != NULL) ?
-			    lm_message_node_get_value(show_node) : NULL),
-			    status,
-			    ((priority_node != NULL) ?
-		            lm_message_node_get_value(priority_node) : NULL));
-
-			g_free(status);
-		}
+		g_free(jid_recoded);
+		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
 
 	}
 
-	g_free(jid);
-
-#ifdef DEBUG
-	printtext(server, NULL, MSGLEVEL_CRAP, "PRESENCE: %s", lm_message_node_to_string(lm_message_get_node(msg)));
-#endif
-
+	g_free(jid_recoded);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }
 

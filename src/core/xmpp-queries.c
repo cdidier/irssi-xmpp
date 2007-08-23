@@ -18,6 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <string.h>
+
 #include "module.h"
 #include "signals.h"
 
@@ -26,52 +28,54 @@
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 
-#include <string.h>
 
 QUERY_REC *
 xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 {
-    QUERY_REC *rec, *rec_tmp;
-    XMPP_SERVER_REC *server;
-    XmppRosterUser *user;
-    XmppRosterRessource *ressource;
+	QUERY_REC *rec, *rec_tmp;
+	XMPP_SERVER_REC *server;
+	XmppRosterUser *user;
+	XmppRosterRessource *ressource;
 
-    g_return_val_if_fail(nick != NULL, NULL);
+	g_return_val_if_fail(server_tag != NULL, NULL);
+	g_return_val_if_fail(nick != NULL, NULL);
 
-    rec = g_new0(QUERY_REC, 1);
-    rec->chat_type = XMPP_PROTOCOL;
-    rec->name = NULL;
+	rec = g_new0(QUERY_REC, 1);
+	rec->chat_type = XMPP_PROTOCOL;
+	rec->name = NULL;
 
-    /* if unspecified, open queries with the highest ressource */
-    if (!xmpp_jid_have_ressource(nick)) {
-        server = XMPP_SERVER(server_find_tag(server_tag));
-        if (server == NULL)
-            goto query_pass_ressource;
+	/* if unspecified, open queries with the highest ressource */
+	if (!xmpp_jid_have_ressource(nick)) {
+		server = XMPP_SERVER(server_find_tag(server_tag));
+		if (server == NULL)
+			goto query_pass_ressource;
 
-        user = xmpp_find_user_from_groups(server->roster, nick, NULL);
-        if ((user == NULL) || (user->ressources == NULL))
-            goto query_pass_ressource;
+		user = xmpp_find_user_from_groups(server->roster, nick, NULL);
+		if ((user == NULL) || (user->ressources == NULL))
+			goto query_pass_ressource;
 
-        ressource = user->ressources->data;
-        if (ressource->name != NULL)
-           rec->name = g_strdup_printf("%s/%s", nick, ressource->name);
+		ressource = user->ressources->data;
+		if (ressource->name != NULL)
+			rec->name = g_strdup_printf("%s/%s", nick,
+			    ressource->name);
 
-        /* test if the query already exist */
-        rec_tmp = xmpp_query_find(server, rec->name);
-        if (rec_tmp != NULL) {
-            g_free(rec->name);
-            g_free(rec);
-            signal_emit("xmpp window raise query", 2, server, rec_tmp);
-            return NULL;
-        }
-    }
+		/* test if the query already exist */
+		rec_tmp = xmpp_query_find(server, rec->name);
+		if (rec_tmp != NULL) {
+			g_free(rec->name);
+			g_free(rec);
+			signal_emit("xmpp window raise query", 2, server,
+			    rec_tmp);
+			return NULL;
+		}
+	}
 
 query_pass_ressource:
-    if (rec->name == NULL)
-        rec->name = g_strdup(nick);
+	if (rec->name == NULL)
+		rec->name = g_strdup(nick);
 
-    rec->server_tag = g_strdup(server_tag);
-    query_init(rec, automatic);
+	rec->server_tag = g_strdup(server_tag);
+	query_init(rec, automatic);
 
-    return rec;
+	return rec;
 }
