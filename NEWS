@@ -1,7 +1,7 @@
 0.14 - ??/08/2007
 
     - you don't need to reconnect anymore when you change the setting
-    "xmpp_priority"
+    "xmpp_priority", it take effect immediately
     - set the JID as nick in irssi by default and add setting
     "xmpp_set_nick_as_username" to use the left part of a JID as nick
     - display disconnection error messages correctly

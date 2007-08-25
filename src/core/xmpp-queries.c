@@ -48,11 +48,11 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 	if (!xmpp_jid_have_ressource(nick)) {
 		server = XMPP_SERVER(server_find_tag(server_tag));
 		if (server == NULL)
-			goto query_pass_ressource;
+			goto pass_ressource;
 
 		user = xmpp_find_user_from_groups(server->roster, nick, NULL);
-		if ((user == NULL) || (user->ressources == NULL))
-			goto query_pass_ressource;
+		if (user == NULL || user->ressources == NULL)
+			goto pass_ressource;
 
 		ressource = user->ressources->data;
 		if (ressource->name != NULL)
@@ -64,13 +64,12 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 		if (rec_tmp != NULL) {
 			g_free(rec->name);
 			g_free(rec);
-			signal_emit("xmpp window raise query", 2, server,
-			    rec_tmp);
+			signal_emit("xmpp query raise", 2, server, rec_tmp);
 			return NULL;
 		}
 	}
 
-query_pass_ressource:
+pass_ressource:
 	if (rec->name == NULL)
 		rec->name = g_strdup(nick);
 

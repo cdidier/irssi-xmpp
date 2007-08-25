@@ -31,9 +31,9 @@ struct _XMPP_SERVER_REC {
 	#include "server-rec.h"
 
 	LmConnection	*lmconn;
-	gchar		*ressource;
-	gint		 priority;
-	gint		 show;
+	char		*ressource;
+	int		 priority;
+	int		 show;
 
 	GSList		*roster;
 };

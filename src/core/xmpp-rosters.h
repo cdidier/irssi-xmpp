@@ -12,7 +12,7 @@ enum {
 	XMPP_PRESENCE_AVAILABLE,
 	XMPP_PRESENCE_CHAT
 };
-extern const gchar *xmpp_presence_show[];
+extern const char *xmpp_presence_show[];
 
 enum {
 	XMPP_SUBSCRIPTION_REMOVE,
@@ -21,44 +21,44 @@ enum {
 	XMPP_SUBSCRIPTION_FROM,
 	XMPP_SUBSCRIPTION_BOTH
 };
-extern const gchar *xmpp_subscription[];
+extern const char *xmpp_subscription[];
 
-extern const gchar *xmpp_service_name;
+extern const char *xmpp_service_name;
 
 typedef struct _XmppRosterRessource {
-	gchar	*name;
-	gint	 priority;
-	gint	 show;
-	gchar	*status;
+	char	*name;
+	int	 priority;
+	int	 show;
+	char	*status;
 } XmppRosterRessource;
 
 typedef struct _XmppRosterUser {
-	gchar	*jid;
-	gchar	*name;
-	gint	 subscription;
+	char	*jid;
+	char	*name;
+	int	 subscription;
 	gboolean error;
 
 	GSList	*ressources;
 } XmppRosterUser;
 
 typedef struct _XmppRosterGroup {
-	gchar	*name;
+	char	*name;
 
 	GSList	*users;
 } XmppRosterGroup;
 
 __BEGIN_DECLS
-gint		 xmpp_sort_user_func(gconstpointer, gconstpointer);
-XmppRosterUser	*xmpp_find_user_from_groups(GSList *, const gchar *, 
+int		 xmpp_sort_user_func(gconstpointer, gconstpointer);
+XmppRosterUser	*xmpp_find_user_from_groups(GSList *, const char *, 
 		    XmppRosterGroup **);
 gboolean	 xmpp_roster_show_user(XmppRosterUser *);
 
 void	xmpp_roster_update(XMPP_SERVER_REC *, LmMessageNode *);
-void	xmpp_roster_presence_update(XMPP_SERVER_REC *, const gchar *,
-	    const gchar *, const gchar *, const gchar *);
-void	xmpp_roster_presence_error(XMPP_SERVER_REC *, const gchar *);
-void	xmpp_roster_presence_unavailable(XMPP_SERVER_REC *, const gchar *,
-	    const gchar *);
+void	xmpp_roster_presence_update(XMPP_SERVER_REC *, const char *,
+	    const char *, const char *, const char *);
+void	xmpp_roster_presence_error(XMPP_SERVER_REC *, const char *);
+void	xmpp_roster_presence_unavailable(XMPP_SERVER_REC *, const char *,
+	    const char *);
 void	xmpp_roster_cleanup(XMPP_SERVER_REC *);
 __END_DECLS
 

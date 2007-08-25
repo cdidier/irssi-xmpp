@@ -77,6 +77,8 @@ send_message(SERVER_REC *server, const char *target, const char *msg,
 static void
 xmpp_server_cleanup(XMPP_SERVER_REC *server)
 {
+	g_return_if_fail(server != NULL);
+
 	if (lm_connection_is_open(server->lmconn))
 		lm_connection_close(server->lmconn, NULL);
 
@@ -94,7 +96,7 @@ SERVER_REC *
 xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 {
 	XMPP_SERVER_REC *server;
-	gchar *str;
+	char *str;
 
 	g_return_val_if_fail(IS_XMPP_SERVER_CONNECT(conn), NULL);
 	if ((conn->address == NULL) || (conn->address[0] == '\0')) return NULL;
@@ -199,7 +201,7 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	const gchar *msg;
+	const char *msg;
 		
 	server = XMPP_SERVER(user_data);
 
@@ -238,12 +240,12 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	XMPP_SERVER_REC *server;
 	LmMessage *msg;
 	LmMessageNode *query;
-	gchar *priority;
+	char *priority;
 	
 	server = XMPP_SERVER(user_data);
 
 	if (!success)
-		goto err_auth;
+		goto err;
 
 	signal_emit("xmpp server status", 2, server,
 	    "Authenticated successfully.");
@@ -275,7 +277,7 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	server->show = XMPP_PRESENCE_AVAILABLE;
 	return;
 
-err_auth:
+err:
 	signal_emit("server connect failed", 2, server,
 	    "Authentication failed");
 }
@@ -290,12 +292,12 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 	server = XMPP_SERVER(user_data);
 
 	if (!success)
-		goto err_open;
+		goto err;
 
 	if (!lm_connection_authenticate(connection, server->connrec->username,
 	    server->connrec->password, server->ressource,
 	    (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
-		goto err_open;
+		goto err;
 
 	lookup_servers = g_slist_remove(lookup_servers, server);
 	servers = g_slist_append(servers, server);
@@ -303,7 +305,7 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 	signal_emit("server connected", 1, server);
 	return;
 
-err_open:
+err:
 	signal_emit("server connect failed", 2, server,
 	    (error != NULL) ? error->message : "Connection failed");
 	g_free(error);
@@ -325,7 +327,7 @@ xmpp_server_connect(SERVER_REC *server)
 		if (!lm_ssl_is_supported()) {
 			signal_emit("xmpp server status", 2, server,
 			    "SSL is not supported in this build.");
-			goto err_connect;
+			goto err;
 		}
 
 		ssl = lm_ssl_new(NULL, (LmSSLFunction)xmpp_server_ssl_cb,
@@ -347,14 +349,14 @@ xmpp_server_connect(SERVER_REC *server)
 	if (!lm_connection_open(xmppserver->lmconn, 
 	    (LmResultFunction)xmpp_server_open_cb, (gpointer)server, NULL,
 	    &error))
-		goto err_connect;
+		goto err;
 
 	lookup_servers = g_slist_append(lookup_servers, server);
 
 	signal_emit("server connecting", 1, server);
 	return;
 
-err_connect:
+err:
 	signal_emit("server connect failed", 2, server,
 	    (error != NULL) ? error->message : NULL);
 	g_free(error);
@@ -403,7 +405,7 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 }
 
 static void
-sig_server_connect_failed(XMPP_SERVER_REC *server, gchar *msg)
+sig_server_connect_failed(XMPP_SERVER_REC *server, char *msg)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;

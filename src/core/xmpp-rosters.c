@@ -29,7 +29,7 @@
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 
-const gchar *xmpp_presence_show[] = {
+const char *xmpp_presence_show[] = {
 	"X",
 	"-",
 	"xa",
@@ -40,7 +40,7 @@ const gchar *xmpp_presence_show[] = {
 	NULL
 };
 
-const gchar *xmpp_subscription[] = {
+const char *xmpp_subscription[] = {
 	"remove",
 	"none",
 	"to",
@@ -49,16 +49,16 @@ const gchar *xmpp_subscription[] = {
 	NULL
 };
 
-const gchar *xmpp_service_name = "Agents/Transports";
+const char *xmpp_service_name = "Agents/Transports";
 
-static XmppRosterGroup *xmpp_roster_create_group(const gchar *);
+static XmppRosterGroup *xmpp_roster_create_group(const char *);
 static void xmpp_roster_cleanup_ressource(gpointer, gpointer); 
 static void xmpp_roster_cleanup_user(gpointer, gpointer);
 
 static int
 xmpp_find_group_func(gconstpointer group, gconstpointer name)
 {
-	gchar *group_name = ((XmppRosterGroup *)group)->name;
+	char *group_name = ((XmppRosterGroup *)group)->name;
 
 	if(group_name == name)
 		return 0;
@@ -71,8 +71,10 @@ xmpp_find_group_func(gconstpointer group, gconstpointer name)
 static int
 xmpp_sort_group_func(gconstpointer group1, gconstpointer group2)
 {
-	gchar *group1_name = ((XmppRosterGroup *)group1)->name;
-	gchar *group2_name = ((XmppRosterGroup *)group2)->name;
+	char *group1_name, *group2_name;
+
+	group1_name = ((XmppRosterGroup *)group1)->name;
+	group2_name = ((XmppRosterGroup *)group2)->name;
 
 	if (group1_name == NULL || (group2_name != NULL
 	    && strcmp(group2_name, xmpp_service_name) == 0))
@@ -93,11 +95,14 @@ xmpp_find_user_func(gconstpointer user, gconstpointer jid)
 int
 xmpp_sort_user_func(gconstpointer user1_pointer, gconstpointer user2_pointer)
 {
-	XmppRosterUser *user1 = (XmppRosterUser *)user1_pointer;
-	XmppRosterUser *user2 = (XmppRosterUser *)user2_pointer;
-	GSList *ressources1_list =  user1->ressources;
-	GSList *ressources2_list =  user2->ressources;
+	GSList *ressources1_list, *ressources2_list;
+	XmppRosterUser *user1, *user2;
 	XmppRosterRessource *fisrt_ressources1, *fisrt_ressources2;
+
+	user1 = (XmppRosterUser *)user1_pointer;
+	ressources1_list =  user1->ressources;
+	user2 = (XmppRosterUser *)user2_pointer;
+	ressources2_list =  user2->ressources;
 
 	if (ressources1_list == ressources2_list
 	    || (user1->error == TRUE && user2->error == TRUE))
@@ -129,7 +134,7 @@ by_name:
 static int
 xmpp_find_ressource_func(gconstpointer ressource, gconstpointer name)
 {
-	gchar *ressource_name = ((XmppRosterRessource *)ressource)->name;
+	char *ressource_name = ((XmppRosterRessource *)ressource)->name;
 
 	if(ressource_name == NULL && name == NULL)
 		return 0;
@@ -146,7 +151,7 @@ xmpp_sort_ressource_func(gconstpointer ressource1, gconstpointer ressource2)
 }
 
 XmppRosterUser *
-xmpp_find_user_from_groups(GSList *groups, const gchar *jid,
+xmpp_find_user_from_groups(GSList *groups, const char *jid,
     XmppRosterGroup **group)
 {
 	GSList *group_list, *group_tmp, *user_list;
@@ -175,22 +180,26 @@ xmpp_find_group_from_user(XMPP_SERVER_REC *server, XmppRosterUser *user)
 {
 	GSList *group_list, *group_list_found;
 
+	g_return_val_if_fail(server != NULL, NULL);
+
 	group_list = server->roster;
 	group_list_found = NULL;
 
 	while (group_list_found != NULL && group_list != NULL) {
 		group_list_found = g_slist_find(group_list, user);
-		group_list = g_slist_next(group_list);
+		group_list = group_list->next;
 	}
 
 	return (XmppRosterGroup *)group_list->data;
 }
 
 static XmppRosterGroup *
-xmpp_find_or_add_group(XMPP_SERVER_REC *server, const gchar *group_name)
+xmpp_find_or_add_group(XMPP_SERVER_REC *server, const char *group_name)
 {
 	GSList *group_list;
 	XmppRosterGroup *group;
+
+	g_return_val_if_fail(server != NULL, NULL);
 
 	group_list = g_slist_find_custom(server->roster, group_name,
 	    (GCompareFunc)xmpp_find_group_func);
@@ -207,12 +216,15 @@ xmpp_find_or_add_group(XMPP_SERVER_REC *server, const gchar *group_name)
 }
 
 static XmppRosterRessource *
-xmpp_find_ressource_from_user(XmppRosterUser *user, gchar *ressource)
+xmpp_find_ressource_from_user(XmppRosterUser *user, char *ressource)
 {
 	GSList *ressource_list;
 
+	g_return_val_if_fail(user != NULL, NULL);
+	g_return_val_if_fail(ressource != NULL, NULL);
+
 	ressource_list = g_slist_find_custom(user->ressources, ressource,
-		(GCompareFunc) xmpp_find_ressource_func);
+		(GCompareFunc)xmpp_find_ressource_func);
 
 	return ressource_list ?
 	    (XmppRosterRessource *)ressource_list->data : NULL;
@@ -221,6 +233,8 @@ xmpp_find_ressource_from_user(XmppRosterUser *user, gchar *ressource)
 gboolean
 xmpp_roster_show_user(XmppRosterUser *user)
 {
+	g_return_val_if_fail(user != NULL, NULL);
+
 	if (user->ressources == NULL
 	    && !settings_get_bool("roster_show_offline")
 	    && (user->subscription == XMPP_SUBSCRIPTION_BOTH
@@ -232,12 +246,13 @@ xmpp_roster_show_user(XmppRosterUser *user)
 
 void
 xmpp_roster_update_subscription(XMPP_SERVER_REC *server, XmppRosterUser *user,
-    const gchar *subscription)
+    const char *subscription)
 {
 	XmppRosterGroup *group;
 
-	if (user == NULL)
-		return;
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(user != NULL);
+	g_return_if_fail(subscription != NULL);
 
 	if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_NONE]) == 0)
@@ -272,9 +287,12 @@ xmpp_roster_update_subscription(XMPP_SERVER_REC *server, XmppRosterUser *user,
 
 static void
 xmpp_roster_move_user(XMPP_SERVER_REC *server, XmppRosterUser *user,
-    XmppRosterGroup *group, const gchar *group_name)
+    XmppRosterGroup *group, const char *group_name)
 {
 	XmppRosterGroup *new_group;
+
+	g_return_if_fail(server != NULL);
+        g_return_if_fail(user != NULL);
 
 	new_group = xmpp_find_or_add_group(server, group_name);
 
@@ -283,9 +301,13 @@ xmpp_roster_move_user(XMPP_SERVER_REC *server, XmppRosterUser *user,
 }
 
 static XmppRosterUser *
-xmpp_roster_create_user(const gchar *jid, const gchar *name)
+xmpp_roster_create_user(const char *jid, const char *name)
 {
-	XmppRosterUser *user = g_new(XmppRosterUser, 1);
+	XmppRosterUser *user;
+
+	g_return_val_if_fail(jid != NULL, NULL);
+
+	user = g_new(XmppRosterUser, 1);
 
 	user->jid = g_strdup(jid);
 	user->name = g_strdup(name);
@@ -297,7 +319,7 @@ xmpp_roster_create_user(const gchar *jid, const gchar *name)
 }
 
 static XmppRosterGroup *
-xmpp_roster_create_group(const gchar *name)
+xmpp_roster_create_group(const char *name)
 {
 	XmppRosterGroup *group = g_new(XmppRosterGroup, 1);
 
@@ -308,12 +330,14 @@ xmpp_roster_create_group(const gchar *name)
 }
 
 static XmppRosterUser *
-xmpp_roster_add(XMPP_SERVER_REC *server, const gchar *jid, const gchar *name,
-    const gchar *group_name)
+xmpp_roster_add(XMPP_SERVER_REC *server, const char *jid, const char *name,
+    const char *group_name)
 {
-	GSList *group_list, *user_list;
 	XmppRosterGroup *group;
 	XmppRosterUser *user;
+
+	g_return_val_if_fail(server != NULL, NULL);
+	g_return_val_if_fail(jid != NULL, NULL);
 
 	group = xmpp_find_or_add_group(server, group_name);
 	
@@ -324,27 +348,35 @@ xmpp_roster_add(XMPP_SERVER_REC *server, const gchar *jid, const gchar *name,
 }
 
 void
-xmpp_roster_update_user(XMPP_SERVER_REC *server, const gchar *jid,
-    const gchar *subscription, const gchar *name, const gchar *group_name)
+xmpp_roster_update_user(XMPP_SERVER_REC *server, const char *jid,
+    const char *subscription, const char *name, const char *group_name)
 {
-	XmppRosterUser *user;
 	XmppRosterGroup *group;
+	XmppRosterUser *user;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(jid != NULL);
 
 	user = xmpp_find_user_from_groups(server->roster, jid, &group);
 	if (user == NULL)
 		user = xmpp_roster_add(server, jid, name, group_name);
 	else {
 
-		/* move user to another group */
-		if ((group->name != group_name)
-		    || (group->name == NULL && group_name != NULL)
+		/* move to another group */
+		if ((group->name == NULL && group_name != NULL)
 		    || (group->name != NULL && group_name == NULL)
 		    || (group->name != NULL && group_name != NULL
 		    && strcmp(group->name, group_name) != 0))
 			xmpp_roster_move_user(server, user, group, group_name);
 
-		g_free(user->name);
-		user->name = g_strdup(name);
+		/* change name */
+		if ((user->name == NULL && name != NULL)
+		    || (user->name != NULL && name == NULL)
+		    || (user->name != NULL && name != NULL
+		    && strcmp(user->name, name) != 0)) {
+			g_free(user->name);
+			user->name = g_strdup(name);
+		}
 	}
 
 	xmpp_roster_update_subscription(server, user, subscription);
@@ -354,14 +386,17 @@ void
 xmpp_roster_update(XMPP_SERVER_REC *server, LmMessageNode *query)
 {
 	LmMessageNode *item, *group_node;
-	const gchar *subscription, *jid, *name;
-	gchar *jid_recoded, *name_recoded, *group_name;
+	const char *subscription, *jid, *name;
+	char *jid_recoded, *name_recoded, *group_recoded;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(query != NULL);
 
 	name_recoded = NULL;
-	group_name = NULL;
+	group_recoded = NULL;
 
 	item = query->children;
-	while(item) {
+	while(item != NULL) {
 
 		if (g_ascii_strcasecmp(item->name, "item") != 0)
 			goto next;
@@ -376,19 +411,19 @@ xmpp_roster_update(XMPP_SERVER_REC *server, LmMessageNode *query)
 
 		name = lm_message_node_get_attribute(item, "name");
 		if (name != NULL)
-			name = xmpp_recode(name, XMPP_RECODE_IN);
+			name_recoded = xmpp_recode(name, XMPP_RECODE_IN);
 
 		group_node = lm_message_node_get_child(item, "group");
 		if (group_node != NULL)
-			group_name = xmpp_recode(group_node->value,
+			group_recoded = xmpp_recode(group_node->value,
 			    XMPP_RECODE_IN);
 
 		xmpp_roster_update_user(server, jid_recoded, subscription,
-		    name_recoded, group_name);
+		    name_recoded, group_recoded);
 
 		g_free_and_null(jid_recoded);
 		g_free_and_null(name_recoded);
-		g_free_and_null(group_name);
+		g_free_and_null(group_recoded);
 	
 next:
 		item = item->next;
@@ -396,12 +431,15 @@ next:
 }
 
 void
-xmpp_roster_presence_update(XMPP_SERVER_REC *server, const gchar *full_jid,
-    const gchar *show, const gchar *status, const gchar *priority)
+xmpp_roster_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
+    const char *show, const char *status, const char *priority)
 {
 	XmppRosterUser *user;
 	XmppRosterRessource *ressource;
-	gchar *jid, *ressource_jid;
+	char *jid, *ressource_jid;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(full_jid != NULL);
 
 	jid = xmpp_jid_strip_ressource(full_jid);
 	ressource_jid = xmpp_jid_get_ressource(full_jid);
@@ -462,10 +500,13 @@ xmpp_roster_presence_update(XMPP_SERVER_REC *server, const gchar *full_jid,
 }
 
 void
-xmpp_roster_presence_error(XMPP_SERVER_REC *server, const gchar *full_jid)
+xmpp_roster_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	XmppRosterUser *user;
-	gchar *jid;
+	char *jid;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(full_jid != NULL);
 
 	jid = xmpp_jid_strip_ressource(full_jid);
 
@@ -480,22 +521,24 @@ xmpp_roster_presence_error(XMPP_SERVER_REC *server, const gchar *full_jid)
 
 void
 xmpp_roster_presence_unavailable(XMPP_SERVER_REC *server,
-    const gchar *full_jid, const gchar *status)
+    const char *full_jid, const char *status)
 {
-	gchar *jid, *ressource_jid;
-	GSList *ressource_list;
 	XmppRosterUser *user;
 	XmppRosterRessource *ressource;
+	char *jid, *ressource_jid;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(full_jid != NULL);
 
 	jid = xmpp_jid_strip_ressource(full_jid);
 	ressource_jid = xmpp_jid_get_ressource(full_jid);
 	
 	user = xmpp_find_user_from_groups(server->roster, jid, NULL);
-	if (!user)
+	if (user == NULL)
 		return;
 
 	ressource = xmpp_find_ressource_from_user(user, ressource_jid);
-	if (!ressource)
+	if (ressource == NULL)
 		return;
 
 	signal_emit("xmpp jid presence unavailable", 2, server, full_jid);
@@ -556,7 +599,9 @@ xmpp_roster_cleanup_group(gpointer data, gpointer user_data)
 void
 xmpp_roster_cleanup(XMPP_SERVER_REC *server)
 {
-	if (!server->roster)
+	g_return_if_fail(server != NULL);
+
+	if (server->roster == NULL)
 		return;
 
 	g_slist_foreach(server->roster, (GFunc)xmpp_roster_cleanup_group, NULL);

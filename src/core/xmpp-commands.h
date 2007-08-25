@@ -11,7 +11,7 @@ enum {
 	XMPP_COMMAND_ROSTER,
 	XMPP_COMMAND_WHOIS
 };
-extern const gchar *xmpp_commands[];
+extern const char *xmpp_commands[];
 
 enum {
 	XMPP_COMMAND_ROSTER_PARAM_ADD,
@@ -23,7 +23,7 @@ enum {
 	XMPP_COMMAND_ROSTER_PARAM_SUBSCRIBE,
 	XMPP_COMMAND_ROSTER_PARAM_UNSUBSCRIBE,
 };
-extern const gchar *xmpp_command_roster[];
+extern const char *xmpp_command_roster[];
 
 #define command_bind_xmpp(cmd, section, signal)				\
 	command_bind_proto(cmd, XMPP_PROTOCOL, section, signal)		

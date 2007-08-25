@@ -27,7 +27,7 @@
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 
-const gchar *xmpp_commands[] = {
+const char *xmpp_commands[] = {
 	"away",
 	"quote",
 	"roster",
@@ -35,7 +35,7 @@ const gchar *xmpp_commands[] = {
 	NULL
 };
 
-const gchar *xmpp_command_roster[] = {
+const char *xmpp_command_roster[] = {
 	"add",
 	"remove",
 	"name",
@@ -50,8 +50,8 @@ const gchar *xmpp_command_roster[] = {
 static void
 cmd_away(const char *data, XMPP_SERVER_REC *server)
 {
-	gchar **tmp, **tmp_prefixed;
-	const gchar *show, *reason;
+	char **tmp, **tmp_prefixed;
+	const char *show, *reason;
 	gboolean default_mode;
 
 	CMD_XMPP_SERVER(server);
@@ -63,8 +63,8 @@ cmd_away(const char *data, XMPP_SERVER_REC *server)
 
 	if (data[0] == '\0')
 		 show = NULL;
-	else if ((g_ascii_strcasecmp(tmp[0], "-one") != 0)
-	    && (g_ascii_strcasecmp(tmp[0], "-all") != 0)) {
+	else if (g_ascii_strcasecmp(tmp[0], "-one") != 0
+	    && g_ascii_strcasecmp(tmp[0], "-all") != 0) {
 		show = tmp[0];
 		reason = tmp[1];
 	} else if (tmp[1] != NULL) {
@@ -73,9 +73,8 @@ cmd_away(const char *data, XMPP_SERVER_REC *server)
 		reason = tmp_prefixed[1];
 	}
 
-parse_cmd_away:
-
-	if ((show == NULL) || (show[0] == '\0'))
+again:
+	if (show == NULL || show[0] == '\0')
 		xmpp_set_presence(server, XMPP_PRESENCE_AVAILABLE, NULL);
 
 	else if (g_ascii_strcasecmp(show,
@@ -102,7 +101,7 @@ parse_cmd_away:
 		show = settings_get_str("xmpp_default_away_mode");
 		default_mode = TRUE;
 
-		goto parse_cmd_away;
+		goto again;
 	}
 
 	if (tmp_prefixed != NULL)
@@ -117,8 +116,6 @@ cmd_quote(const char *data, XMPP_SERVER_REC *server)
 
 	lm_connection_send_raw(server->lmconn, data, NULL);
 }
-
-
 
 static void
 cmd_roster_show_users(gpointer data, gpointer user_data)
@@ -140,7 +137,7 @@ cmd_roster_show_groups(gpointer data, gpointer user_data)
        
 	show_group = FALSE;
 	user_list = group->users;
-	while (!show_group && (user_list != NULL)) {
+	while (show_group == NULL && user_list != NULL) {
 		if (xmpp_roster_show_user((XmppRosterUser *)user_list->data))
 			show_group = TRUE;
 
@@ -162,10 +159,10 @@ static void
 cmd_roster(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *msg;
-	LmMessageNode *root, *query, *item;
+	LmMessageNode *query_node, *item_node;
 	XmppRosterUser *user;
 	XmppRosterGroup *group;
-	gchar **tmp, *jid_recoded, *str;
+	char **tmp, *jid_recoded, *str;
 	GError *error;
 
 	CMD_XMPP_SERVER(server);
@@ -185,7 +182,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 	tmp = g_strsplit(data, " ", 3);
 
-	if ((tmp[1] == NULL) || (tmp[1][0] == '\0')) {
+	if (tmp[1] == NULL || tmp[1][0] == '\0') {
 		signal_emit("error command", 2,
 		    GINT_TO_POINTER(CMDERR_NOT_ENOUGH_PARAMS),
 		    xmpp_commands[XMPP_COMMAND_ROSTER]);
@@ -206,14 +203,14 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 		msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
 		    LM_MESSAGE_SUB_TYPE_SET);
-		root = lm_message_get_node(msg);
 
-		query = lm_message_node_add_child(root, "query", NULL);
-		lm_message_node_set_attribute(query, "xmlns",
+		query_node = lm_message_node_add_child(msg->node, "query",
+		    NULL);
+		lm_message_node_set_attribute(query_node, "xmlns",
 		    "jabber:iq:roster");
 
-		item = lm_message_node_add_child(query, "item", NULL);
-		lm_message_node_set_attribute(item, "jid", jid_recoded);
+		item_node = lm_message_node_add_child(query_node, "item", NULL);
+		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
 		lm_connection_send(server->lmconn, msg, &error);
 		lm_message_unref(msg);
@@ -238,15 +235,16 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 		msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
 		    LM_MESSAGE_SUB_TYPE_SET);
-		root = lm_message_get_node(msg);
 
-		query = lm_message_node_add_child(root, "query", NULL);
-		lm_message_node_set_attribute(query, "xmlns",
+		query_node = lm_message_node_add_child(msg->node, "query",
+		    NULL);
+		lm_message_node_set_attribute(query_node, "xmlns",
 		    "jabber:iq:roster");
 
-		item = lm_message_node_add_child(query, "item", NULL);
-		lm_message_node_set_attribute(item, "jid", jid_recoded);
-		lm_message_node_set_attribute(item, "subscription", "remove");
+		item_node = lm_message_node_add_child(query_node, "item", NULL);
+		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
+		lm_message_node_set_attribute(item_node, "subscription",
+		    "remove");
 
 		lm_connection_send(server->lmconn, msg, &error);
 		lm_message_unref(msg);
@@ -264,24 +262,24 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 		msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
 		    LM_MESSAGE_SUB_TYPE_SET);
-		root = lm_message_get_node(msg);
 
-		query = lm_message_node_add_child(root, "query", NULL);
-		lm_message_node_set_attribute(query, "xmlns",
+		query_node = lm_message_node_add_child(msg->node, "query",
+		    NULL);
+		lm_message_node_set_attribute(query_node, "xmlns",
 		    "jabber:iq:roster");
 
-		item = lm_message_node_add_child(query, "item", NULL);
-		lm_message_node_set_attribute(item, "jid", jid_recoded);
+		item_node = lm_message_node_add_child(query_node, "item", NULL);
+		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
 		if (group->name != NULL) {
 			str = xmpp_recode(group->name, XMPP_RECODE_OUT);
-			lm_message_node_add_child(item, "group", str);
+			lm_message_node_add_child(item_node, "group", str);
 			g_free(str);
 		}
 
 		if ((tmp[2] != NULL) && (tmp[2][0] != '\0')) {
 			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
-			lm_message_node_set_attribute(item, "name", str);
+			lm_message_node_set_attribute(item_node, "name", str);
 			g_free(str);
 		}
 
@@ -300,24 +298,24 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 		msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
 		    LM_MESSAGE_SUB_TYPE_SET);
-		root = lm_message_get_node(msg);
 
-		query = lm_message_node_add_child(root, "query", NULL);
-		lm_message_node_set_attribute(query, "xmlns",
+		query_node = lm_message_node_add_child(msg->node, "query",
+		    NULL);
+		lm_message_node_set_attribute(query_node, "xmlns",
 		    "jabber:iq:roster");
 
-		item = lm_message_node_add_child(query, "item", NULL);
-		lm_message_node_set_attribute(item, "jid", jid_recoded);
+		item_node = lm_message_node_add_child(query_node, "item", NULL);
+		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
-		if ((tmp[2] != NULL) && (tmp[2][0] != '\0')) {
+		if (tmp[2] != NULL && tmp[2][0] != '\0') {
 			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
-			lm_message_node_add_child(item, "group", str);
+			lm_message_node_add_child(item_node, "group", str);
 			g_free(str);
 		}
 
 		if (user->name != NULL) {
 			str = xmpp_recode(user->name, XMPP_RECODE_OUT);
-			lm_message_node_set_attribute(item, "name", str);
+			lm_message_node_set_attribute(item_node, "name", str);
 			g_free(str);
 		}
 
@@ -351,8 +349,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 
 		if ((tmp[2] != NULL) && (tmp[2][0] != '\0')) {
 			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
-			lm_message_node_add_child(lm_message_get_node(msg), 
-			    "status", str);
+			lm_message_node_add_child(msg->node, "status", str);
 			g_free(str);
 		}
 
@@ -388,7 +385,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *msg;
 	LmMessageNode *vcard_node;
-	gchar *jid_recoded, *jid = NULL;
+	char *jid_recoded, *jid = NULL;
 
 	CMD_XMPP_SERVER(server);
 
@@ -410,8 +407,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 
 	msg = lm_message_new_with_sub_type(jid_recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
-	vcard_node = lm_message_node_add_child(lm_message_get_node(msg),
-	    "vCard", NULL);
+	vcard_node = lm_message_node_add_child(msg->node, "vCard", NULL);
 	lm_message_node_set_attribute(vcard_node, "xmlns", "vcard-temp");
 
 	lm_connection_send(server->lmconn, msg, NULL);
