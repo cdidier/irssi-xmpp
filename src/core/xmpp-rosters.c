@@ -221,7 +221,6 @@ xmpp_find_ressource_from_user(XmppRosterUser *user, char *ressource)
 	GSList *ressource_list;
 
 	g_return_val_if_fail(user != NULL, NULL);
-	g_return_val_if_fail(ressource != NULL, NULL);
 
 	ressource_list = g_slist_find_custom(user->ressources, ressource,
 		(GCompareFunc)xmpp_find_ressource_func);
