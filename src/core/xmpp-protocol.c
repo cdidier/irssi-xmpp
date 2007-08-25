@@ -108,7 +108,7 @@ xmpp_jid_get_username(const char *jid)
 gboolean
 xmpp_jid_have_ressource(const char *jid)
 {
-	g_return_val_if_fail(jid != NULL, NULL);
+	g_return_val_if_fail(jid != NULL, FALSE);
 
 	return (g_utf8_strchr(jid, -1, '/') != NULL) ? TRUE : FALSE;
 }
@@ -116,7 +116,7 @@ xmpp_jid_have_ressource(const char *jid)
 gboolean
 xmpp_jid_have_address(const char *jid)
 {
-	g_return_val_if_fail(jid != NULL, NULL);
+	g_return_val_if_fail(jid != NULL, FALSE);
 
 	return (g_utf8_strchr(jid, -1, '@') != NULL) ? TRUE : FALSE;
 }
