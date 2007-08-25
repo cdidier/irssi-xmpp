@@ -40,9 +40,9 @@ read_settings(void)
 
 		/* update priority */
 		if (server->priority != settings_get_int("xmpp_priority")) {
-			server->priority = settings_get_int("xmpp_priority");
 			xmpp_set_presence(server, server->show,
-			    server->away_reason);
+			    server->away_reason,
+			    settings_get_int("xmpp_priority"));
 		}
 
 	}

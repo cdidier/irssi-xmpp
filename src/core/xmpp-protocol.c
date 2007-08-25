@@ -18,6 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <string.h>
+#include <stdlib.h>
 #include <sys/utsname.h>
 
 #include "module.h"
@@ -124,7 +126,8 @@ xmpp_jid_have_address(const char *jid)
 gboolean
 xmpp_priority_out_of_bound(const int priority)
 {
-	return (-128 <= priority && priority <= 127) ? FALSE : TRUE;
+	return (XMPP_PRIORITY_MIN <= priority
+	    && priority <= XMPP_PRIORITY_MAX) ? FALSE : TRUE;
 }
 
 void
@@ -160,13 +163,32 @@ xmpp_send_message_chat(XMPP_SERVER_REC *server, const char *to_jid,
 	g_free(message_recoded);
 }
 
+gboolean
+xmpp_presence_changed(const int show, const int old_chow, const gchar *status,
+    const gchar *old_status, const int priority, const int old_priority)
+{
+	if ((show != old_chow)
+	    || (status == NULL && old_status != NULL)
+	    || (status != NULL && old_status == NULL)
+	    || (status != NULL && old_status != NULL
+	    && strcmp(status, old_status) != 0)
+	    || (priority != old_priority))
+		return TRUE;
+	return FALSE;
+}
+
 void
-xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status)
+xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
+    const int priority)
 {
 	LmMessage *msg;
-	char *status_recoded, *priority;
+	char *status_recoded, *priority_str;
 
 	g_return_if_fail(server != NULL);
+
+	if (!xmpp_presence_changed(show, server->show, status,
+	    server->away_reason, priority, server->priority))
+		return;
 
 	msg = lm_message_new(NULL, LM_MESSAGE_TYPE_PRESENCE);
 
@@ -217,9 +239,11 @@ xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status)
 		}
 	}
 
-	priority = g_strdup_printf("%d", server->priority);
-	lm_message_node_add_child(msg->node, "priority", priority);
-	g_free(priority);
+	if (!xmpp_priority_out_of_bound(priority))
+		server->priority = priority;
+	priority_str = g_strdup_printf("%d", server->priority);
+	lm_message_node_add_child(msg->node, "priority", priority_str);
+	g_free(priority_str);
 
 	lm_connection_send(server->lmconn, msg, NULL);
 	lm_message_unref(msg);

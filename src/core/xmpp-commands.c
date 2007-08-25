@@ -75,26 +75,32 @@ cmd_away(const char *data, XMPP_SERVER_REC *server)
 
 again:
 	if (show == NULL || show[0] == '\0')
-		xmpp_set_presence(server, XMPP_PRESENCE_AVAILABLE, NULL);
+		xmpp_set_presence(server, XMPP_PRESENCE_AVAILABLE, NULL,
+		    server->priority);
 
 	else if (g_ascii_strcasecmp(show,
 	    xmpp_presence_show[XMPP_PRESENCE_CHAT]) == 0)
-		xmpp_set_presence(server, XMPP_PRESENCE_CHAT, reason);
+		xmpp_set_presence(server, XMPP_PRESENCE_CHAT, reason,
+		    server->priority);
 
 	else if (g_ascii_strcasecmp(show,
 	    xmpp_presence_show[XMPP_PRESENCE_DND]) == 0)
-		xmpp_set_presence(server, XMPP_PRESENCE_DND, reason);
+		xmpp_set_presence(server, XMPP_PRESENCE_DND, reason,
+		    server->priority);
 
 	else if (g_ascii_strcasecmp(show,
 	    xmpp_presence_show[XMPP_PRESENCE_XA]) == 0)
-		xmpp_set_presence(server, XMPP_PRESENCE_XA, reason);
+		xmpp_set_presence(server, XMPP_PRESENCE_XA, reason,
+		    server->priority);
 
 	else if (g_ascii_strcasecmp(show,
 	    xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0)
-		xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason);
+		xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason,
+		    server->priority);
 
 	else if (default_mode)
-		xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason);
+		xmpp_set_presence(server, XMPP_PRESENCE_AWAY, reason,
+		  server->priority);
 
 	else {
 		reason = (tmp_prefixed != NULL) ? tmp[1] : data;

@@ -431,11 +431,12 @@ next:
 
 void
 xmpp_roster_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
-    const char *show, const char *status, const char *priority)
+    const char *show_str, const char *status, const char *priority_str)
 {
 	XmppRosterUser *user;
 	XmppRosterRessource *ressource;
 	char *jid, *ressource_jid;
+	int show, priority;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(full_jid != NULL);
@@ -457,37 +458,41 @@ xmpp_roster_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 		user->ressources = g_slist_prepend(user->ressources, ressource);
 	}
 
-	if (show != NULL) {
-		if (g_ascii_strcasecmp(show,
+	priority = (priority_str != NULL) ? atoi(priority_str) : 0;
+
+	if (show_str != NULL) {
+		if (g_ascii_strcasecmp(show_str,
 		    xmpp_presence_show[XMPP_PRESENCE_CHAT]) == 0)
-			ressource->show = XMPP_PRESENCE_CHAT;
+			show = XMPP_PRESENCE_CHAT;
 
-		else if (g_ascii_strcasecmp(show,
+		else if (g_ascii_strcasecmp(show_str,
 		    xmpp_presence_show[XMPP_PRESENCE_DND]) == 0)
-			ressource->show = XMPP_PRESENCE_DND;
+			show = XMPP_PRESENCE_DND;
 
-		else if (g_ascii_strcasecmp(show,
+		else if (g_ascii_strcasecmp(show_str,
 		    xmpp_presence_show[XMPP_PRESENCE_XA]) == 0)
-			ressource->show = XMPP_PRESENCE_XA;
+			show = XMPP_PRESENCE_XA;
 
-		else if (g_ascii_strcasecmp(show,
+		else if (g_ascii_strcasecmp(show_str,
 		    xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0)
-			ressource->show = XMPP_PRESENCE_AWAY;
+			show = XMPP_PRESENCE_AWAY;
 
 		else
-			ressource->show = XMPP_PRESENCE_AVAILABLE;
+			show = XMPP_PRESENCE_AVAILABLE;
 	} else
-		ressource->show = XMPP_PRESENCE_AVAILABLE;
+		show = XMPP_PRESENCE_AVAILABLE;
+
+	if (!xmpp_presence_changed(show, ressource->show, status,
+	    ressource->status, priority, ressource->priority))
+		return;
+
+	ressource->show = show;
 
 	g_free_and_null(ressource->status);
 	if (status != NULL)
 		ressource->status = g_strdup(status);
 
-	if (priority)
-		ressource->priority = atoi(priority);
-	else
-		ressource->priority = 0;
-
+	ressource->priority = priority;
 	user->ressources = g_slist_sort(user->ressources,
 	    (GCompareFunc)xmpp_sort_ressource_func);
 
