@@ -200,7 +200,6 @@ xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status)
 		g_free_and_null(server->away_reason);
 	}
 
-
 	/* away */
 	if (lm_message_node_get_child(msg->node, "show") != NULL) {
 		signal_emit("event 306", 2, server, server->nick);
