@@ -541,7 +541,8 @@ xmpp_roster_presence_unavailable(XMPP_SERVER_REC *server,
 	if (ressource == NULL)
 		return;
 
-	signal_emit("xmpp jid presence unavailable", 2, server, full_jid);
+	signal_emit("xmpp jid presence change", 4, server, full_jid,
+	    XMPP_PRESENCE_UNAVAILABLE, status);
 
 	user->ressources = g_slist_remove(user->ressources, ressource);
 	xmpp_roster_cleanup_ressource(ressource, NULL);

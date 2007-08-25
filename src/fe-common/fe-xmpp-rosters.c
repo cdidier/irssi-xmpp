@@ -23,13 +23,12 @@
 #include "settings.h"
 #include "signals.h"
 #include "levels.h"
+#include "printtext.h"
+#include "themes.h"
 
 #include "xmpp.h"
 #include "xmpp-servers.h"
 #include "xmpp-rosters.h"
-
-#include "printtext.h"
-#include "themes.h"
 
 static void
 event_roster_group(XMPP_SERVER_REC *server, const char *group)
