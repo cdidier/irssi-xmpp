@@ -137,7 +137,7 @@ cmd_roster_show_groups(gpointer data, gpointer user_data)
        
 	show_group = FALSE;
 	user_list = group->users;
-	while (show_group == NULL && user_list != NULL) {
+	while (!show_group && user_list != NULL) {
 		if (xmpp_roster_show_user((XmppRosterUser *)user_list->data))
 			show_group = TRUE;
 
