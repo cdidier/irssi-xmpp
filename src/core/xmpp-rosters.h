@@ -13,6 +13,7 @@ enum {
 	XMPP_PRESENCE_CHAT
 };
 extern const char *xmpp_presence_show[];
+#define XMPP_PRESENCE_SHOW_LEN 7
 
 enum {
 	XMPP_SUBSCRIPTION_REMOVE,
