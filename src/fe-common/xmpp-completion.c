@@ -80,9 +80,9 @@ completion_get_nick_from_roster(SERVER_REC *server, const char *nick)
 	int len;
 	
 	g_return_val_if_fail(nick != NULL, NULL);
-	if (!IS_XMPP_SERVER(server))
-		return NULL;
 	xmppserver = XMPP_SERVER(server);
+	if (xmppserver == NULL)
+		return NULL;
 
 	len = strlen(nick);
 
@@ -136,6 +136,7 @@ sig_complete_command_roster(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
 	int len, i;
+	char **tmp;
 
 	g_return_if_fail(list != NULL);
 	g_return_if_fail(window != NULL);
@@ -145,15 +146,48 @@ sig_complete_command_roster(GList **list, WINDOW_REC *window,
 	*list = NULL;
 	len = strlen(word);
 
-	if (args[0] != '\0')
-		return;
+	/* complete args */
+	if (args[0] != '\0') {
+	
+		tmp = g_strsplit(args, " ", 3);
 
-	for (i=0; xmpp_command_roster[i] != NULL; i++) {
+		/* complete groups */
+		if (tmp[0] != NULL && tmp[1] != NULL && tmp[2] == NULL
+		    && g_ascii_strcasecmp(tmp[0],
+		    xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_GROUP])
+		    == 0) {
+        		GSList *group_list;
+			XMPP_SERVER_REC *xmppserver;
+			XmppRosterGroup *group;
 
-		if (g_ascii_strncasecmp(word, xmpp_command_roster[i], len) == 0)
-			*list = g_list_append(*list,
-			    (gpointer)g_strdup(xmpp_command_roster[i]));
+			xmppserver = XMPP_SERVER(window->active_server);
+			if (xmppserver == NULL)
+				goto out;
 
+			for (group_list = xmppserver->roster;
+			    group_list != NULL; group_list = group_list->next) {
+
+				group = (XmppRosterGroup *)group_list->data;
+				if (group->name != NULL
+				    && g_ascii_strncasecmp(word, group->name,
+				    len) == 0)
+					*list = g_list_append(*list,
+					    (gpointer)g_strdup(group->name));
+			}
+
+		}
+
+out:
+		g_strfreev(tmp);
+
+	/* complete subcommand */
+	} else {
+		for (i=0; xmpp_command_roster[i] != NULL; i++) {
+			if (g_ascii_strncasecmp(word, xmpp_command_roster[i],
+			    len) == 0)
+				*list = g_list_append(*list,
+				    (gpointer)g_strdup(xmpp_command_roster[i]));
+		}
 	}
 }
 

@@ -1,5 +1,6 @@
 0.14 - ??/08/2007
 
+	- complete group name in the command /ROSTER
 	- send message composing event, set "xmpp_send_composing" to OFF,
 	to disable it
 	- you don't need to reconnect anymore when you change the setting

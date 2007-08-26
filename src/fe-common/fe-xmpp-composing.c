@@ -81,21 +81,21 @@ sig_gui_key_pressed(int key)
 	char *str = NULL;
 
 	if (!settings_get_bool("xmpp_send_composing"))
-		goto last;
+		goto out;
 
 	/* ignore command or empty line */
 	str = parse_special_string("$L", active_win->active_server,
 	    active_win->active, "", NULL, 0);
 	if (str != NULL &&
 	    (str[0] == *settings_get_str("cmdchars") || str[0] == '\0'))
-		goto last;
+		goto out;
 
 	if (key != KEY_TAB && key != KEY_RETURN && last_key != KEY_ESCAPE
 	    && key != KEY_ESCAPE && last_key != KEYS_PAGE && key != KEYS_PAGE
 	    && key != KEYS_OTHER && key != KEY_BACKSPACE) {
 
 		if (!settings_get_bool("xmpp_send_composing"))
-			goto last;
+			goto out;
 
 		/* starting composing */
 		if (composing_time == 0) {
@@ -117,7 +117,7 @@ sig_gui_key_pressed(int key)
 		stop_composing(NULL);
 	}
 
-last:
+out:
 	last_key = key;
 	g_free(str);
 }
