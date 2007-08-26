@@ -152,6 +152,11 @@ Settings:
     Send a subscribe request to the contact when adding his/her to the roster.
     (default: ON)
 
+Composing in the statusbar
+==========================
+
+/STATUSBAR WINDOW ADD -before barend -alignment right xmpp_composing
+
 Subscriptions status:
 =====================
 

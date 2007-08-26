@@ -26,7 +26,6 @@
 #include "printtext.h"
 #include "themes.h"
 
-#include "xmpp.h"
 #include "xmpp-servers.h"
 
 #include "xmpp-completion.h"
