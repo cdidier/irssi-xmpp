@@ -59,6 +59,7 @@ xmpp_settings_init(void)
 	settings_add_bool("xmpp", "roster_show_offline_unsuscribed", TRUE);
 	settings_add_str("xmpp", "roster_default_group", "General");
 	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);
+	settings_add_bool("xmpp", "xmpp_send_composing", TRUE);
 
 	signal_add("setup changed", (SIGNAL_FUNC)read_settings);
 }

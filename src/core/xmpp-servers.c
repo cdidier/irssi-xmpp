@@ -428,7 +428,7 @@ xmpp_servers_init(void)
 void
 xmpp_servers_deinit(void)
 {
-	signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
+	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
 	signal_remove("server connect failed",

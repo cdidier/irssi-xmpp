@@ -249,6 +249,23 @@ xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	lm_message_unref(msg);
 }
 
+void
+xmpp_send_composing(XMPP_SERVER_REC *server, const char *full_jid)
+{
+	char *str = g_strdup_printf("%d", time(NULL));
+	signal_emit("xmpp jid presence change", 4, server, full_jid,
+	    5, str);
+	g_free(str);
+}
+
+void xmpp_send_stop_composing(XMPP_SERVER_REC *server, const char *full_jid)
+{
+	char *str = g_strdup_printf("%d", time(NULL));
+	signal_emit("xmpp jid presence change", 4, server, full_jid,
+	    1, str);
+	g_free(str);
+}
+
 /*
  * XEP-0092: Software Version
  * http://www.xmpp.org/extensions/xep-0092.html
