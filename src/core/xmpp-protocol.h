@@ -11,8 +11,6 @@
 #define XMPP_PRIORITY_MIN -128
 #define XMPP_PRIORITY_MAX 127
 
-#define XMPP_COMPOSING_TIMEOUT 5
-
 __BEGIN_DECLS
 char   *xmpp_recode(const char *, const int);
 
@@ -29,9 +27,10 @@ void	xmpp_send_message_chat(XMPP_SERVER_REC *, const char *,
 	    const char *);
 void	xmpp_set_presence(XMPP_SERVER_REC *, const int, const char *,
 	    const int);
-void	xmpp_send_composing(XMPP_SERVER_REC *, const char *full_jid);
-void	xmpp_send_stop_composing(XMPP_SERVER_REC *, const char *full_jid);
 void	xmpp_register_handlers(XMPP_SERVER_REC *);
+
+void	xmpp_protocol_init(void);
+void	xmpp_protocol_deinit(void);
 __END_DECLS
 
 #endif

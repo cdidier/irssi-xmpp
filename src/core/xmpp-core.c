@@ -27,6 +27,7 @@
 #include "settings.h"
 
 #include "xmpp-servers.h"
+#include "xmpp-protocol.h"
 #include "xmpp-settings.h"
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"
@@ -87,6 +88,7 @@ xmpp_core_init(void)
 	g_free(rec);
 
 	xmpp_servers_init();
+	xmpp_protocol_init();
 	xmpp_settings_init();
 	xmpp_commands_init();
 
@@ -97,6 +99,7 @@ void
 xmpp_core_deinit(void) 
 {
 	xmpp_servers_deinit();
+	xmpp_protocol_init();
 	xmpp_settings_deinit();
 	xmpp_commands_deinit();
 

@@ -28,6 +28,9 @@
 #include "settings.h"
 #include "special-vars.h"
 
+#include "fe-xmpp-composing.h"
+
+#include "xmpp-servers.h"
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
 #include "xmpp-protocol.h"

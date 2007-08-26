@@ -215,7 +215,7 @@ xmpp_find_or_add_group(XMPP_SERVER_REC *server, const char *group_name)
 	return group;
 }
 
-static XmppRosterRessource *
+XmppRosterRessource *
 xmpp_find_ressource_from_user(XmppRosterUser *user, char *ressource)
 {
 	GSList *ressource_list;
@@ -297,6 +297,24 @@ xmpp_roster_move_user(XMPP_SERVER_REC *server, XmppRosterUser *user,
 
 	group->users = g_slist_remove(group->users, user);
 	new_group->users = g_slist_append(new_group->users, user);
+}
+
+static XmppRosterRessource *
+xmpp_roster_create_ressource(const char *name)
+{
+	XmppRosterRessource *ressource;
+
+	g_return_val_if_fail(name != NULL, NULL);
+
+	ressource = g_new(XmppRosterRessource, 1);
+
+	ressource->name = g_strdup(name);
+	ressource->priority = 0;
+	ressource->show= XMPP_PRESENCE_UNAVAILABLE;
+	ressource->status = NULL;
+	ressource->composing_id = NULL;
+
+	return ressource;
 }
 
 static XmppRosterUser *
@@ -452,9 +470,7 @@ xmpp_roster_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 	/* find ressource or create it if it doesn't exist */	
 	ressource = xmpp_find_ressource_from_user(user, ressource_jid);
 	if (ressource == NULL) {
-		ressource = g_new(XmppRosterRessource, 1);
-		ressource->name = g_strdup(ressource_jid);
-		ressource->status = NULL;
+		ressource = xmpp_roster_create_ressource(ressource_jid);
 		user->ressources = g_slist_prepend(user->ressources, ressource);
 	}
 
@@ -566,6 +582,7 @@ xmpp_roster_cleanup_ressource(gpointer data, gpointer user_data)
 
 	g_free(ressource->name);
 	g_free(ressource->status);
+	g_free(ressource->composing_id);
 	g_free(ressource);
 }
 

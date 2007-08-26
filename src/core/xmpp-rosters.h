@@ -31,6 +31,7 @@ typedef struct _XmppRosterRessource {
 	int	 priority;
 	int	 show;
 	char	*status;
+	char	*composing_id;
 } XmppRosterRessource;
 
 typedef struct _XmppRosterUser {
@@ -49,10 +50,12 @@ typedef struct _XmppRosterGroup {
 } XmppRosterGroup;
 
 __BEGIN_DECLS
-int		 xmpp_sort_user_func(gconstpointer, gconstpointer);
-XmppRosterUser	*xmpp_find_user_from_groups(GSList *, const char *, 
-		    XmppRosterGroup **);
-gboolean	 xmpp_roster_show_user(XmppRosterUser *);
+int			 xmpp_sort_user_func(gconstpointer, gconstpointer);
+XmppRosterUser		*xmpp_find_user_from_groups(GSList *, const char *, 
+			     XmppRosterGroup **);
+XmppRosterRessource 	*xmpp_find_ressource_from_user(XmppRosterUser *,
+			     char *ressource);
+gboolean		 xmpp_roster_show_user(XmppRosterUser *);
 
 void	xmpp_roster_update(XMPP_SERVER_REC *, LmMessageNode *);
 void	xmpp_roster_presence_update(XMPP_SERVER_REC *, const char *,

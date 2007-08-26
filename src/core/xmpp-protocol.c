@@ -249,21 +249,107 @@ xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	lm_message_unref(msg);
 }
 
+/*
+ * XEP-0022: Message Events
+ * http://www.xmpp.org/extensions/xep-0022.html
+ */
 void
-xmpp_send_composing(XMPP_SERVER_REC *server, const char *full_jid)
+xmpp_send_start_composing(XMPP_SERVER_REC *server, const char *full_jid)
 {
-	char *str = g_strdup_printf("%d", time(NULL));
-	signal_emit("xmpp jid presence change", 4, server, full_jid,
-	    5, str);
-	g_free(str);
+	LmMessage *msg;
+	LmMessageNode *child;
+	XmppRosterUser *user;
+	XmppRosterRessource *ressource;
+	char *full_jid_recoded, *jid, *res;
+	const char *id;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(full_jid != NULL);
+
+	full_jid_recoded = xmpp_recode(full_jid, XMPP_RECODE_OUT);
+
+	msg = lm_message_new_with_sub_type(full_jid_recoded,
+	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
+
+	child = lm_message_node_add_child(msg->node, "x", NULL);
+	lm_message_node_set_attribute(child, "xmlns", "jabber:x:event");
+
+	lm_message_node_add_child(child, "composing", NULL);
+
+	jid = xmpp_jid_strip_ressource(full_jid);
+	res = xmpp_jid_get_ressource(full_jid);
+
+	if (jid == NULL || ressource == NULL)
+		goto out;
+	
+	user = xmpp_find_user_from_groups(server->roster, jid, NULL);
+	if (user == NULL)
+		goto out;
+
+	ressource = xmpp_find_ressource_from_user(user, res);
+	if (ressource != NULL) {
+		id = lm_message_node_get_attribute(msg->node, "id");
+		lm_message_node_add_child(child, "id", id);
+
+		g_free_and_null(ressource->composing_id);
+		ressource->composing_id = g_strdup(id);
+	}
+
+out:
+	lm_connection_send(server->lmconn, msg, NULL);
+	lm_message_unref(msg);
+
+	g_free(full_jid_recoded);
+	g_free(jid);
+	g_free(res);
 }
 
 void xmpp_send_stop_composing(XMPP_SERVER_REC *server, const char *full_jid)
 {
-	char *str = g_strdup_printf("%d", time(NULL));
-	signal_emit("xmpp jid presence change", 4, server, full_jid,
-	    1, str);
-	g_free(str);
+	LmMessage *msg;
+	LmMessageNode *child;
+	XmppRosterUser *user;
+	XmppRosterRessource *ressource;
+	char *full_jid_recoded, *jid, *res;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(full_jid != NULL);
+
+	full_jid_recoded = xmpp_recode(full_jid, XMPP_RECODE_OUT);
+
+	msg = lm_message_new_with_sub_type(full_jid_recoded,
+	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
+
+	child = lm_message_node_add_child(msg->node, "x", NULL);
+	lm_message_node_set_attribute(child, "xmlns", "jabber:x:event");
+
+	jid = xmpp_jid_strip_ressource(full_jid);
+	res = xmpp_jid_get_ressource(full_jid);
+
+	if (jid == NULL || ressource == NULL)
+		goto out;
+	
+	user = xmpp_find_user_from_groups(server->roster, jid, NULL);
+	if (user == NULL)
+		goto out;
+
+	ressource = xmpp_find_ressource_from_user(user, res);
+	if (ressource == NULL)
+		goto out;
+
+	if (ressource->composing_id) {
+		lm_message_node_add_child(child, "id",
+		    ressource->composing_id);
+		g_free_and_null(ressource->composing_id);
+	}
+
+out:
+	lm_connection_send(server->lmconn, msg, NULL);
+	lm_message_unref(msg);
+
+	g_free(full_jid_recoded);
+	g_free(jid);
+	g_free(res);
 }
 
 /*
@@ -516,4 +602,23 @@ xmpp_register_handlers(XMPP_SERVER_REC *server)
 	lm_connection_register_message_handler(server->lmconn, hiq,
 	    LM_MESSAGE_TYPE_IQ, LM_HANDLER_PRIORITY_NORMAL);
 	lm_message_handler_unref(hiq);
+}
+
+void
+xmpp_protocol_init(void)
+{
+	signal_add("xmpp composing start",
+	    (SIGNAL_FUNC)xmpp_send_start_composing);
+	signal_add("xmpp composing stop",
+	    (SIGNAL_FUNC)xmpp_send_stop_composing);
+}
+
+
+void
+xmpp_protocol_deinit(void)
+{
+	signal_remove("xmpp composing start",
+	    (SIGNAL_FUNC)xmpp_send_start_composing);
+	signal_remove("xmpp composing stop",
+	    (SIGNAL_FUNC)xmpp_send_stop_composing);
 }
