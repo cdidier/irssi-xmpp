@@ -304,8 +304,6 @@ xmpp_roster_create_ressource(const char *name)
 {
 	XmppRosterRessource *ressource;
 
-	g_return_val_if_fail(name != NULL, NULL);
-
 	ressource = g_new(XmppRosterRessource, 1);
 
 	ressource->name = g_strdup(name);
