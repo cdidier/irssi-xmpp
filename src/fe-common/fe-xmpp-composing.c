@@ -26,6 +26,7 @@
 #include "printtext.h"
 #include "themes.h"
 #include "settings.h"
+#include "special-vars.h"
 
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
@@ -43,49 +44,48 @@ struct composing_query {
 	gchar *full_jid;
 };
 
-gboolean keylog_active = FALSE;
-int last_key = 0;
-time_t last_time;
-struct composing_query *last_compo;
-GSList *compo_list;
+gboolean	 keylog_active;
+int 		 last_key;
+time_t		 composing_time;
+char		*composing_name;
+XMPP_SERVER_REC *composing_server;
 
 static gboolean
 stop_composing(gpointer *user_data)
 {
-	struct composing_query *compo;
-	time_t current_time;
-
-	compo = (struct composing_query *)user_data;
+	if (composing_time == 0)
+		return FALSE;
 
 	/* still composing */
-	current_time = time(NULL);
-	if ((compo == last_compo)
-	    && ((current_time - last_time) < XMPP_COMPOSING_TIMEOUT))
+	if (((time(NULL) - composing_time) < XMPP_COMPOSING_TIMEOUT)
+	    && user_data == NULL)
 		return TRUE;
 
 	/* server still connected */
-	if (g_slist_find(servers, compo->server) == NULL)
+	if (g_slist_find(servers, composing_server) == NULL)
 		return FALSE;
 
-	xmpp_send_stop_composing(compo->server, compo->full_jid);
+	signal_emit("xmpp composing stop", 2, composing_server,
+	    composing_name);
+	composing_time = 0;
 
 	return FALSE;
 }
 
 static void
-stop_composing_destroy(gpointer *user_data)
-{
-	g_free(((struct composing_query *)user_data)->full_jid);
-	g_free(user_data);
-}
-
-static void
 sig_gui_key_pressed(int key)
 {
-	XMPP_SERVER_REC *server;
-	QUERY_REC *query;
-	struct composing_query *compo;
-	time_t current_time;
+	char *str = NULL;
+
+	if (!settings_get_bool("xmpp_send_composing"))
+		goto last;
+
+	/* ignore command or empty line */
+	str = parse_special_string("$L", active_win->active_server,
+	    active_win->active, "", NULL, 0);
+	if (str != NULL &&
+	    (str[0] == *settings_get_str("cmdchars") || str[0] == '\0'))
+		goto last;
 
 	if (key != KEY_TAB && key != KEY_RETURN && last_key != KEY_ESCAPE
 	    && key != KEY_ESCAPE && last_key != KEYS_PAGE && key != KEYS_PAGE
@@ -94,38 +94,29 @@ sig_gui_key_pressed(int key)
 		if (!settings_get_bool("xmpp_send_composing"))
 			goto last;
 
-		server = XMPP_SERVER(active_win->active_server);
-		if (server == NULL)
-			goto last;
+		/* starting composing */
+		if (composing_time == 0) {
+			composing_time = time(NULL);
+			g_timeout_add(XMPP_COMPOSING_TIMEOUT * 1000,
+			    (GSourceFunc)stop_composing, NULL);
 
-		query = XMPP_QUERY(active_win->active);
-		if (query == NULL || !xmpp_jid_have_ressource(query->name))
-			 goto last;
+			signal_emit("xmpp composing start", 2,
+			    composing_server, composing_name);
+		}
 
-		/* composing */
-		current_time = time(NULL);
-		if ((current_time - last_time) < (XMPP_COMPOSING_TIMEOUT - 1))
-			goto last;
+		/* still composing */
+		else if ((time(NULL) - composing_time)
+		    > (XMPP_COMPOSING_TIMEOUT - 1))
+			 composing_time = time(NULL);
 
-	//      if (compo != last_compo) {
-			compo = g_new(struct composing_query, 1);
-			compo->server = server;
-			compo->full_jid = g_strdup(query->name);
-			g_timeout_add_full(G_PRIORITY_DEFAULT,
-			    XMPP_COMPOSING_TIMEOUT * 1000,
-			    (GSourceFunc)stop_composing, compo,
-			    (GDestroyNotify)stop_composing_destroy);
-			last_compo = compo;
-	//      }
-
-		last_time = current_time;
-		xmpp_send_composing(server, query->name);
-
-	} else if (key == KEY_RETURN)
-		last_time = time(NULL) - XMPP_COMPOSING_TIMEOUT - 1;
+	} else if (key == KEY_RETURN) {
+		composing_time = 0;
+		stop_composing(NULL);
+	}
 
 last:
 	last_key = key;
+	g_free(str);
 }
 
 static void
@@ -145,30 +136,47 @@ sig_window_changed(WINDOW_REC *new_window, WINDOW_REC *old_window)
 	if (query == NULL || !xmpp_jid_have_ressource(query->name))
 		goto stop;
 
+	/* composing in another window */
+	if (composing_name != query->name
+	    || composing_server != server) {
+		stop_composing(NULL);
+		composing_name = query->name;
+		composing_server = server;
+	}
+
 	if (!keylog_active) {
 		signal_add_last("gui key pressed",
 		    (SIGNAL_FUNC)sig_gui_key_pressed);
-
 		keylog_active = TRUE;
-		last_time = time(NULL) - XMPP_COMPOSING_TIMEOUT - 1;
 	}
+
 	return;
 
 stop:
-	if (keylog_active)
+	if (keylog_active) {
 		signal_remove("gui key pressed",
 		    (SIGNAL_FUNC)sig_gui_key_pressed);
+		keylog_active = FALSE;
+
+		stop_composing((void *)TRUE);
+		composing_name = NULL;
+		composing_server = NULL;
+	}
 }
 
 void
 fe_xmpp_composing_init(void) {
 	signal_add_last("window changed", (SIGNAL_FUNC)sig_window_changed);
 
-	compo_list = NULL;
+	keylog_active = FALSE;
+	last_key = 0;
+	composing_time = 0;
+	composing_name = NULL;
+	composing_server = NULL;
 }
 
+void
 fe_xmpp_composing_deinit(void) {
-	 signal_remove("window changed", (SIGNAL_FUNC)sig_window_changed);
+	signal_remove("window changed", (SIGNAL_FUNC)sig_window_changed);
 
-	g_slist_free(compo_list);
 }

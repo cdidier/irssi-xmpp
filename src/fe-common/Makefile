@@ -1,5 +1,5 @@
 LIB= fe_xmpp
-SRCS= fe-xmpp.c module-formats.c xmpp-completion.c fe-xmpp-composing.c fe-xmpp-rosters.c fe-xmpp-queries.c
+SRCS= fe-xmpp.c module-formats.c xmpp-completion.c fe-xmpp-rosters.c fe-xmpp-queries.c fe-xmpp-composing.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-std=c99 \
