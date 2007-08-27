@@ -79,6 +79,9 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 {
 	g_return_if_fail(server != NULL);
 
+	if (server->connected)
+		signal_emit("server disconnected", 1, server);
+
 	if (lm_connection_is_open(server->lmconn))
 		lm_connection_close(server->lmconn, NULL);
 
@@ -401,6 +404,8 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
+	server->connected = FALSE;
+
 	xmpp_server_cleanup(server);
 }
 
@@ -428,6 +433,16 @@ xmpp_servers_init(void)
 void
 xmpp_servers_deinit(void)
 {
+	GSList *tmp;
+	XMPP_SERVER_REC *server;
+
+	/* disconnect all servers before unloading the module */
+	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
+		server = XMPP_SERVER(tmp->data);
+		if (server != NULL)
+			signal_emit("server disconnected", 1, server);
+	}
+
 	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
