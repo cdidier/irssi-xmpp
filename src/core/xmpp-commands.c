@@ -26,6 +26,7 @@
 /*#include "xmpp-channels.h"*/
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
+#include "xmpp-tools.h"
 
 const char *xmpp_commands[] = {
 	"away",
@@ -201,7 +202,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 		goto cmd_roster_end;
 	}
 
-	jid_recoded = xmpp_recode(tmp[1], XMPP_RECODE_OUT);
+	jid_recoded = xmpp_recode_out(tmp[1]);
 
 	/* /ROSTER ADD <jid> */
 	if (g_ascii_strcasecmp(tmp[0],
@@ -278,13 +279,13 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
 		if (group->name != NULL) {
-			str = xmpp_recode(group->name, XMPP_RECODE_OUT);
+			str = xmpp_recode_out(group->name);
 			lm_message_node_add_child(item_node, "group", str);
 			g_free(str);
 		}
 
 		if ((tmp[2] != NULL) && (tmp[2][0] != '\0')) {
-			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
+			str = xmpp_recode_out(tmp[2]);
 			lm_message_node_set_attribute(item_node, "name", str);
 			g_free(str);
 		}
@@ -314,13 +315,13 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 		lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
 		if (tmp[2] != NULL && tmp[2][0] != '\0') {
-			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
+			str = xmpp_recode_out(tmp[2]);
 			lm_message_node_add_child(item_node, "group", str);
 			g_free(str);
 		}
 
 		if (user->name != NULL) {
-			str = xmpp_recode(user->name, XMPP_RECODE_OUT);
+			str = xmpp_recode_out(user->name);
 			lm_message_node_set_attribute(item_node, "name", str);
 			g_free(str);
 		}
@@ -354,7 +355,7 @@ cmd_roster(const char *data, XMPP_SERVER_REC *server)
 		    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBE);
 
 		if ((tmp[2] != NULL) && (tmp[2][0] != '\0')) {
-			str = xmpp_recode(tmp[2], XMPP_RECODE_OUT);
+			str = xmpp_recode_out(tmp[2]);
 			lm_message_node_add_child(msg->node, "status", str);
 			g_free(str);
 		}
@@ -409,7 +410,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 	}
 
 	jid = xmpp_jid_strip_ressource(data);
-	jid_recoded = xmpp_recode(jid, XMPP_RECODE_OUT);
+	jid_recoded = xmpp_recode_out(jid);
 
 	msg = lm_message_new_with_sub_type(jid_recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);

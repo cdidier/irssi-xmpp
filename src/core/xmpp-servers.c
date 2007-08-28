@@ -27,6 +27,7 @@
 #include "xmpp-servers.h"
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
+#include "xmpp-tools.h"
 
 static void
 channels_join(SERVER_REC *server, const char *channel, int automatic)

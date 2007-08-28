@@ -25,8 +25,8 @@
 
 #include "xmpp-queries.h"
 #include "xmpp-servers.h"
-#include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
+#include "xmpp-tools.h"
 
 QUERY_REC *
 xmpp_query_create(const char *server_tag, const char *nick, int automatic)

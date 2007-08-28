@@ -28,6 +28,7 @@
 #include "xmpp-servers.h"
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
+#include "xmpp-tools.h"
 
 const char *xmpp_presence_show[] = {
 	"X",
@@ -419,19 +420,18 @@ xmpp_roster_update(XMPP_SERVER_REC *server, LmMessageNode *query)
 		jid = lm_message_node_get_attribute(item, "jid");
 		if (jid == NULL)
 			goto next;
-		jid_recoded = xmpp_recode(jid, XMPP_RECODE_IN);
+		jid_recoded = xmpp_recode_in(jid);
 
 		subscription = lm_message_node_get_attribute(item,
 		    "subscription");
 
 		name = lm_message_node_get_attribute(item, "name");
 		if (name != NULL)
-			name_recoded = xmpp_recode(name, XMPP_RECODE_IN);
+			name_recoded = xmpp_recode_in(name);
 
 		group_node = lm_message_node_get_child(item, "group");
 		if (group_node != NULL)
-			group_recoded = xmpp_recode(group_node->value,
-			    XMPP_RECODE_IN);
+			group_recoded = xmpp_recode_in(group_node->value);
 
 		xmpp_roster_update_user(server, jid_recoded, subscription,
 		    name_recoded, group_recoded);
