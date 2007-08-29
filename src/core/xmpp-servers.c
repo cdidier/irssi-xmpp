@@ -29,6 +29,12 @@
 #include "xmpp-rosters.h"
 #include "xmpp-tools.h"
 
+gboolean
+xmpp_server_is_alive(XMPP_SERVER_REC *server)
+{
+	return (server != NULL && g_slist_find(servers, server) != NULL);
+}
+
 static void
 channels_join(SERVER_REC *server, const char *channel, int automatic)
 {

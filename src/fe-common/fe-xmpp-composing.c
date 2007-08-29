@@ -64,14 +64,13 @@ stop_composing(gpointer *user_data)
 	if (composing_time == 0)
 		return FALSE;
 
+	if (xmpp_server_is_alive(composing_server) && composing_name != NULL)
+		return FALSE;
+
 	/* still composing */
 	if (((time(NULL) - composing_time) < XMPP_COMPOSING_TIMEOUT)
 	    && user_data == NULL)
 		return TRUE;
-
-	/* server still connected */
-	if (g_slist_find(servers, composing_server) == NULL)
-		return FALSE;
 
 	signal_emit("xmpp composing stop", 2, composing_server,
 	    composing_name);
@@ -99,17 +98,15 @@ sig_gui_key_pressed(int key)
 	    && key != KEY_ESCAPE && last_key != KEYS_PAGE && key != KEYS_PAGE
 	    && key != KEYS_OTHER && key != KEY_BACKSPACE) {
 
-		if (!settings_get_bool("xmpp_send_composing"))
-			goto out;
-
 		/* starting composing */
 		if (composing_time == 0) {
 			composing_time = time(NULL);
 			g_timeout_add(XMPP_COMPOSING_TIMEOUT * 1000,
 			    (GSourceFunc)stop_composing, NULL);
 
-			signal_emit("xmpp composing start", 2,
-			    composing_server, composing_name);
+			if (xmpp_server_is_alive(composing_server))
+				signal_emit("xmpp composing start", 2,
+				    composing_server, composing_name);
 		}
 
 		/* still composing */
@@ -268,8 +265,6 @@ xmpp_composing_update(void)
 void
 fe_xmpp_composing_init(void) {
 	signal_add_last("window changed", (SIGNAL_FUNC)sig_window_changed);
-	signal_add("xmpp composing start",
-	    (SIGNAL_FUNC)event_composing_show);
 
 	statusbar_item_register("xmpp_composing", NULL, item_xmpp_composing);
 
@@ -289,8 +284,6 @@ fe_xmpp_composing_init(void) {
 void
 fe_xmpp_composing_deinit(void) {
 	signal_remove("window changed", (SIGNAL_FUNC)sig_window_changed);
-	signal_remove("xmpp composing start",
-	    (SIGNAL_FUNC)event_composing_show);
 	
 	statusbar_item_unregister("xmpp_composing");
 
