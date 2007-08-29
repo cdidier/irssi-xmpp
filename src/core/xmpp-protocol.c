@@ -65,10 +65,10 @@ xmpp_send_message_chat(XMPP_SERVER_REC *server, const char *to_jid,
 }
 
 gboolean
-xmpp_presence_changed(const int show, const int old_chow, const gchar *status,
+xmpp_presence_changed(const int show, const int old_show, const gchar *status,
     const gchar *old_status, const int priority, const int old_priority)
 {
-	if ((show != old_chow)
+	if ((show != old_show)
 	    || (status == NULL && old_status != NULL)
 	    || (status != NULL && old_status == NULL)
 	    || (status != NULL && old_status != NULL

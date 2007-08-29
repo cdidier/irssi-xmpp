@@ -36,7 +36,7 @@
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
-#include "xmpp-protocol.h"
+#include "xmpp-tools.h"
 
 #define KEY_TAB 9
 #define KEY_RETURN 10

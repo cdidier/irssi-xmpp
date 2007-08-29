@@ -23,9 +23,9 @@
 #include "window-items.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 #include "xmpp-commands.h"
+#include "xmpp-tools.h"
 
 #include <string.h>
 
