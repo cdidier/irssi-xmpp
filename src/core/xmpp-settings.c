@@ -18,6 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <string.h>
+
 #include "module.h"
 #include "settings.h"
 #include "signals.h"
@@ -40,9 +42,30 @@ read_settings(void)
 
 		/* update priority */
 		if (server->priority != settings_get_int("xmpp_priority")) {
-			xmpp_set_presence(server, server->show,
-			    server->away_reason,
+			signal_emit("xmpp own_presence", 4, server,
+			    server->show, server->away_reason,
 			    settings_get_int("xmpp_priority"));
+		}
+
+		/* update nick */
+		if (settings_get_bool("xmpp_set_nick_as_username")) {
+			if (strcmp(server->connrec->nick,
+			    server->connrec->username) != 0) {
+				g_free(server->connrec->nick);
+				g_free(server->nick);
+				server->connrec->nick =
+				    g_strdup(server->connrec->username);
+				server->nick = g_strdup(server->connrec->nick);
+			}
+		} else {
+			if (strcmp(server->connrec->nick,
+			    server->connrec->realname) != 0) {
+				g_free(server->connrec->nick);
+				g_free(server->nick);
+				server->connrec->nick =
+				    g_strdup(server->connrec->realname);
+				server->nick = g_strdup(server->connrec->nick);
+			}
 		}
 
 	}
@@ -51,16 +74,6 @@ read_settings(void)
 void
 xmpp_settings_init(void)
 {
-	settings_add_int("xmpp", "xmpp_priority", 0);
-	settings_add_bool("xmpp", "xmpp_send_version", TRUE);
-	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
-	settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
-	settings_add_bool("xmpp", "roster_show_offline", TRUE);
-	settings_add_bool("xmpp", "roster_show_offline_unsuscribed", TRUE);
-	settings_add_str("xmpp", "roster_default_group", "General");
-	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);
-	settings_add_bool("xmpp", "xmpp_send_composing", TRUE);
-
 	signal_add("setup changed", (SIGNAL_FUNC)read_settings);
 }
 

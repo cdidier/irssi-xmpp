@@ -25,15 +25,17 @@
 struct _XMPP_SERVER_CONNECT_REC {
 	#include "server-connect-rec.h"
 };
-#define STRUCT_SERVER_CONNECT_REC XMPP_SERVER_CONNECT_REC
 
+#define STRUCT_SERVER_CONNECT_REC XMPP_SERVER_CONNECT_REC
 struct _XMPP_SERVER_REC {
 	#include "server-rec.h"
 
-	LmConnection	*lmconn;
-	char		*ressource;
-	int		 priority;
+	char		*resource;
 	int		 show;
+	int		 priority;
+	gboolean	 default_priority;
+
+	LmConnection	 *lmconn;
 
 	GSList		*roster;
 };

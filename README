@@ -16,8 +16,8 @@ Requirement:
 
 Procedure:
     $ export IRSSI_INCLUDE=/path/to/irssi/sources
-	$ make
-	$ make user-install
+    $ make
+    $ make user-install
 
 Note: On non-Linux systems (e.g. *BSD) you might need to use "gmake" instead of
 "make".
@@ -28,7 +28,7 @@ Running irssi-xmpp:
 Usage:
     /LOAD xmpp
 
-Simply load the module in irssi. Currently you cannot load it automaticly,
+Simply load the module in irssi. Currently you cannot load it automatically,
 unless using a script or something like that.
 
 The module must be placed in "~/.irssi/modules/", or you should load it with
@@ -41,28 +41,32 @@ Connection:
 ===========
 
 Usage:
-    /SERVER [-ssl] -xmppnet <network> <address> <port> <password> <jid>
+    /XMPPCONNECT [-ssl] [-server <server>] [-port <port>]
+                 <jid>[/<resource>] <password>
 
 The "jid" is your Jabber ID (something like "username@server"). You can add
-"/<ressource>" at the end of the "jid" to set your own ressource.
+"/<resource>" at the end of the "jid" to set your own resource.
 
-If 0 is specified as port, the default port will be user (5222 for a regular
-connection or 5223 for SSL).
 
 You can put these things in your config file (The config file can be found
 here : "~.irssi/config"):
 
-To create a XMPP network, add to chatnets section,
-    <network> = { type = "XMPP"; nick = "<jid>"; };
+To create a XMPP network, add to "chatnets" section,
+    <network> = { type = "XMPP"; nick = "<jid>[/<resource>]"; };
+For example:
+    "xmpp:username@server" = { type = "XMPP"; nick = "username@server/resource"; };
 
-Then you can add this to servers section:
-    { address = "<address>"; port="<port>"; use_ssl = "{yes|no}"; chatnet = "<network>"; password = "password"; };
-
-Or in irssi, you can type this:
-	/SERVER ADD -xmppnet <network> <address> <port> <password> <jid>
+Then you can add this to "servers" section:
+    { address = "<address>"; port="<port>"; use_ssl = "{yes|no}"; chatnet = "<network>"; password = "<password>"; };
+For example:
+    { address = "server"; port="5223"; use_ssl = "yes"; chatnet = "xmpp:username@server"; password = "password"; };
 
 Now you can connect to your jabber account by typing:
     /CONNECT <network>
+
+
+The old connection command still available:
+    /SERVER [-ssl] -xmppnet <network> <address> <port> <password> <jid>
 
 Register:
 =========
@@ -73,12 +77,12 @@ with another client.
 General commands:
 =================
 
-/QUERY <jid>[/<ressource>]
+/QUERY <jid>[/<resource>]
     Starts a private conversation with the JID. If the user is online and 
-    the ressource isn't specified, the convestion window will be on the
-    ressource with the highest priority.
+    the resource isn't specified, the conversation window will be on the
+    resource with the highest priority.
     
-/MSG <jid>[/<ressource>] <message>
+/MSG <jid>[/<resource>] <message>
     Send a message to a jid.
 
 /AWAY [away|chat|dnd|xa] <reason>
@@ -101,9 +105,19 @@ General commands:
 /ROSTER GROUP <jid> <group>
     Change the group of a JID.
 
+/WHOIS <jid>
+    Request the vcard related to the JID.
+
+/VER <jid>/<resource>
+    Request the software version of the resource.
+
 /QUOTE <data>
     Sends server raw data without parsing. You need to make sure the value is
     valid XML yourself.
+
+/XMPPCONNECT
+/XMPPSERVER
+    See the "Connection" section of this file.
 
 Subscription commands:
 ======================
@@ -152,8 +166,8 @@ Settings:
     Send a subscribe request to the contact when adding his/her to the roster.
     (default: ON)
 
-Composing in the statusbar
-==========================
+Composing in the statusbar:
+===========================
 
 /STATUSBAR WINDOW ADD -before barend -alignment right xmpp_composing
 
@@ -173,13 +187,6 @@ chat: Free for chat
 dnd: Do not disturb
 xa: Not available
 
-Unimplemented commands:
-=======================
-
-(next release ?)
-/WHOIS
-/WHOIS <jid>
-
 Bugs/Suggestions:
 =================
 
@@ -188,7 +195,7 @@ Send me a mail or use jabber.
 Author:
 =======
 
-Colin "cdidier" DIDIER (Email: errtu@cybione.org, JID: errtu@im.cybione.org)
+Colin DIDIER (cdidier@cybione.org, xmpp:errtu@im.cybione.org)
 
 irssi-xmpp was inspired by irssi-jabber, another jabber module for irssi which
 was written by Chistian Häggström. (http://kalvdans.no-ip.org/trac/irssi-jabber)

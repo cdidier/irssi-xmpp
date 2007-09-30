@@ -19,48 +19,28 @@
  */
 
 #include "module.h"
-#include "module-formats.h"
-#include "signals.h"
-#include "servers-setup.h"
 #include "levels.h"
+#include "module-formats.h"
 #include "printtext.h"
+#include "servers-setup.h"
+#include "signals.h"
 #include "themes.h"
 
-#include "xmpp-servers.h"
-
-#include "xmpp-completion.h"
+#include "fe-xmpp-commands.h"
 #include "fe-xmpp-composing.h"
-#include "fe-xmpp-rosters.h"
+#include "fe-xmpp-messages.h"
 #include "fe-xmpp-queries.h"
-
-/*static void
-sig_print_error(XMPP_SERVER_REC *server, const char *msg)
-{
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_DEFAULT_ERROR, NULL, msg, NULL);
-}*/
+#include "fe-xmpp-rosters.h"
+#include "fe-xmpp-whois.h"
+#include "xmpp-completion.h"
+#include "text-xmpp-composing.h"
 
 static void
 event_server_status(XMPP_SERVER_REC *server, const char *msg)
 {
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CLIENTNOTICE,
 	    XMPPTXT_DEFAULT_EVENT, NULL, msg, NULL);
 }
-
-static void
-event_message_error(XMPP_SERVER_REC *server, const char *jid)
-{
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_MESSAGE_NOT_DELIVERED, jid);
-}
-
-#ifdef DEBUG
-static void
-event_debug(XMPP_SERVER_REC *server, const char *msg)
-{
-	printtext(server, NULL, MSGLEVEL_CRAP, "%s", msg);
-}
-#endif
 
 static void
 sig_server_add_fill(SERVER_SETUP_REC *rec, GHashTable *optlist)
@@ -80,17 +60,17 @@ fe_xmpp_init(void)
 {
 	theme_register(fecommon_xmpp_formats);
 
-	signal_add("xmpp message error", (SIGNAL_FUNC)event_message_error);
 	signal_add("xmpp server status", (SIGNAL_FUNC)event_server_status);
 	signal_add("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
-#ifdef DEBUG
-	 signal_add("xmpp debug", (SIGNAL_FUNC)event_debug);
-#endif
 
-	/*fe_xmpp_composing_init();*/
-	fe_xmpp_rosters_init();
+	fe_xmpp_commands_init();
+	fe_xmpp_composing_init();
+	fe_xmpp_messages_init();
 	fe_xmpp_queries_init();
+	fe_xmpp_rosters_init();
+	fe_xmpp_whois_init();
 	xmpp_completion_init();
+	text_xmpp_composing_init();
 
 	module_register("xmpp", "fe");
 }
@@ -98,17 +78,17 @@ fe_xmpp_init(void)
 void
 fe_xmpp_deinit(void)
 {
-	signal_remove("xmpp message error", (SIGNAL_FUNC)event_message_error);
 	signal_remove("xmpp server status", (SIGNAL_FUNC)event_server_status);
 	signal_remove("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
-#ifdef DEBUG
-	signal_remove("xmpp debug", (SIGNAL_FUNC)event_debug);
-#endif
 
-	/*fe_xmpp_composing_deinit();*/
-	fe_xmpp_rosters_deinit();
+	fe_xmpp_commands_deinit();
+	fe_xmpp_composing_deinit();
+	fe_xmpp_messages_deinit();
 	fe_xmpp_queries_deinit();
+	fe_xmpp_rosters_deinit();
+	fe_xmpp_whois_deinit();
 	xmpp_completion_deinit();
+	text_xmpp_composing_deinit();
 
 	theme_unregister();
 }

@@ -1,4 +1,4 @@
-SUBDIR= core fe-common fe-text
+SUBDIR= core fe-common #fe-text
 
 .PHONY: clean all user-install
 

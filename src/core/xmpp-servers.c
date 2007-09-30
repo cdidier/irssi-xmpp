@@ -18,13 +18,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include "module.h"
-#include "signals.h"
-/*#include "channels-setup.h"*/
-#include "servers-reconnect.h"
+#include "network.h"
 #include "settings.h"
+#include "signals.h"
+/*#include "channels-setup.h"
+#include "servers-reconnect.h"*/
 
 #include "xmpp-servers.h"
+#include "xmpp-channels.h"
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 #include "xmpp-tools.h"
@@ -32,7 +37,9 @@
 gboolean
 xmpp_server_is_alive(XMPP_SERVER_REC *server)
 {
-	return (server != NULL && g_slist_find(servers, server) != NULL);
+	return (server != NULL
+	    && g_slist_find(servers, server) != NULL
+	    && server->connected);
 }
 
 static void
@@ -72,13 +79,10 @@ send_message(SERVER_REC *server, const char *target, const char *msg,
 	if (xmppserver == NULL)
 		return;
 	
-	if (target_type == SEND_TARGET_CHANNEL) {
-		/* channel message */
-
-	} else {
-		/* private message */
-		xmpp_send_message_chat(xmppserver, target, msg);
-	}
+	if (target_type == SEND_TARGET_CHANNEL)
+		xmpp_channel_send_message(xmppserver, target, msg);
+	else
+		xmpp_send_message(xmppserver, target, msg);
 }
 
 static void
@@ -86,8 +90,12 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 {
 	g_return_if_fail(server != NULL);
 
-	if (server->connected)
+	if (server->connected) {
 		signal_emit("server disconnected", 1, server);
+		return;
+	}
+
+	signal_emit("xmpp handlers unregister", 1, server);
 
 	if (lm_connection_is_open(server->lmconn))
 		lm_connection_close(server->lmconn, NULL);
@@ -96,9 +104,9 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 	servers = g_slist_remove(servers, server);
 
 	lm_connection_unref(server->lmconn);
-	g_free(server->ressource);
+	g_free(server->resource);
 
-	xmpp_roster_cleanup(server);
+	signal_emit("xmpp roster cleanup", 1, server);
 }
 
 
@@ -116,13 +124,11 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	server->chat_type = XMPP_PROTOCOL;
 
 	server->connrec = (XMPP_SERVER_CONNECT_REC *)conn;
-	server_connect_ref(SERVER_CONNECT(conn));
+	server_connect_ref(conn);
 
 	if (server->connrec->port <= 0) {
-		if (server->connrec->use_ssl)
-			server->connrec->port = LM_CONNECTION_DEFAULT_PORT_SSL;
-		else
-			server->connrec->port = LM_CONNECTION_DEFAULT_PORT;
+		server->connrec->port = (server->connrec->use_ssl) ?
+		    LM_CONNECTION_DEFAULT_PORT_SSL : LM_CONNECTION_DEFAULT_PORT;
 	}
 	
 	/* don't use irssi's sockets */
@@ -130,15 +136,15 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	str = server->connrec->nick;
 
-	server->ressource = xmpp_jid_get_ressource(server->connrec->nick);
-	if (server->ressource == NULL)
-		server->ressource = g_strdup("irssi-xmpp");
+	server->resource = xmpp_extract_resource(server->connrec->nick);
+	if (server->resource == NULL)
+		server->resource = g_strdup("irssi-xmpp");
 
-	server->connrec->username = xmpp_jid_get_username(str);
+	server->connrec->username = xmpp_extract_user(str);
 
 	/* store the full jid */
 	if (xmpp_jid_have_address(str))
-		server->connrec->realname = xmpp_jid_strip_ressource(str);
+		server->connrec->realname = xmpp_strip_resource(str);
 	else
 		server->connrec->realname = g_strdup_printf("%s@%s",
 		    server->connrec->username, server->connrec->address);
@@ -150,19 +156,23 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	g_free(str);
 
-	server->priority = settings_get_int("xmpp_priority");
-	if (xmpp_priority_out_of_bound(server->priority))
-		server->priority = 0;
+	server->priority =
+	    !xmpp_priority_out_of_bound(settings_get_int("xmpp_priority")) ?
+	    settings_get_int("xmpp_priority") : 0;
+	server->default_priority =
+	    (server->priority != settings_get_int("xmpp_priority"));
 
 	server->roster = NULL;
 
-	server_connect_init((SERVER_REC *) server);
+	server_connect_init((SERVER_REC *)server);
 
 	/* init loudmouth connection structure */
 	server->lmconn = lm_connection_new(NULL);
-	lm_connection_set_server(server->lmconn, server->connrec->address);
+	lm_connection_set_server(server->lmconn,
+	    server->connrec->address);
 	lm_connection_set_port(server->lmconn, server->connrec->port);
-	lm_connection_set_jid(server->lmconn, server->connrec->realname);
+	lm_connection_set_jid(server->lmconn,
+	    server->connrec->realname);
 
 	return (SERVER_REC *)server;
 }
@@ -260,6 +270,9 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	signal_emit("xmpp server status", 2, server,
 	    "Authenticated successfully.");
 
+	/* handle incoming messages */
+	signal_emit("xmpp handlers register", 1, server);
+
 	/* fetch the roster */
 	signal_emit("xmpp server status", 2, server, "Requesting the roster.");
 	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
@@ -297,15 +310,27 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
+	IPADDR ip;
+	char *host;
 	GError *error = NULL;
 
 	server = XMPP_SERVER(user_data);
 
 	if (!success)
-		goto err;
+		/* goto err; */
+		return;
+
+	/* get the server address */
+	host = lm_connection_get_local_host(server->lmconn);
+	if (host != NULL) {
+		net_host2ip(host, &ip);
+		signal_emit("server connecting", 2, server, &ip);
+		g_free(host);
+	} else
+		signal_emit("server connecting", 1, server, &ip);
 
 	if (!lm_connection_authenticate(connection, server->connrec->username,
-	    server->connrec->password, server->ressource,
+	    server->connrec->password, server->resource,
 	    (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
 		goto err;
 
@@ -335,8 +360,8 @@ xmpp_server_connect(SERVER_REC *server)
 	/* SSL */
 	if (xmppserver->connrec->use_ssl) {
 		if (!lm_ssl_is_supported()) {
-			signal_emit("xmpp server status", 2, server,
-			    "SSL is not supported in this build.");
+			error = g_new(GError, 1);
+			error->message = "SSL is not supported in this build.";
 			goto err;
 		}
 
@@ -347,8 +372,6 @@ xmpp_server_connect(SERVER_REC *server)
 	} 
 
 	/* Proxy: not supported yet */
-
-	xmpp_register_handlers(xmppserver);
 
 	lm_connection_set_disconnect_function(xmppserver->lmconn,
 	    (LmDisconnectFunction)xmpp_server_close_cb, (gpointer)server,
@@ -363,7 +386,6 @@ xmpp_server_connect(SERVER_REC *server)
 
 	lookup_servers = g_slist_append(lookup_servers, server);
 
-	signal_emit("server connecting", 1, server);
 	return;
 
 err:
@@ -425,6 +447,27 @@ sig_server_connect_failed(XMPP_SERVER_REC *server, char *msg)
 	xmpp_server_cleanup(server);
 }
 
+static void
+sig_server_quit(XMPP_SERVER_REC *server, char *reason)
+{
+	LmMessage *msg;
+	char *status_recoded;
+
+	if (!IS_XMPP_SERVER(server)
+	    && (reason == NULL || *reason == '\0'))
+		return;
+
+	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
+	    LM_MESSAGE_SUB_TYPE_UNAVAILABLE);
+
+	status_recoded = xmpp_recode_out(reason);
+	lm_message_node_add_child(msg->node, "status", status_recoded);
+	g_free(status_recoded);
+
+	lm_connection_send(server->lmconn, msg, NULL);
+	lm_message_unref(msg);
+}
+
 void
 xmpp_servers_init(void)
 {
@@ -433,21 +476,29 @@ xmpp_servers_init(void)
 	    (SIGNAL_FUNC)sig_server_disconnected);
 	signal_add("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
+	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
 	signal_add("server connect copy",
 	    (SIGNAL_FUNC)sig_server_connect_copy);
+
+	settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
 }
 
 void
 xmpp_servers_deinit(void)
 {
-	GSList *tmp;
+	GSList *tmp, *oldnext;
 	XMPP_SERVER_REC *server;
 
 	/* disconnect all servers before unloading the module */
-	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
+	tmp = servers;
+	while (tmp != NULL) {
+		oldnext = tmp->next;
+
 		server = XMPP_SERVER(tmp->data);
 		if (server != NULL)
 			signal_emit("server disconnected", 1, server);
+
+		tmp = oldnext;
 	}
 
 	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
@@ -455,6 +506,7 @@ xmpp_servers_deinit(void)
 	    (SIGNAL_FUNC)sig_server_disconnected);
 	signal_remove("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
+	signal_remove("server quit", (SIGNAL_FUNC)sig_server_quit);
 	signal_remove("server connect copy",
 	    (SIGNAL_FUNC)sig_server_connect_copy);
 }

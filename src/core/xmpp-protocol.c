@@ -18,68 +18,89 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/utsname.h>
 
 #include "module.h"
-#include "signals.h"
 #include "settings.h"
+#include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-protocol.h"
+#include "xmpp-channels.h"
+#include "xmpp-queries.h"
 #include "xmpp-rosters.h"
+#include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
+#include "loudmouth-tools.h"
 
 void
-xmpp_send_message_chat(XMPP_SERVER_REC *server, const char *to_jid,
+xmpp_send_message(XMPP_SERVER_REC *server, const char *to_jid,
     const char *message)
 {
 	LmMessage *msg;
-	char *to_jid_recoded, *message_recoded;
-	GError *error;
+	LmMessageNode *child;
+	XMPP_ROSTER_USER_REC *user;
+	XMPP_ROSTER_RESOURCE_REC *resource;
+	char *jid, *res, *to_full_jid, *to_jid_recoded, *message_recoded;
+	GError *error = NULL;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(to_jid != NULL);
 	g_return_if_fail(message != NULL);
 
-	to_jid_recoded = xmpp_recode_out(to_jid);
+	to_full_jid = xmpp_get_full_jid(server, to_jid);
+	to_jid_recoded =
+	    xmpp_recode_out((to_full_jid != NULL) ? to_full_jid : to_jid);
+	g_free(to_full_jid);
+
 	message_recoded = xmpp_recode_out(message);
-	error = NULL;
 
 	msg = lm_message_new_with_sub_type(to_jid_recoded,
 	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
-	lm_message_node_add_child(msg->node, "body", message_recoded);
+	g_free(to_jid_recoded);
 
+	lm_message_node_add_child(msg->node, "body", message_recoded);
+	g_free(message_recoded);
+
+	jid = xmpp_strip_resource(to_jid);
+	res = xmpp_extract_resource(to_jid);
+
+	if (jid == NULL || res == NULL)
+		goto send;
+
+	user = xmpp_find_user(server, jid, NULL);
+	if (user == NULL)
+		goto send;
+	g_free(jid);
+
+	resource = xmpp_find_resource(user, res);
+	if (resource == NULL)
+		goto send;
+	g_free(res);
+	
+	/* stop composing */
+	if (resource->composing_id != NULL) {
+		child = lm_message_node_add_child(msg->node, "x", NULL);
+		lm_message_node_set_attribute(child, "xmlns",
+		    "jabber:x:event");
+		lm_message_node_add_child(child, "id", resource->composing_id);
+		g_free_and_null(resource->composing_id);
+	}
+
+send:
 	lm_connection_send(server->lmconn, msg, &error);
 	lm_message_unref(msg);
 
 	if (error != NULL) {
-		signal_emit("xmpp message error", 3, server, to_jid,
+		signal_emit("message xmpp error", 3, server, to_jid,
 		    error->message);
 		g_free(error);
 	}
-
-	g_free(to_jid_recoded);
-	g_free(message_recoded);
-}
-
-gboolean
-xmpp_presence_changed(const int show, const int old_show, const gchar *status,
-    const gchar *old_status, const int priority, const int old_priority)
-{
-	if ((show != old_show)
-	    || (status == NULL && old_status != NULL)
-	    || (status != NULL && old_status == NULL)
-	    || (status != NULL && old_status != NULL
-	    && strcmp(status, old_status) != 0)
-	    || (priority != old_priority))
-		return TRUE;
-	return FALSE;
 }
 
 void
-xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
+own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
     const int priority)
 {
 	LmMessage *msg;
@@ -151,15 +172,14 @@ xmpp_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 
 /*
  * XEP-0022: Message Events
- * http://www.xmpp.org/extensions/xep-0022.html
  */
-void
-xmpp_send_start_composing(XMPP_SERVER_REC *server, const char *full_jid)
+static void
+composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	XmppRosterUser *user;
-	XmppRosterRessource *ressource;
+	XMPP_ROSTER_USER_REC *user;
+	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *full_jid_recoded, *jid, *res;
 	const char *id;
 
@@ -173,43 +193,43 @@ xmpp_send_start_composing(XMPP_SERVER_REC *server, const char *full_jid)
 
 	child = lm_message_node_add_child(msg->node, "x", NULL);
 	lm_message_node_set_attribute(child, "xmlns", "jabber:x:event");
+	g_free(full_jid_recoded);
 
 	lm_message_node_add_child(child, "composing", NULL);
 
-	jid = xmpp_jid_strip_ressource(full_jid);
-	res = xmpp_jid_get_ressource(full_jid);
+	jid = xmpp_strip_resource(full_jid);
+	res = xmpp_extract_resource(full_jid);
 
-	if (jid == NULL || ressource == NULL)
+	if (jid == NULL || res == NULL)
 		goto out;
 	
-	user = xmpp_find_user_from_groups(server->roster, jid, NULL);
+	user = xmpp_find_user(server, jid, NULL);
 	if (user == NULL)
 		goto out;
 
-	ressource = xmpp_find_ressource_from_user(user, res);
-	if (ressource != NULL) {
+	resource = xmpp_find_resource(user, res);
+	if (resource != NULL) {
 		id = lm_message_node_get_attribute(msg->node, "id");
 		lm_message_node_add_child(child, "id", id);
-
-		g_free_and_null(ressource->composing_id);
-		ressource->composing_id = g_strdup(id);
+		g_free_and_null(resource->composing_id);
+		resource->composing_id = g_strdup(id);
 	}
 
 out:
 	lm_connection_send(server->lmconn, msg, NULL);
 	lm_message_unref(msg);
 
-	g_free(full_jid_recoded);
 	g_free(jid);
 	g_free(res);
 }
 
-void xmpp_send_stop_composing(XMPP_SERVER_REC *server, const char *full_jid)
+static void
+composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	XmppRosterUser *user;
-	XmppRosterRessource *ressource;
+	XMPP_ROSTER_USER_REC *user;
+	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *full_jid_recoded, *jid, *res;
 
 	g_return_if_fail(server != NULL);
@@ -219,45 +239,40 @@ void xmpp_send_stop_composing(XMPP_SERVER_REC *server, const char *full_jid)
 
 	msg = lm_message_new_with_sub_type(full_jid_recoded,
 	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
+	g_free(full_jid_recoded);
 
 	child = lm_message_node_add_child(msg->node, "x", NULL);
 	lm_message_node_set_attribute(child, "xmlns", "jabber:x:event");
 
-	jid = xmpp_jid_strip_ressource(full_jid);
-	res = xmpp_jid_get_ressource(full_jid);
+	jid = xmpp_strip_resource(full_jid);
+	res = xmpp_extract_resource(full_jid);
 
-	if (jid == NULL || ressource == NULL)
+	if (jid == NULL || res == NULL)
 		goto out;
 	
-	user = xmpp_find_user_from_groups(server->roster, jid, NULL);
+	user = xmpp_find_user(server, jid, NULL);
 	if (user == NULL)
 		goto out;
 
-	ressource = xmpp_find_ressource_from_user(user, res);
-	if (ressource == NULL)
-		goto out;
-
-	if (ressource->composing_id) {
-		lm_message_node_add_child(child, "id",
-		    ressource->composing_id);
-		g_free_and_null(ressource->composing_id);
+	resource = xmpp_find_resource(user, res);
+	if (resource != NULL && resource->composing_id != NULL) {
+		lm_message_node_add_child(child, "id", resource->composing_id);
+		g_free_and_null(resource->composing_id);
 	}
 
 out:
 	lm_connection_send(server->lmconn, msg, NULL);
 	lm_message_unref(msg);
 
-	g_free(full_jid_recoded);
 	g_free(jid);
 	g_free(res);
 }
 
 /*
  * XEP-0092: Software Version
- * http://www.xmpp.org/extensions/xep-0092.html
  */
-void
-xmpp_version_send(XMPP_SERVER_REC *server, const char *to_jid,
+static void
+version_send(XMPP_SERVER_REC *server, const char *to_jid,
     const char *id)
 {
 	LmMessage *msg;
@@ -266,9 +281,6 @@ xmpp_version_send(XMPP_SERVER_REC *server, const char *to_jid,
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(to_jid != NULL);
-
-	if (!settings_get_bool("xmpp_send_version"))
-		return;
 
 	msg = lm_message_new_with_sub_type(to_jid, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_RESULT);
@@ -279,207 +291,514 @@ xmpp_version_send(XMPP_SERVER_REC *server, const char *to_jid,
 	query_node = lm_message_node_add_child(msg->node, "query", NULL);
 	lm_message_node_set_attribute(query_node, "xmlns", "jabber:iq:version");
 
-	lm_message_node_add_child(query_node, "name", IRSSI_XMPP_PACKAGE);
-	lm_message_node_add_child(query_node, "version", IRSSI_XMPP_VERSION);
+	if (settings_get_bool("xmpp_send_version")) {
+		lm_message_node_add_child(query_node, "name",
+		    IRSSI_XMPP_PACKAGE);
+		lm_message_node_add_child(query_node, "version",
+		    IRSSI_XMPP_VERSION);
 
-	if (uname(&u) == 0)
-		lm_message_node_add_child(query_node, "os", u.sysname);
+		if (uname(&u) == 0)
+			lm_message_node_add_child(query_node, "os", u.sysname);
+	}
 
 	lm_connection_send(server->lmconn, msg, NULL);
 	lm_message_unref(msg);
 }
 
+static void
+version_handle(XMPP_SERVER_REC *server, const char *jid,
+    LmMessageNode *node)
+{
+	LmMessageNode *child;
+	char *value;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(jid != NULL);
+	g_return_if_fail(node != NULL);
+
+	signal_emit("xmpp begin of version", 2, server, jid);
+
+
+	child = node->children;
+	while(child != NULL) {
+
+		if (child->value == NULL)
+			goto next;
+
+		value = xmpp_recode_in(child->value);
+		g_strstrip(value);
+
+		signal_emit("xmpp version value", 4, server, jid, child->name,
+		    value);
+
+		g_free(value);
+
+next:
+		child = child->next;
+	}
+
+	signal_emit("xmpp end of version", 2, server, jid);
+}
+
+/*
+ * XEP-0054: vcard-temp
+ */
+static void
+vcard_handle(XMPP_SERVER_REC *server, const char *jid,
+    LmMessageNode *node)
+{
+	LmMessageNode *child, *subchild;
+	const char *adressing;
+	char *value;
+
+	signal_emit("xmpp begin of vcard", 2, server, jid);
+
+	child = node->children;
+	while(child != NULL) {
+
+		/* ignore avatar */
+		if (g_ascii_strcasecmp(child->name, "PHOTO") == 0)
+			goto next;
+
+		if (child->value != NULL) {
+			value = xmpp_recode_in(child->value);
+			g_strstrip(value);
+
+			signal_emit("xmpp vcard value", 4, server, jid,
+			     child->name, value);
+
+			g_free(value);
+			goto next;
+		}
+
+		/* find the adressing type indicator */
+		subchild = child->children;
+		adressing = NULL;
+		while(subchild != NULL && adressing == NULL) {
+			if (subchild->value == NULL && (
+			    g_ascii_strcasecmp(subchild->name , "HOME") == 0 ||
+			    g_ascii_strcasecmp(subchild->name , "WORK") == 0))
+				adressing = subchild->name;
+
+			subchild = subchild->next;
+		}
+
+		subchild = child->children;
+		while(subchild != NULL) {
+			
+			if (subchild->value != NULL) {
+				value = xmpp_recode_in(subchild->value);
+				g_strstrip(value);
+
+				signal_emit("xmpp vcard subvalue", 6, server,
+				    jid, child->name, adressing,
+				    subchild->name, value);
+
+				g_free(value);
+			}
+
+			subchild = subchild->next;
+		}
+
+next:
+		child = child->next;
+	}
+
+	signal_emit("xmpp end of vcard", 2, server, jid);
+}
+
+
+
+
 /*
  * Incoming messages handlers
  */
 static LmHandlerResult
-xmpp_handle_message(LmMessageHandler *handler, LmConnection *connection,
+handle_message(LmMessageHandler *handler, LmConnection *connection,
     LmMessage *msg, gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	LmMessageNode *body_node;
-	const char *jid;
-	char *message_recoded;
+	LmMessageNode *child, *subchild;
+	char *jid, *text;
 
 	server = XMPP_SERVER(user_data);
+	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
-#ifdef DEBUG
-	signal_emit("xmpp debug", 2, server,
-	    lm_message_node_to_string(msg->node));
-#endif
+	switch (lm_message_get_sub_type(msg)) {
+	
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		child = lm_message_node_get_child(msg->node, "body");
+		if (child == NULL)
+			signal_emit("message xmpp error", 2, server, jid);
+		else {
+			text = xmpp_recode_in(child->value);
+			signal_emit("message xmpp error", 3, server, jid,
+			    text);
+			g_free(text);
+		}
 
-	if (lm_message_get_sub_type(msg) == LM_MESSAGE_SUB_TYPE_ERROR)
-		goto err;
+		break;
 
-	body_node = lm_message_node_get_child(msg->node, "body");
-	if (body_node == NULL)
-		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
+	case LM_MESSAGE_SUB_TYPE_CHAT:
+		/* XEP-0022: Message Events */
+		child = lm_message_node_get_child(msg->node, "x");
+		if (child != NULL) {
+			XMPP_QUERY_REC *query;
 
-	message_recoded = xmpp_recode_in(body_node->value);
-	jid = lm_message_node_get_attribute(msg->node, "from");
+			subchild = lm_message_node_get_child(child,
+			    "composing");
+			
+			query = xmpp_query_find(server, jid);
+			if (query != NULL)
+				query->composing_visible = (subchild != NULL);
 
-	signal_emit("message private", 4, server, message_recoded, jid, jid);
+			if (subchild != NULL)
+				signal_emit("xmpp composing show", 2, server,
+				    jid);
+			else
+				signal_emit("xmpp composing hide", 2, server,
+				    jid);
+		}
 
-	g_free(message_recoded);
-	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
+		child = lm_message_node_get_child(msg->node, "subject");
+		if (child != NULL) {
+			text = xmpp_recode_in(child->value);
+			signal_emit("message private", 4, server, text,
+			    jid, jid);
+			g_free(text);
+		}
 
-err:
-	signal_emit("xmpp message error", 3, server,
-	    lm_message_node_get_attribute(msg->node, "from"),
-	    lm_message_node_get_attribute(
-	    lm_message_node_get_child(msg->node, "error"), "code"));
+		child = lm_message_node_get_child(msg->node, "body");
+		if (child != NULL) {
+			text = xmpp_recode_in(child->value);
+			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+				signal_emit("message xmpp action", 5, server,
+				    text+4, jid, jid,
+				    GINT_TO_POINTER(SEND_TARGET_NICK));
+			else
+				signal_emit("message private", 4, server,
+				    text, jid, jid);
+			g_free(text);
+		}
+		break;
 
+	case LM_MESSAGE_SUB_TYPE_GROUPCHAT:
+		child = lm_message_node_get_child(msg->node, "subject");
+		if (child != NULL) {
+			XMPP_CHANNEL_REC *channel;
+			char *channel_name, *nick;
+
+			channel_name = xmpp_extract_channel(jid);
+			nick =  xmpp_extract_resource(jid);
+			text = xmpp_recode_in(child->value);
+
+			signal_emit("xmpp channel topic", 4, server,
+			    channel_name, text, nick);
+
+			g_free(channel_name);
+			g_free(nick);
+			g_free(text);
+
+			goto out;
+		}
+		
+		child = lm_message_node_get_child(msg->node, "body");
+		if (child != NULL) {
+			XMPP_CHANNEL_REC *channel;
+			char *channel_name, *nick;
+
+			channel_name = xmpp_extract_channel(jid);
+			nick =  xmpp_extract_resource(jid);
+
+			/* it's my own message, so ignore it */
+			channel = xmpp_channel_find(server, channel_name);
+			if (nick == NULL || (channel != NULL &&
+			    strcmp(nick, channel->nick) == 0)) {
+				g_free(channel_name);
+				g_free(nick);
+				goto out;
+			}
+
+			text = xmpp_recode_in(child->value);
+
+			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+				signal_emit("message xmpp action", 5, server,
+				    text+4, nick, channel_name,
+				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+			else
+				signal_emit("message public", 5, server, text,
+				   nick, "", channel_name);
+
+			g_free(channel_name);
+			g_free(nick);
+			g_free(text);
+		}
+
+		break;
+
+	default:
+		break;
+	}
+
+out:
+	g_free(jid);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }
 
 static LmHandlerResult
-xmpp_handle_presence(LmMessageHandler *handler, LmConnection *connection,
+handle_presence(LmMessageHandler *handler, LmConnection *connection,
     LmMessage *msg, gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	LmMessageNode *show_node, *status_node, *priority_node;
-	char *jid_recoded, *status_recoded;
-	LmMessageSubType msg_type;
+	LmMessageNode *child, *subchild, *show, *priority;
+	char *jid, *text;
 
 	server = XMPP_SERVER(user_data);
-	jid_recoded = xmpp_recode_in(lm_message_node_get_attribute(msg->node,
-	    "from"));
-	status_recoded = NULL;
+	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
-#ifdef DEBUG
-	signal_emit("xmpp debug", 2, server,
-	    lm_message_node_to_string(msg->node));
-#endif
-
-	msg_type = lm_message_get_sub_type(msg);
-	switch (msg_type) {
-
-	/* the user is disconnecting */
-	case LM_MESSAGE_SUB_TYPE_UNAVAILABLE:
-		status_node = lm_message_node_get_child(msg->node, "status");
-		if (status_node != NULL)
-			status_recoded = xmpp_recode_in(status_node->value);
-
-		xmpp_roster_presence_unavailable(server, jid_recoded,
-		    status_recoded);
-
-		g_free(status_recoded);
-		break;
+	switch (lm_message_get_sub_type(msg)) {
 
 	/* an error occured when the server try to get the pressence */
 	case LM_MESSAGE_SUB_TYPE_ERROR:
-		xmpp_roster_presence_error(server, jid_recoded);
+		signal_emit("xmpp presence error", 2, server, jid);
 		break;
 
 	/* the user wants to add you in his/her roster */
 	case LM_MESSAGE_SUB_TYPE_SUBSCRIBE:
-		status_node = lm_message_node_get_child(msg->node, "status");
-		if (status_node != NULL)
-			status_recoded = xmpp_recode_in(status_node->value);
+		child = lm_message_node_get_child(msg->node, "status");
+		text = (child != NULL) ? xmpp_recode_in(child->value) : NULL;
+		signal_emit("xmpp presence subscribe", 3, server, jid, text);
+		g_free(text);
 
-		signal_emit("xmpp jid subscribe", 3, server, jid_recoded,
-		    status_recoded);
-
-		g_free(status_recoded);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE:
-		signal_emit("xmpp jid unsubscribe", 2, server, jid_recoded);
+		signal_emit("xmpp presence unsubscribe", 2, server, jid);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_SUBSCRIBED:
-		signal_emit("xmpp jid subscribed", 2, server, jid_recoded);
+		signal_emit("xmpp presence subscribed", 2, server, jid);
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED:
-		signal_emit("xmpp jid unsubscribed", 2, server, jid_recoded);
+		signal_emit("xmpp presence unsubscribed", 2, server, jid);
 		break;
 
 	/* the user change his presence */
 	case LM_MESSAGE_SUB_TYPE_AVAILABLE:
+		/* from channel */
+		text = xmpp_extract_channel(jid);
+		if (xmpp_channel_find(server, text) != NULL) {
+			GSList *x;
+			const char *affiliation, *role, *item_jid;
+			char *nick, *destnick;
 
-		status_node = lm_message_node_get_child(msg->node, "status");
-		if (status_node != NULL)
-			status_recoded = xmpp_recode_in(status_node->value);
+			nick = xmpp_extract_nick(jid);
+			affiliation = NULL;
+			role = NULL;
+			item_jid = NULL;
 
-		show_node = lm_message_node_get_child(msg->node, "show");
-		priority_node = lm_message_node_get_child(msg->node,
-		    "priority");
+			x = lm_message_node_find_childs(msg->node, "x");
+			if (x != NULL &&
+			    lm_message_nodes_attribute_found(x, "xmlns",
+			    "http://jabber.org/protocol/muc#user", &child)) {
 
-		xmpp_roster_presence_update(server, jid_recoded,
-		    (show_node != NULL) ? show_node->value : NULL,
-		    status_recoded,
-		    (priority_node != NULL) ? priority_node->value : NULL);
+				subchild = lm_message_node_get_child(child,
+				    "item");
+				if (subchild != NULL) {
+					affiliation =
+					    lm_message_node_get_attribute(
+					    subchild, "affiliation");
+					role = lm_message_node_get_attribute(
+					    subchild, "role");
+					item_jid =
+					    lm_message_node_get_attribute(
+					    subchild, "jid");
+				}
+			}
+			g_slist_free(x);
 
-		g_free(status_recoded);
+			destnick = (item_jid != NULL) ?
+			    xmpp_extract_nick(item_jid) : NULL;
+			signal_emit("xmpp channel nick event", 5, server, text,
+			    (destnick != NULL) ? destnick : nick,
+			    affiliation, role);
+
+			g_free(destnick);
+			g_free(nick);
+
+		/* from roster */
+		} else {
+			g_free(text);
+
+			child = lm_message_node_get_child(msg->node, "status");
+			text = (child != NULL) ?
+			    xmpp_recode_in(child->value) : NULL;
+
+			show = lm_message_node_get_child(msg->node, "show");
+			priority = lm_message_node_get_child(msg->node,
+			    "priority");
+
+			signal_emit("xmpp presence update", 5, server, jid,
+			    (show != NULL) ? show->value : NULL, text,
+			    (priority != NULL) ? priority->value : NULL);
+		}
+
+		g_free(text);
+		break;
+
+	/* the user is disconnecting */
+	case LM_MESSAGE_SUB_TYPE_UNAVAILABLE:
+		/* from channel */
+		text = xmpp_extract_channel(jid);
+		if (xmpp_channel_find(server, text) != NULL) {
+			GSList *x;
+			const char *affiliation, *role, *code;
+			char *nick, *status, *newnick;
+
+			nick = xmpp_extract_nick(jid);
+			affiliation = NULL;
+			role = NULL;
+			code = NULL;
+			newnick = NULL;
+
+			/* changing name */
+			x = lm_message_node_find_childs(msg->node, "x");
+			if (x != NULL &&
+			    lm_message_nodes_attribute_found(x, "xmlns",
+			    "http://jabber.org/protocol/muc#user", &child)) {
+
+				subchild = lm_message_node_get_child(child,
+				    "item");
+				if (subchild != NULL) {
+					affiliation =
+					    lm_message_node_get_attribute(
+					    subchild, "affiliation");
+					role = lm_message_node_get_attribute(
+					    subchild, "role");
+					newnick = xmpp_recode_in(
+					    lm_message_node_get_attribute(
+					    subchild, "nick"));
+				}
+
+				subchild = lm_message_node_get_child(child,
+				    "status");
+				if (subchild != NULL)
+					code = lm_message_node_get_attribute(
+					    subchild, "code");
+			}
+			g_slist_free(x);
+
+			child = lm_message_node_get_child(msg->node, "status");
+			status = (child != NULL) ?
+			    xmpp_recode_in(child->value) : NULL;
+
+			if (code != NULL &&
+			    g_ascii_strcasecmp(code, "303") == 0) {
+				if (newnick != NULL)
+					signal_emit("xmpp channel nick change",
+					    6, server, text, nick, newnick,
+					    affiliation, role);
+
+			} else
+				signal_emit("xmpp channel nick remove", 4,
+				    server, text, nick, status);
+
+			g_free(nick);
+			g_free(newnick);
+			g_free(status);
+
+		/* from roster */
+		} else {
+			g_free(text);
+
+			child = lm_message_node_get_child(msg->node, "status");
+			text = (child != NULL) ?
+			    xmpp_recode_in(child->value) : NULL;
+			signal_emit("xmpp presence unavailable", 3, server,
+			    jid, text);
+		}
+
+		g_free(text);
 		break;
 
 	default:
-		g_free(jid_recoded);
-		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
-
+		break;
 	}
 
-	g_free(jid_recoded);
+	g_free(jid);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }
 
 static LmHandlerResult
-xmpp_handle_iq(LmMessageHandler *handler, LmConnection *connection,
+handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	LmMessage *msg, gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	LmMessageNode *root, *query;
-	const char *xmlns, *id, *jid;
-	LmMessageSubType msg_type;
+	LmMessageNode *child;
+	const char *xmlns;
+	char *jid;
 
 	server = XMPP_SERVER(user_data);
-	root = lm_message_get_node(msg);
-	jid = lm_message_node_get_attribute(msg->node, "from");
-	id = lm_message_node_get_attribute(msg->node, "id");
+	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
-#ifdef DEBUG
-	signal_emit("xmpp debug", 2, server,
-	    lm_message_node_to_string(msg->node));
-#endif
+	child = lm_message_node_get_child(msg->node, "query");
+	if (child == NULL)
+		child = lm_message_node_get_child(msg->node, "vCard");
 
-	query = lm_message_node_get_child(msg->node, "query");
-	if (query == NULL)
-		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
-
-	xmlns = lm_message_node_get_attribute(query, "xmlns");
+	xmlns = (child != NULL) ?
+	    lm_message_node_get_attribute(child, "xmlns") : NULL;
 	if (xmlns == NULL)
-		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
+		goto out;
 
-	msg_type = lm_message_get_sub_type(msg);
-	switch (msg_type) {
+	switch (lm_message_get_sub_type(msg)) {
 
 	case LM_MESSAGE_SUB_TYPE_GET:
+		/* XEP-0092: Software Version */
 		if (g_ascii_strcasecmp(xmlns, "jabber:iq:version") == 0)
-		    xmpp_version_send(server, jid, id);
+			version_send(server, jid,
+			    lm_message_node_get_attribute(msg->node, "id"));
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_RESULT:
+		if (g_ascii_strcasecmp(xmlns, "jabber:iq:roster") == 0)
+			signal_emit("xmpp roster update", 2, server, child);
+
+		else if (g_ascii_strcasecmp(xmlns, "jabber:iq:version") == 0)
+			version_handle(server, jid, child);
+
+		else if (g_ascii_strcasecmp(xmlns, "vcard-temp") == 0)
+			vcard_handle(server, jid, child);
+
+		else if (g_ascii_strcasecmp(xmlns,
+		    "http://jabber.org/protocol/disco#info") == 0) {
+			signal_emit("xmpp channel joined", 2, server, jid);
+		}
+		
+		break;
+
 	case LM_MESSAGE_SUB_TYPE_SET :
 		if (g_ascii_strcasecmp(xmlns, "jabber:iq:roster") == 0)
-			xmpp_roster_update(server, query);
+			signal_emit("xmpp roster update", 2, server, child);
 		break;
 	
 	default:
-		return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
+		break;
 	}
 
+out:
+	g_free(jid);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }
 
-void
-xmpp_register_handlers(XMPP_SERVER_REC *server)
+static void
+handlers_register(XMPP_SERVER_REC *server)
 {
 	LmMessageHandler *hmessage, *hpresence, *hiq;
 
 	/* handle message */
 	hmessage = lm_message_handler_new(
-	    (LmHandleMessageFunction)xmpp_handle_message, (gpointer)server,
+	    (LmHandleMessageFunction)handle_message, (gpointer)server,
 	    NULL);
 	lm_connection_register_message_handler(server->lmconn, hmessage,
 	    LM_MESSAGE_TYPE_MESSAGE, LM_HANDLER_PRIORITY_NORMAL);
@@ -487,7 +806,7 @@ xmpp_register_handlers(XMPP_SERVER_REC *server)
 
 	/* handle presence */
 	hpresence = lm_message_handler_new(
-	    (LmHandleMessageFunction)xmpp_handle_presence, (gpointer)server,
+	    (LmHandleMessageFunction)handle_presence, (gpointer)server,
 	    NULL);
 	lm_connection_register_message_handler(server->lmconn, hpresence,
 	    LM_MESSAGE_TYPE_PRESENCE, LM_HANDLER_PRIORITY_NORMAL);
@@ -495,27 +814,39 @@ xmpp_register_handlers(XMPP_SERVER_REC *server)
 
 	/* handle iq */
 	hiq = lm_message_handler_new(
-	    (LmHandleMessageFunction)xmpp_handle_iq, (gpointer)server, NULL);
+	    (LmHandleMessageFunction)handle_iq, (gpointer)server, NULL);
 	lm_connection_register_message_handler(server->lmconn, hiq,
 	    LM_MESSAGE_TYPE_IQ, LM_HANDLER_PRIORITY_NORMAL);
 	lm_message_handler_unref(hiq);
 }
 
+static void
+handlers_unregister(XMPP_SERVER_REC *server)
+{
+}
+
 void
 xmpp_protocol_init(void)
 {
-	signal_add("xmpp composing start",
-	    (SIGNAL_FUNC)xmpp_send_start_composing);
-	signal_add("xmpp composing stop",
-	    (SIGNAL_FUNC)xmpp_send_stop_composing);
-}
+	signal_add("xmpp handlers register", (SIGNAL_FUNC)handlers_register);
+	signal_add("xmpp handlers unregister",
+	    (SIGNAL_FUNC)handlers_unregister);
+	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)own_presence);
+	signal_add("xmpp composing start", (SIGNAL_FUNC)composing_start);
+	signal_add("xmpp composing stop", (SIGNAL_FUNC)composing_stop);
 
+	settings_add_int("xmpp", "xmpp_priority", 0);
+	settings_add_bool("xmpp", "xmpp_send_version", TRUE);
+}
 
 void
 xmpp_protocol_deinit(void)
 {
-	signal_remove("xmpp composing start",
-	    (SIGNAL_FUNC)xmpp_send_start_composing);
-	signal_remove("xmpp composing stop",
-	    (SIGNAL_FUNC)xmpp_send_stop_composing);
+	signal_remove("xmpp handlers register",
+	    (SIGNAL_FUNC)handlers_register);
+	signal_remove("xmpp handlers unregister",
+	    (SIGNAL_FUNC)handlers_unregister);
+	signal_remove("xmpp own_presence", (SIGNAL_FUNC)own_presence);
+	signal_remove("xmpp composing start", (SIGNAL_FUNC)composing_start);
+	signal_remove("xmpp composing stop", (SIGNAL_FUNC)composing_stop);
 }

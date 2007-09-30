@@ -1,10 +1,8 @@
-For 0.14:
-	- commands /WHOIS, /VERSION and /XMPPSERVER
-	- show composing events in statusbar
+next:
+	- autoreconnection
+	- ping support (XEP-0199)
 
 ---
-More complete list soon...
-
 To discuss with irssi's developpers:
 	- implement own message levels
 	- format strings without printing them (strdup_formattext ?)

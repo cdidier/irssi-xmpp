@@ -19,31 +19,30 @@
  */		 
 
 #include "module.h"
+#include "levels.h"
 #include "module-formats.h"
+#include "printtext.h"
 #include "signals.h"
 #include "window-items.h"
-#include "levels.h"
-#include "printtext.h"
-#include "themes.h"
 
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
 
 const char *fe_xmpp_presence_show[] = {
 	"error",
-	"is now offline",
-	"is now away: extended away",
-	"is now away: do not disturb",
-	"is now away",
-	"is now online",
-	"is now ready for chat"
+	"Offline",
+	"Not Available",
+	"Busy",
+	"Away",
+	"Available",
+	"Free for Chat"
 };
 
 static void
-event_presence_change(XMPP_SERVER_REC *server, const char *full_jid,
+sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
     int show, const char *status)
 {
-	QUERY_REC *rec;
+	XMPP_QUERY_REC *rec;
 	const char *msg;
 
 	g_return_if_fail(server != NULL);
@@ -65,7 +64,7 @@ event_presence_change(XMPP_SERVER_REC *server, const char *full_jid,
 }
 
 static void
-event_query_raise(XMPP_SERVER_REC *server, QUERY_REC *query)
+sig_query_raise(XMPP_SERVER_REC *server, QUERY_REC *query)
 {
 	WINDOW_REC *window;
 	
@@ -82,15 +81,14 @@ event_query_raise(XMPP_SERVER_REC *server, QUERY_REC *query)
 void
 fe_xmpp_queries_init(void)
 {
-	signal_add("xmpp query raise", (SIGNAL_FUNC)event_query_raise);
-	signal_add("xmpp jid presence change",
-	    (SIGNAL_FUNC)event_presence_change);
+	signal_add("xmpp query raise", (SIGNAL_FUNC)sig_query_raise);
+	signal_add("xmpp presence changed", (SIGNAL_FUNC)sig_presence_changed);
 }
 
 void
 fe_xmpp_queries_deinit(void)
 {   
-	signal_remove("xmpp query raise", (SIGNAL_FUNC)event_query_raise);
-	signal_remove("xmpp jid presence change",
-	    (SIGNAL_FUNC)event_presence_change);
+	signal_remove("xmpp query raise", (SIGNAL_FUNC)sig_query_raise);
+	signal_remove("xmpp presence changed",
+	    (SIGNAL_FUNC)sig_presence_changed);
 }

@@ -19,65 +19,63 @@
  */
 
 #include "module.h"
+#include "levels.h"
 #include "module-formats.h"
+#include "printtext.h"
 #include "settings.h"
 #include "signals.h"
-#include "levels.h"
-#include "printtext.h"
-#include "themes.h"
 
-#include "xmpp.h"
 #include "xmpp-servers.h"
 #include "xmpp-rosters.h"
 
 static void
-event_roster_group(XMPP_SERVER_REC *server, const char *group)
+sig_roster_group(XMPP_SERVER_REC *server, const char *group)
 {
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_ROSTER_GROUP,
-	    (group != NULL) ? group : settings_get_str("roster_default_group"));
+	    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
+	    group : settings_get_str("roster_default_group"));
 }
 
 static void
-event_roster_nick(XMPP_SERVER_REC *server, const XmppRosterUser *user)
+sig_roster_nick(XMPP_SERVER_REC *server, const XMPP_ROSTER_USER_REC *user)
 {
-	GSList *ressource_list;
-	XmppRosterRessource *ressource;
-	const gchar *first_show, *show;
-	gchar *name, *ressource_str, *str;
+	GSList *resource_list;
+	XMPP_ROSTER_RESOURCE_REC *resource;
+	const char *first_show, *show;
+	char *name, *resource_str, *str;
 
 	first_show = NULL;
-	ressource_str = NULL;
+	resource_str = NULL;
 
 	/* offline user ? */
-	if (user->ressources == NULL)
+	if (user->resources == NULL)
 		first_show = xmpp_presence_show[XMPP_PRESENCE_UNAVAILABLE];
 
-	ressource_list = user->ressources;
-	while (ressource_list != NULL) {
-		ressource = (XmppRosterRessource *)ressource_list->data;
+	resource_list = user->resources;
+	while (resource_list != NULL) {
+		resource = (XMPP_ROSTER_RESOURCE_REC *)resource_list->data;
 		
-		show = xmpp_presence_show[ressource->show];
+		show = xmpp_presence_show[resource->show];
 		
 		if (first_show == NULL) 
 			first_show = show;
 		
-		if(ressource->show == XMPP_PRESENCE_AVAILABLE)
+		if(resource->show == XMPP_PRESENCE_AVAILABLE)
 			show = NULL;
 		
-		if (ressource->name != NULL) {
+		if (resource->name != NULL) {
 			str = g_strdup_printf("%s[%s%s%s%s(%d)%s%s]",
-			    ressource_str ? ressource_str : "",
+			    resource_str ? resource_str : "",
 			    show ? "(" : "", show ? show : "", show ? ")" : "",
-			    ressource->name, ressource->priority,
-			    ressource->status ? ": " : "",
-			    ressource->status ? ressource->status : "");
+			    resource->name, resource->priority,
+			    resource->status ? ": " : "",
+			    resource->status ? resource->status : "");
 			
-			g_free(ressource_str);
-			ressource_str = str;
+			g_free(resource_str);
+			resource_str = str;
 		}
 		
-		ressource_list = g_slist_next(ressource_list);
+		resource_list = g_slist_next(resource_list);
 	}
 
 	if (user->error)
@@ -85,47 +83,47 @@ event_roster_nick(XMPP_SERVER_REC *server, const XmppRosterUser *user)
 
 	if (user->subscription != XMPP_SUBSCRIPTION_BOTH) {
 		str = g_strdup_printf("%s%s(subscription: %s)",
-		    ressource_str ? ressource_str : "",
-		    ressource_str ? " " : "",
+		    resource_str ? resource_str : "",
+		    resource_str ? " " : "",
 		    xmpp_subscription[user->subscription]);
 		
-		g_free(ressource_str);
-		ressource_str = str;
+		g_free(resource_str);
+		resource_str = str;
 	}
 
 	if (user->name != NULL) {
 		name = user->name;
 
 		str = g_strdup_printf("(%s) %s", user->jid,
-			ressource_str ? ressource_str : "");
-		g_free(ressource_str);
-		ressource_str = str;
+			resource_str ? resource_str : "");
+		g_free(resource_str);
+		resource_str = str;
 
 	} else
 		name = user->jid;
 	
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_ROSTER_NICK, first_show, name, ressource_str);
+	    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
 	
-	g_free(ressource_str);
+	g_free(resource_str);
 }
 
 static void
-event_begin_of_roster(XMPP_SERVER_REC *server)
+sig_begin_of_roster(XMPP_SERVER_REC *server)
 {   
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
 	    XMPPTXT_BEGIN_OF_ROSTER);
 }
 
 static void
-event_end_of_roster(XMPP_SERVER_REC *server)
+sig_end_of_roster(XMPP_SERVER_REC *server)
 {   
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
 	    XMPPTXT_END_OF_ROSTER);
 }
 
 static void
-event_not_in_roster(XMPP_SERVER_REC *server, char *jid)
+sig_not_in_roster(XMPP_SERVER_REC *server, const char *jid)
 { 
 	g_return_if_fail(jid != NULL);
 
@@ -134,7 +132,7 @@ event_not_in_roster(XMPP_SERVER_REC *server, char *jid)
 }
 
 static void
-event_subscribe(XMPP_SERVER_REC *server, char *jid, char *status)
+sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 {
 	g_return_if_fail(jid != NULL);
 
@@ -143,7 +141,7 @@ event_subscribe(XMPP_SERVER_REC *server, char *jid, char *status)
 }
 
 static void
-event_subscribed(XMPP_SERVER_REC *server, char *jid)
+sig_subscribed(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
@@ -152,7 +150,7 @@ event_subscribed(XMPP_SERVER_REC *server, char *jid)
 }
 
 static void
-event_unsubscribe(XMPP_SERVER_REC *server, char *jid)
+sig_unsubscribe(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
@@ -161,7 +159,7 @@ event_unsubscribe(XMPP_SERVER_REC *server, char *jid)
 }
 
 static void
-event_unsubscribed(XMPP_SERVER_REC *server, char *jid)
+sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
@@ -172,28 +170,31 @@ event_unsubscribed(XMPP_SERVER_REC *server, char *jid)
 void
 fe_xmpp_rosters_init(void)
 {
-	signal_add("xmpp roster group", (SIGNAL_FUNC)event_roster_group);
-	signal_add("xmpp roster nick", (SIGNAL_FUNC)event_roster_nick);
-	signal_add("xmpp begin of roster",(SIGNAL_FUNC)event_begin_of_roster);
-	signal_add("xmpp end of roster", (SIGNAL_FUNC)event_end_of_roster);
-	signal_add("xmpp not in roster", (SIGNAL_FUNC)event_not_in_roster);
-	signal_add("xmpp jid subscribe", (SIGNAL_FUNC)event_subscribe);
-	signal_add("xmpp jid subscribed", (SIGNAL_FUNC)event_subscribed);
-	signal_add("xmpp jid unsubscribe", (SIGNAL_FUNC)event_unsubscribe);
-	signal_add("xmpp jid unsubscribed", (SIGNAL_FUNC)event_unsubscribed);
+	signal_add("xmpp roster group", (SIGNAL_FUNC)sig_roster_group);
+	signal_add("xmpp roster nick", (SIGNAL_FUNC)sig_roster_nick);
+	signal_add("xmpp begin of roster",(SIGNAL_FUNC)sig_begin_of_roster);
+	signal_add("xmpp end of roster", (SIGNAL_FUNC)sig_end_of_roster);
+	signal_add("xmpp not in roster", (SIGNAL_FUNC)sig_not_in_roster);
+	signal_add("xmpp presence subscribe", (SIGNAL_FUNC)sig_subscribe);
+	signal_add("xmpp presence subscribed", (SIGNAL_FUNC)sig_subscribed);
+	signal_add("xmpp presence unsubscribe", (SIGNAL_FUNC)sig_unsubscribe);
+	signal_add("xmpp presence unsubscribed",
+	    (SIGNAL_FUNC)sig_unsubscribed);
 }
 
 void
 fe_xmpp_rosters_deinit(void)
 {
-	signal_remove("xmpp roster group", (SIGNAL_FUNC)event_roster_group);
-	signal_remove("xmpp roster nick", (SIGNAL_FUNC)event_roster_nick);
+	signal_remove("xmpp roster group", (SIGNAL_FUNC)sig_roster_group);
+	signal_remove("xmpp roster nick", (SIGNAL_FUNC)sig_roster_nick);
 	signal_remove("xmpp begin of roster",
-	    (SIGNAL_FUNC)event_begin_of_roster);
-	signal_remove("xmpp end of roster", (SIGNAL_FUNC)event_end_of_roster);
-	signal_remove("xmpp not in roster", (SIGNAL_FUNC) event_not_in_roster);
-	signal_remove("xmpp jid subscribe", (SIGNAL_FUNC)event_subscribe);
-	signal_remove("xmpp jid subscribed", (SIGNAL_FUNC)event_subscribed);
-	signal_remove("xmpp jid unsubscribe", (SIGNAL_FUNC)event_unsubscribe);
-	signal_remove("xmpp jid unsubscribed", (SIGNAL_FUNC)event_unsubscribed);
+	    (SIGNAL_FUNC)sig_begin_of_roster);
+	signal_remove("xmpp end of roster", (SIGNAL_FUNC)sig_end_of_roster);
+	signal_remove("xmpp not in roster", (SIGNAL_FUNC) sig_not_in_roster);
+	signal_remove("xmpp presence subscribe", (SIGNAL_FUNC)sig_subscribe);
+	signal_remove("xmpp presence subscribed", (SIGNAL_FUNC)sig_subscribed);
+	signal_remove("xmpp presence unsubscribe",
+	    (SIGNAL_FUNC)sig_unsubscribe);
+	signal_remove("xmpp presence unsubscribed",
+	    (SIGNAL_FUNC)sig_unsubscribed);
 }

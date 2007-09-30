@@ -1,15 +1,16 @@
 LIB= xmpp_core
-SRCS= xmpp-core.c xmpp-commands.c xmpp-protocol.c xmpp-queries.c xmpp-rosters.c xmpp-servers.c xmpp-settings.c xmpp-tools.c
+SRCS= loudmouth-tools.c xmpp-channels.c xmpp-commands.c xmpp-core.c xmpp-protocol.c xmpp-queries.c xmpp-rosters.c xmpp-rosters-tools.c xmpp-servers.c xmpp-settings.c xmpp-tools.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-fPIC -std=c99 \
-			-I${IRSSI_INCLUDE} \
-			-I${IRSSI_INCLUDE}/src \
-			-I${IRSSI_INCLUDE}/src/core \
-			`pkg-config --cflags loudmouth-1.0` \
-			-DUOFF_T_LONG
+		-I${IRSSI_INCLUDE} \
+		-I${IRSSI_INCLUDE}/src \
+		-I${IRSSI_INCLUDE}/src/core \
+		`pkg-config --cflags loudmouth-1.0` \
+		-DUOFF_T_LONG
+
 LDFLAGS+=	-shared \
-			`pkg-config --libs loudmouth-1.0`
+		`pkg-config --libs loudmouth-1.0`
 
 ifeq ($(DEBUG), yes)
 CFLAGS+=	-Wall -W -ggdb -DDEBUG
@@ -18,7 +19,7 @@ endif
 all: $(LIB)
 
 $(LIB): $(OBJS)
-	$(CC) -shared -o lib$@.so $^ $(LDFLAGS)
+	$(CC) -o lib$@.so $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)

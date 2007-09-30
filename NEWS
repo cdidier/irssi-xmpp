@@ -1,7 +1,16 @@
-0.14 - ??/08/2007
+0.14 - ??/09/2007
 
-	- complete group name in the command /ROSTER
-	- send message composing event, set "xmpp_send_composing" to OFF,
+	- add MUC support
+	- add command /ME
+	- add commands /XMPPCONNECT and /XMPPSERVER to connect to a jabber
+	server
+	- add command /VER request the software version
+	- add command /WHOIS to request the vCard
+	- send the specified message when disconnecting (/quit <message>)
+	- full completion support for user name (without space)
+	- complete group name in the command /ROSTER GROUP
+	- add statusbar "xmpp_composing" to show composing events
+	- send message composing events, set "xmpp_send_composing" to OFF
 	to disable it
 	- you don't need to reconnect anymore when you change the setting
 	"xmpp_priority", it take effect immediately
@@ -9,7 +18,7 @@
 	"xmpp_set_nick_as_username" to use the left part of a JID as nick
 	- display disconnection error messages correctly
 	- don't create a new query window if there's already one
-	- lots of bug fixes and code cleanups
+	- lots of bug fixes and big code cleanup
 
 0.13 - 12/08/2007
 
@@ -19,7 +28,7 @@
 	when adding a contact to the roster
 	- add setting "xmpp_priority" to set the priority of your connection,
 	must reconnect to take effect
-	- bulletproof username, server, ressource and jid, when using /server
+	- bulletproof username, server, resource and jid, when using /server
 	or /connect (fit to the "Connection" part of the README)
 	- drop "lorder|tsort" in Makefiles, may compile on every linux
 	distributions
@@ -28,8 +37,8 @@
 
 	- add SSL support
 	- add new connection status messages
-	- full JIDs and ressources completion
-	- open queries with the highest ressource if not specified
+	- full JIDs and resources completion
+	- open queries with the highest resource if not specified
 	- show unsuscribed users in the roster
 	- add setting "roster_show_offline_unsuscribed" to show/hide
 	unsuscribed users when they are offline if "roster_show_offline" is OFF
@@ -37,11 +46,11 @@
 	group
 	- don't show empty groups in the roster
 	- add setting "xmpp_default_away_mode" to set the away mode to use when
-	whe symply type /away <reason>
+	we simply type /away <reason>
 
 0.11 - 08/08/2007
 
-	- add autocompletion for JIDs (and partial for ressources)
+	- add autocompletion for JIDs (and partial for resources)
 	- add setting "roster_show_offline"
 	- add setting "xmpp_send_version"
 	- fix sorting users in the roster

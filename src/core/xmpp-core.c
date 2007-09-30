@@ -27,10 +27,12 @@
 #include "settings.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-protocol.h"
-#include "xmpp-settings.h"
+#include "xmpp-channels.h"
 #include "xmpp-commands.h"
+#include "xmpp-protocol.h"
 #include "xmpp-queries.h"
+#include "xmpp-rosters.h"
+#include "xmpp-settings.h"
 
 static CHATNET_REC *
 create_chatnet(void)
@@ -81,16 +83,20 @@ xmpp_core_init(void)
 
 	rec->server_init_connect = xmpp_server_init_connect;
 	rec->server_connect = xmpp_server_connect;
-	/* rec->channel_create = xmpp_channel_create; */
-	rec->query_create = xmpp_query_create;
+	rec->channel_create = (CHANNEL_REC *(*)(SERVER_REC *, const char *,
+	    const char *, int))xmpp_channel_create;
+	rec->query_create = (QUERY_REC *(*)(const char *, const char *, int))
+	    xmpp_query_create;
 
 	chat_protocol_register(rec);
 	g_free(rec);
 
-	xmpp_servers_init();
-	xmpp_protocol_init();
-	xmpp_settings_init();
+	xmpp_channels_init();
 	xmpp_commands_init();
+	xmpp_protocol_init();
+	xmpp_rosters_init();
+	xmpp_servers_init();
+	xmpp_settings_init();
 
 	module_register("xmpp", "core");
 }
@@ -98,10 +104,12 @@ xmpp_core_init(void)
 void
 xmpp_core_deinit(void) 
 {
-	xmpp_servers_deinit();
-	xmpp_protocol_init();
-	xmpp_settings_deinit();
+	xmpp_channels_deinit();
 	xmpp_commands_deinit();
+	xmpp_protocol_deinit();
+	xmpp_rosters_deinit();
+	xmpp_servers_deinit();
+	xmpp_settings_deinit();
 
 	signal_emit("chat protocol deinit", 1, chat_protocol_find("XMPP"));
 	chat_protocol_unregister("XMPP");
