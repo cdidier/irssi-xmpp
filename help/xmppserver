@@ -1,0 +1,11 @@
+
+XMPPSERVER %|[-ssl] [-server <host>] [-port <port>] <jid>[/<resource] <password>
+
+     -ssl: use SSL when connecting
+     -server: the host
+     -port: the port
+
+This command disconnects the server in active window and connects to the new one. It will take the same arguments as /XMPPCONNECT.
+
+See also: XMPPCONNECT, CONNECT, SERVER, DISCONNECT, RECONNECT, RMRECONNS
+
