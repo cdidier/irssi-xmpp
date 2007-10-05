@@ -1,5 +1,5 @@
-LIB= fe_xmpp
-SRCS= fe-xmpp-commands.c fe-xmpp-composing.c fe-xmpp-messages.c fe-xmpp-queries.c fe-xmpp-rosters.c fe-xmpp-whois.c fe-xmpp.c module-formats.c xmpp-completion.c
+LIB= text_xmpp
+SRCS= text-xmpp.c text-xmpp-composing.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-std=c99 \
@@ -7,6 +7,7 @@ CFLAGS+=	-std=c99 \
 		-I${IRSSI_INCLUDE}/src \
 		-I${IRSSI_INCLUDE}/src/core \
 		-I$(IRSSI_INCLUDE)/src/fe-common/core \
+		-I$(IRSSI_INCLUDE)/src/fe-text \
 		-I../../src/core \
 		`pkg-config --cflags loudmouth-1.0` \
 		-DUOFF_T_LONG

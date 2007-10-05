@@ -23,6 +23,9 @@ struct _XMPP_CHANNEL_REC {
 	char	*nick;
 	char	*oldnick;
 
+	gboolean non_anonymous; /* status code 100 */
+	gboolean logging; /* status code 170 */
+
 	time_t	 composing_time;
 };
 
