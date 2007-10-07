@@ -24,7 +24,9 @@
 #include "module-formats.h"
 #include "signals.h"
 #include "window-items.h"
-#include "fe-text/statusbar.h"
+
+/* in include/irssi/src/fe-text */
+#include "statusbar.h"
 
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
