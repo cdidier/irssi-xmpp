@@ -508,7 +508,8 @@ nick_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 
 	set_modes(nick, affiliation, role);
 
-	/* event */
+	signal_emit("message xmpp channel mode", 5, server, channel, nick->nick,
+	    affiliation, role);
 }
 
 static void
