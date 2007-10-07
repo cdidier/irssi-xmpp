@@ -424,7 +424,7 @@ insert_nick(XMPP_CHANNEL_REC *channel, const char *nick_name, const char *full_j
 static void
 nick_event(XMPP_SERVER_REC *server, const char *channel_name,
     const char *nick_name, const char *full_jid, const char *affiliation,
-    const char *role)
+    const char *role, const char *show)
 {
 	XMPP_CHANNEL_REC *channel;
 	NICK_REC *nick;
@@ -441,7 +441,7 @@ nick_event(XMPP_SERVER_REC *server, const char *channel_name,
 	if (nick == NULL)
 		signal_emit("xmpp channel nick add", 6, server, channel,
 		    nick_name, full_jid, affiliation, role);
-	else
+	else if (show == NULL)
 		signal_emit("xmpp channel nick mode", 5, server, channel,
 		    nick, affiliation, role);
 }
@@ -463,10 +463,11 @@ nick_add(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 
 	nick = insert_nick(channel, nick_name, full_jid, affiliation, role);
 
-	if (channel->names_got ||
-	    strcmp(nick_name, channel->nick) == 0) {
+	if (channel->names_got || channel->ownnick == nick) {
 		signal_emit("message join", 4, server, channel->name, nick->nick,
 		    nick->host);
+		signal_emit("message xmpp channel mode", 5, server, channel,
+		    nick->nick, affiliation, role);
 	}
 }
 

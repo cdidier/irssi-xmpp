@@ -621,9 +621,12 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			}
 			g_slist_free(x);
 
+			show = lm_message_node_get_child(msg->node, "show");
+
 			signal_emit("xmpp channel nick event", 6, server, text,
 			    (item_nick != NULL) ? item_nick : nick, item_jid,
-			    item_affiliation, item_role);
+			    item_affiliation, item_role,
+			    (show != NULL) ? show->value : NULL);
 
 			g_free(item_jid);
 			g_free(item_nick);
