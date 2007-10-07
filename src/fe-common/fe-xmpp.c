@@ -19,10 +19,12 @@
  */
 
 #include "module.h"
+#include "core.h"
 #include "levels.h"
 #include "module-formats.h"
 #include "printtext.h"
 #include "servers-setup.h"
+#include "settings.h"
 #include "signals.h"
 #include "themes.h"
 
@@ -73,6 +75,14 @@ fe_xmpp_init(void)
 	xmpp_completion_init();
 
 	module_register("xmpp", "fe");
+
+	/* load irssi-xmpp's fe-text submodule */
+	if (irssi_gui == IRSSI_GUI_TEXT) {
+		char *cmd_line = g_strconcat(settings_get_str("cmdchars"),
+		    "load xmpp text", NULL);
+		signal_emit("send command", 1, cmd_line);
+		g_free(cmd_line);
+	}
 }
 
 void
