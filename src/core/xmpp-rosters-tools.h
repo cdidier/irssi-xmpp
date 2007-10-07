@@ -1,4 +1,4 @@
-/* $Id:*/
+/* $Id$ */
 
 #ifndef __XMPP_ROSTER_TOOLS_H
 #define __XMPP_ROSTER_TOOLS_H

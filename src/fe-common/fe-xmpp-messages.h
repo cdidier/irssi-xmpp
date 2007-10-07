@@ -1,4 +1,4 @@
-/* $Id:*/
+/* $Id$ */
 
 #ifndef __FE_XMPP_MESSAGES_H
 #define __FE_XMPP_MESSAGES_H

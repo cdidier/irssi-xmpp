@@ -1,4 +1,4 @@
-/* $Id:*/
+/* $Id$ */
 
 #ifndef __XMPP_CHANNELS_H
 #define __XMPP_CHANNELS_H
