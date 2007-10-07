@@ -21,21 +21,24 @@
 #include <string.h>
 
 #include "module.h"
+#include "nicklist.h"
 #include "signals.h"
 
 #include "xmpp-queries.h"
+#include "xmpp-channels.h"
 #include "xmpp-rosters.h"
 #include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
 
 QUERY_REC *
-xmpp_query_create(const char *server_tag, const char *nick, int automatic)
+xmpp_query_create(const char *server_tag, const char *data, int automatic)
 {
 	XMPP_QUERY_REC *rec, *rec_tmp;
 	XMPP_SERVER_REC *server;
+	const char *channel_name;
 
 	g_return_val_if_fail(server_tag != NULL, NULL);
-	g_return_val_if_fail(nick != NULL, NULL);
+	g_return_val_if_fail(data != NULL, NULL);
 
 	server = XMPP_SERVER(server_find_tag(server_tag));
 	if (server == NULL)
@@ -44,7 +47,25 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 	rec = g_new0(XMPP_QUERY_REC, 1);
 	rec->chat_type = XMPP_PROTOCOL;
 
-	rec->name = xmpp_get_full_jid(server, nick);
+	channel_name = NULL;
+	signal_emit("xmpp windows get active channel", 1, &channel_name);
+
+	/* query created from a channel */
+	if (channel_name != NULL) {
+		XMPP_CHANNEL_REC *channel;
+		NICK_REC *nick;
+
+		channel = xmpp_channel_find(server, channel_name);
+		if (channel != NULL) {
+			nick = nicklist_find(CHANNEL(channel), data);
+			if (nick != NULL)
+				rec->name = g_strdup(nick->host);
+		}
+	}
+	
+	if (rec->name == NULL)
+		rec->name = xmpp_get_full_jid(server, data);
+
 	if (rec->name != NULL) {
 		/* test if the query already exist */
 		rec_tmp = xmpp_query_find(server, rec->name);
@@ -55,7 +76,7 @@ xmpp_query_create(const char *server_tag, const char *nick, int automatic)
 			return NULL;
 		}
 	} else
-		rec->name = g_strdup(nick);
+		rec->name = g_strdup(data);
 
 	rec->server_tag = g_strdup(server_tag);
 	query_init((QUERY_REC *)rec, automatic);

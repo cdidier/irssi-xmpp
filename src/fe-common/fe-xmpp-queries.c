@@ -75,7 +75,7 @@ sig_query_raise(XMPP_SERVER_REC *server, QUERY_REC *query)
 	if (window != active_win)
 		window_set_active(window);
 
-	window_item_set_active(active_win, (WI_ITEM_REC *) query);
+	window_item_set_active(active_win, (WI_ITEM_REC *)query);
 }
 
 void

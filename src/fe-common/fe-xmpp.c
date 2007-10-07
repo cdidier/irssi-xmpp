@@ -32,6 +32,7 @@
 #include "fe-xmpp-queries.h"
 #include "fe-xmpp-rosters.h"
 #include "fe-xmpp-whois.h"
+#include "fe-xmpp-windows.h"
 #include "xmpp-completion.h"
 
 static void
@@ -68,6 +69,7 @@ fe_xmpp_init(void)
 	fe_xmpp_queries_init();
 	fe_xmpp_rosters_init();
 	fe_xmpp_whois_init();
+	fe_xmpp_windows_init();
 	xmpp_completion_init();
 
 	module_register("xmpp", "fe");
@@ -85,6 +87,7 @@ fe_xmpp_deinit(void)
 	fe_xmpp_queries_deinit();
 	fe_xmpp_rosters_deinit();
 	fe_xmpp_whois_deinit();
+	fe_xmpp_windows_deinit();
 	xmpp_completion_deinit();
 
 	theme_unregister();

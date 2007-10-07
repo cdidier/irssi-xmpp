@@ -590,13 +590,12 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		text = xmpp_extract_channel(jid);
 		if (xmpp_channel_find(server, text) != NULL) {
 			GSList *x;
-			const char *affiliation, *role, *item_jid;
-			char *nick, *destnick;
+			const char *item_affiliation, *item_role;
+			char *nick, *item_jid, *item_nick;
 
 			nick = xmpp_extract_nick(jid);
-			affiliation = NULL;
-			role = NULL;
-			item_jid = NULL;
+			item_affiliation = item_role = NULL;
+			item_jid = item_nick = NULL;
 
 			x = lm_message_node_find_childs(msg->node, "x");
 			if (x != NULL &&
@@ -606,25 +605,27 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 				subchild = lm_message_node_get_child(child,
 				    "item");
 				if (subchild != NULL) {
-					affiliation =
+					item_affiliation =
 					    lm_message_node_get_attribute(
 					    subchild, "affiliation");
-					role = lm_message_node_get_attribute(
+					item_role = lm_message_node_get_attribute(
 					    subchild, "role");
-					item_jid =
+					item_jid = xmpp_recode_in(
 					    lm_message_node_get_attribute(
-					    subchild, "jid");
+					    subchild, "jid"));
+					item_nick = xmpp_recode_in(
+					    lm_message_node_get_attribute(
+					    subchild, "nick"));
 				}
 			}
 			g_slist_free(x);
 
-			destnick = (item_jid != NULL) ?
-			    xmpp_extract_nick(item_jid) : NULL;
-			signal_emit("xmpp channel nick event", 5, server, text,
-			    (destnick != NULL) ? destnick : nick,
-			    affiliation, role);
+			signal_emit("xmpp channel nick event", 6, server, text,
+			    (item_nick != NULL) ? item_nick : nick, item_jid,
+			    item_affiliation, item_role);
 
-			g_free(destnick);
+			g_free(item_jid);
+			g_free(item_nick);
 			g_free(nick);
 
 		/* from roster */
@@ -653,14 +654,12 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		text = xmpp_extract_channel(jid);
 		if (xmpp_channel_find(server, text) != NULL) {
 			GSList *x;
-			const char *affiliation, *role, *code;
-			char *nick, *status, *newnick;
+			const char *item_affiliation, *item_role, *status_code;
+			char *nick, *status, *item_nick;
 
 			nick = xmpp_extract_nick(jid);
-			affiliation = NULL;
-			role = NULL;
-			code = NULL;
-			newnick = NULL;
+			item_affiliation = item_role = status_code = NULL;
+			status = item_nick = NULL;
 
 			/* changing name */
 			x = lm_message_node_find_childs(msg->node, "x");
@@ -671,42 +670,42 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 				subchild = lm_message_node_get_child(child,
 				    "item");
 				if (subchild != NULL) {
-					affiliation =
+					item_affiliation =
 					    lm_message_node_get_attribute(
 					    subchild, "affiliation");
-					role = lm_message_node_get_attribute(
+					item_role = lm_message_node_get_attribute(
 					    subchild, "role");
-					newnick = xmpp_recode_in(
+					item_nick = xmpp_recode_in(
 					    lm_message_node_get_attribute(
 					    subchild, "nick"));
 				}
 
 				subchild = lm_message_node_get_child(child,
 				    "status");
-				if (subchild != NULL)
-					code = lm_message_node_get_attribute(
+				if (subchild != NULL) {
+					status = xmpp_recode_in(child->value);
+					status_code =
+					    lm_message_node_get_attribute(
 					    subchild, "code");
+				}
 			}
 			g_slist_free(x);
 
-			child = lm_message_node_get_child(msg->node, "status");
-			status = (child != NULL) ?
-			    xmpp_recode_in(child->value) : NULL;
-
-			if (code != NULL &&
-			    g_ascii_strcasecmp(code, "303") == 0) {
-				if (newnick != NULL)
+			/* status code 303, change nick */
+			if (status_code != NULL &&
+			    g_ascii_strcasecmp(status_code, "303") == 0) {
+				if (item_nick != NULL)
 					signal_emit("xmpp channel nick change",
-					    6, server, text, nick, newnick,
-					    affiliation, role);
+					    6, server, text, nick, item_nick,
+					    item_affiliation, item_role);
 
 			} else
 				signal_emit("xmpp channel nick remove", 4,
 				    server, text, nick, status);
 
-			g_free(nick);
-			g_free(newnick);
+			g_free(item_nick);
 			g_free(status);
+			g_free(nick);
 
 		/* from roster */
 		} else {

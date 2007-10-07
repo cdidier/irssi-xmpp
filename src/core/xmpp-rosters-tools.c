@@ -225,9 +225,9 @@ xmpp_show_user(XMPP_ROSTER_USER_REC *user)
 	g_return_val_if_fail(user != NULL, FALSE);
 
 	return (user->resources != NULL &&
-	    (user->subscription == XMPP_SUBSCRIPTION_BOTH ||
+	    user->subscription == XMPP_SUBSCRIPTION_BOTH) ||
 	    (user->subscription != XMPP_SUBSCRIPTION_BOTH &&
-	    settings_get_bool("roster_show_offline_unsuscribed"))))
+	    settings_get_bool("roster_show_offline_unsuscribed"))
 	    || settings_get_bool("roster_show_offline");
 }
 

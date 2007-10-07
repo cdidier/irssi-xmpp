@@ -165,7 +165,6 @@ send_join(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 	
 	lm_connection_send(server->lmconn, msg, NULL);
 	lm_message_unref(msg);
-
 }
 
 static void
@@ -227,12 +226,11 @@ channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	for (tmp = chanlist; *tmp != NULL; tmp++) {
 		channel = xmpp_channel_find(server, *tmp);
 		if (channel == NULL) {
-
 			channel = (XMPP_CHANNEL_REC *)
 			    xmpp_channel_create(server, *tmp, NULL, automatic);
 
-			
-			channel->nick = g_strdup(server->nick);
+			/* set your nick */
+			channel->nick = g_strdup(server->connrec->username);
 
 			send_join(server, channel);
 		}
@@ -366,8 +364,6 @@ set_modes(NICK_REC *nick, const char *affiliation, const char *role)
 {
 	g_return_if_fail(nick != NULL);
 
-	g_debug(nick->nick);
-
 	if (affiliation != NULL) {
 		if (g_ascii_strcasecmp(affiliation, "owner") == 0) {
 			nick->other = '&';
@@ -375,6 +371,9 @@ set_modes(NICK_REC *nick, const char *affiliation, const char *role)
 		} else if (g_ascii_strcasecmp(affiliation, "admin") == 0) {
 			nick->other = NULL;
 			nick->op = TRUE;
+		} else if (g_ascii_strcasecmp(affiliation, "member") == 0) {
+			nick->other = NULL;
+			nick->op = FALSE;
 		} else {
 			nick->other = NULL;
 			nick->op = FALSE;
@@ -386,7 +385,6 @@ set_modes(NICK_REC *nick, const char *affiliation, const char *role)
 			nick->halfop = FALSE; 
 			nick->voice = TRUE; 
 		} else if (g_ascii_strcasecmp(role, "moderator") == 0) {
-			g_debug("halfop");
 			nick->halfop = TRUE;
 			nick->voice = TRUE;
 		} else {
@@ -397,7 +395,7 @@ set_modes(NICK_REC *nick, const char *affiliation, const char *role)
 }
 
 static NICK_REC *
-insert_nick(XMPP_CHANNEL_REC *channel, const char *nick_name,
+insert_nick(XMPP_CHANNEL_REC *channel, const char *nick_name, const char *full_jid,
     const char *affiliation, const char *role)
 {
 	NICK_REC *nick;
@@ -406,7 +404,11 @@ insert_nick(XMPP_CHANNEL_REC *channel, const char *nick_name,
 	g_return_val_if_fail(nick_name != NULL, NULL);
 
 	nick = g_new0(NICK_REC, 1);
+
 	nick->nick = g_strdup(nick_name);
+	nick->host = (full_jid != NULL) ?
+	    g_strdup(full_jid) : g_strconcat(channel->name, "/", nick->nick, NULL);
+
 	set_modes(nick, affiliation, role);
 
 	nicklist_insert(CHANNEL(channel), nick);
@@ -421,7 +423,8 @@ insert_nick(XMPP_CHANNEL_REC *channel, const char *nick_name,
 
 static void
 nick_event(XMPP_SERVER_REC *server, const char *channel_name,
-    const char *nick_name, const char *affiliation, const char *role)
+    const char *nick_name, const char *full_jid, const char *affiliation,
+    const char *role)
 {
 	XMPP_CHANNEL_REC *channel;
 	NICK_REC *nick;
@@ -430,16 +433,14 @@ nick_event(XMPP_SERVER_REC *server, const char *channel_name,
 	g_return_if_fail(channel_name != NULL);
 	g_return_if_fail(nick_name != NULL);
 
-	g_debug("event");
-
 	channel = xmpp_channel_find(server, channel_name);
 	if (channel == NULL)
 		 return;
 
 	nick = nicklist_find(CHANNEL(channel), nick_name);
 	if (nick == NULL)
-		signal_emit("xmpp channel nick add", 5, server, channel,
-		    nick_name, affiliation, role);
+		signal_emit("xmpp channel nick add", 6, server, channel,
+		    nick_name, full_jid, affiliation, role);
 	else
 		signal_emit("xmpp channel nick mode", 5, server, channel,
 		    nick, affiliation, role);
@@ -447,7 +448,8 @@ nick_event(XMPP_SERVER_REC *server, const char *channel_name,
 
 static void
 nick_add(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    const char *nick_name, const char *affiliation, const char *role)
+    const char *nick_name, const char *full_jid, const char *affiliation,
+    const char *role)
 {
 	NICK_REC *nick;
 
@@ -459,14 +461,12 @@ nick_add(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	if (nick != NULL)
 		return;
 
-	nick = insert_nick(channel, nick_name, affiliation, role);
+	nick = insert_nick(channel, nick_name, full_jid, affiliation, role);
 
 	if (channel->names_got ||
 	    strcmp(nick_name, channel->nick) == 0) {
-		char *addr = g_strconcat(channel->name, "/", nick->nick, NULL);
-		signal_emit("message join", 4, server, channel->name,
-		    nick->nick, addr);
-		g_free(addr);
+		signal_emit("message join", 4, server, channel->name, nick->nick,
+		    nick->host);
 	}
 }
 
@@ -489,15 +489,13 @@ nick_remove(XMPP_SERVER_REC *server, const char *channel_name,
 	if (nick == NULL)
 		return;
 
-	nicklist_remove(CHANNEL(channel), nick);
-
 	if (channel->oldnick == NULL ||
 	    strcmp(nick_name, channel->oldnick) != 0) {
-		char *addr = g_strconcat(channel->name, "/", nick_name, NULL);
-		signal_emit("message part", 5, server, channel->name,
-		    nick_name, addr, status);
-		g_free(addr);
+		signal_emit("message part", 5, server, channel->name, nick->nick,
+		    nick->host, status);
 	}
+
+	nicklist_remove(CHANNEL(channel), nick);
 }
 
 static void
@@ -530,14 +528,12 @@ nick_change(XMPP_SERVER_REC *server, const char *channel_name,
 	if (channel == NULL)
 		return;
 
-	g_debug("!!!change!!!, %s", oldnick);
-
 	nick = nicklist_find(CHANNEL(channel), oldnick);
 	if (nick == NULL)
 		return;
 
+	insert_nick(channel, newnick, nick->host, affiliation, role);
 	nicklist_remove(CHANNEL(channel), nick);
-	insert_nick(channel, newnick, affiliation, role);
 
 	signal_emit("message xmpp channel nick", 4, server,
 	    channel, newnick, oldnick);
