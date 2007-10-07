@@ -541,6 +541,34 @@ nick_change(XMPP_SERVER_REC *server, const char *channel_name,
 }
 
 static void
+nick_kick(XMPP_SERVER_REC *server, const char *channel_name,
+    const char *nick_name, const char *reason)
+{
+	XMPP_CHANNEL_REC *channel;
+	NICK_REC *nick;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(channel_name != NULL);
+	g_return_if_fail(nick_name != NULL);
+
+	channel = xmpp_channel_find(server, channel_name);
+	if (channel == NULL)
+		return;
+
+	nick = nicklist_find(CHANNEL(channel), nick_name);
+	if (nick == NULL)
+		return;
+
+	signal_emit("message kick", 6, server, channel->name, nick->nick,
+	    channel->name, nick->host, reason);
+
+	if (channel->ownnick == nick)
+		channel_destroy(CHANNEL(channel));
+	else
+		nicklist_remove(CHANNEL(channel), nick);
+}
+
+static void
 joined(XMPP_SERVER_REC *server, const char *channel_name)
 {
 	XMPP_CHANNEL_REC *channel;
@@ -577,6 +605,7 @@ xmpp_channels_init(void)
 	signal_add("xmpp channel nick remove", (SIGNAL_FUNC)nick_remove);
 	signal_add("xmpp channel nick mode", (SIGNAL_FUNC)nick_mode);
 	signal_add("xmpp channel nick change", (SIGNAL_FUNC)nick_change);
+	signal_add("xmpp channel nick kick", (SIGNAL_FUNC)nick_kick);
 	signal_add("xmpp channel joined", (SIGNAL_FUNC)joined);
 
 	settings_add_str("xmpp", "muc_default_nick", "");
@@ -596,5 +625,6 @@ xmpp_channels_deinit(void)
 	signal_remove("xmpp channel nick remove", (SIGNAL_FUNC)nick_remove);
 	signal_remove("xmpp channel nick mode", (SIGNAL_FUNC)nick_mode);
 	signal_remove("xmpp channel nick change", (SIGNAL_FUNC)nick_change);
+	signal_remove("xmpp channel nick kick", (SIGNAL_FUNC)nick_kick);
 	signal_remove("xmpp channel joined", (SIGNAL_FUNC)joined);
 }

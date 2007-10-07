@@ -608,7 +608,8 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					item_affiliation =
 					    lm_message_node_get_attribute(
 					    subchild, "affiliation");
-					item_role = lm_message_node_get_attribute(
+					item_role =
+					    lm_message_node_get_attribute(
 					    subchild, "role");
 					item_jid = xmpp_recode_in(
 					    lm_message_node_get_attribute(
@@ -655,11 +656,11 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		if (xmpp_channel_find(server, text) != NULL) {
 			GSList *x;
 			const char *item_affiliation, *item_role, *status_code;
-			char *nick, *status, *item_nick;
+			char *nick, *status, *reason, *item_nick;
 
 			nick = xmpp_extract_nick(jid);
 			item_affiliation = item_role = status_code = NULL;
-			status = item_nick = NULL;
+			status = reason = item_nick = NULL;
 
 			/* changing name */
 			x = lm_message_node_find_childs(msg->node, "x");
@@ -673,17 +674,25 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					item_affiliation =
 					    lm_message_node_get_attribute(
 					    subchild, "affiliation");
-					item_role = lm_message_node_get_attribute(
+					item_role =
+					    lm_message_node_get_attribute(
 					    subchild, "role");
 					item_nick = xmpp_recode_in(
 					    lm_message_node_get_attribute(
 					    subchild, "nick"));
 				}
 
+				subchild = lm_message_node_get_child(subchild,
+				    "reason");
+				if (subchild != NULL)
+					reason =
+					    xmpp_recode_in(subchild->value);
+
 				subchild = lm_message_node_get_child(child,
 				    "status");
 				if (subchild != NULL) {
-					status = xmpp_recode_in(child->value);
+					status =
+					    xmpp_recode_in(subchild->value);
 					status_code =
 					    lm_message_node_get_attribute(
 					    subchild, "code");
@@ -692,12 +701,24 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			g_slist_free(x);
 
 			/* status code 303, change nick */
-			if (status_code != NULL &&
-			    g_ascii_strcasecmp(status_code, "303") == 0) {
-				if (item_nick != NULL)
+			if (status_code != NULL) {
+			 	if (g_ascii_strcasecmp(status_code,
+				    "303") == 0 && item_nick != NULL)
 					signal_emit("xmpp channel nick change",
 					    6, server, text, nick, item_nick,
 					    item_affiliation, item_role);
+
+				/* kick */
+				else if (g_ascii_strcasecmp(status_code,
+				    "307") == 0)
+					signal_emit("xmpp channel nick kick",
+					    4, server, text, nick, reason);
+					
+				/* ban */
+				else if (g_ascii_strcasecmp(status_code,
+				    "301") == 0)
+					signal_emit("xmpp channel nick kick", 4,
+					    server, text, nick, reason);
 
 			} else
 				signal_emit("xmpp channel nick remove", 4,
@@ -705,6 +726,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 
 			g_free(item_nick);
 			g_free(status);
+			g_free(reason);
 			g_free(nick);
 
 		/* from roster */
