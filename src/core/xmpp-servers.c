@@ -165,6 +165,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	server->roster = NULL;
 
 	server_connect_init((SERVER_REC *)server);
+	server->orignick = g_strdup(server->nick);
 
 	/* init loudmouth connection structure */
 	server->lmconn = lm_connection_new(NULL);

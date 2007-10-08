@@ -1,5 +1,5 @@
 LIB= text_xmpp
-SRCS= text-xmpp.c text-xmpp-composing.c
+SRCS= text-xmpp.c text-xmpp-composing.c text-xmpp-nick.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-std=c99 \

@@ -30,6 +30,8 @@ struct _XMPP_SERVER_CONNECT_REC {
 struct _XMPP_SERVER_REC {
 	#include "server-rec.h"
 
+	char		*orignick;
+
 	char		*resource;
 	int		 show;
 	int		 priority;

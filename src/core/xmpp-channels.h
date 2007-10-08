@@ -31,7 +31,7 @@ struct _XMPP_CHANNEL_REC {
 
 __BEGIN_DECLS
 CHANNEL_REC	*xmpp_channel_create(XMPP_SERVER_REC *, const char *,
-		     const char *, int);
+		     const char *, int, const char *);
 void		 xmpp_channel_send_message(XMPP_SERVER_REC *, const char *,
 		     const char *);
 
