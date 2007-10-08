@@ -453,14 +453,14 @@ sig_server_quit(XMPP_SERVER_REC *server, char *reason)
 	LmMessage *msg;
 	char *status_recoded;
 
-	if (!IS_XMPP_SERVER(server)
-	    && (reason == NULL || *reason == '\0'))
+	if (!IS_XMPP_SERVER(server))
 		return;
-
+	
 	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
 	    LM_MESSAGE_SUB_TYPE_UNAVAILABLE);
 
-	status_recoded = xmpp_recode_out(reason);
+	status_recoded = xmpp_recode_out((reason != NULL) ?
+	    reason : settings_get_str("quit_message"));
 	lm_message_node_add_child(msg->node, "status", status_recoded);
 	g_free(status_recoded);
 
