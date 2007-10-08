@@ -24,6 +24,7 @@
 #include "ignore.h"
 #include "levels.h"
 #include "module-formats.h"
+#include "nicklist.h"
 #include "printtext.h"
 #include "settings.h"
 #include "signals.h"
@@ -125,30 +126,41 @@ sig_error(XMPP_SERVER_REC *server, const char *full_jid,
 
 static void
 sig_channel_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    const char *newnick, const char *oldnick)
+    NICK_REC *nick, const char *oldnick)
 {
-	char *addr;
-	int level;
-	gboolean ownnick;
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(channel != NULL);
+	g_return_if_fail(nick != NULL);
+	g_return_if_fail(oldnick != NULL);
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
+		return;
 
-	addr = g_strconcat(channel->name, "/", newnick, NULL);
+	if (ignore_check(SERVER(server), oldnick, nick->host, channel->nick,
+	    nick->nick, MSGLEVEL_NICKS))
+		 return;
 
-	if (ignore_check(SERVER(server), oldnick, addr, channel->nick, newnick,
-	    MSGLEVEL_NICKS))
-		 goto out;
+	printformat_module(CORE_MODULE_NAME, server, channel->name,
+	    MSGLEVEL_NICKS, TXT_NICK_CHANGED, oldnick, nick->nick,
+	    channel->name, nick->host);
+}
 
-	ownnick = (strcmp(newnick, channel->nick) == 0);
+static void
+sig_channel_own_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
+    NICK_REC *nick, const char *oldnick)
+{
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(channel != NULL);
+	g_return_if_fail(nick != NULL);
+	g_return_if_fail(oldnick != NULL);
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
+		return;
 
-	level = MSGLEVEL_NICKS;
-	if (ownnick)
-		level |= MSGLEVEL_NO_ACT;
+	if (channel->ownnick != nick)
+		return;
 
-	printformat_module(CORE_MODULE_NAME, server, channel->name, level,
-	    ownnick ? TXT_YOUR_NICK_CHANGED : TXT_NICK_CHANGED,
-	    oldnick, newnick, channel, addr);
-
-out:
-	g_free(addr);
+	printformat_module(CORE_MODULE_NAME, server, channel->name,
+	    MSGLEVEL_NICKS | MSGLEVEL_NO_ACT, TXT_YOUR_NICK_CHANGED, oldnick,
+	    nick->nick, channel->name, nick->host);
 }
 
 static void
@@ -176,6 +188,8 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_add("message xmpp error", (SIGNAL_FUNC)sig_error);
 	signal_add("message xmpp channel nick", (SIGNAL_FUNC)sig_channel_nick);
+	signal_add("message xmpp channel own_nick",
+	    (SIGNAL_FUNC)sig_channel_own_nick);
 	signal_add("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
 }
 
@@ -187,5 +201,7 @@ fe_xmpp_messages_deinit(void)
 	signal_remove("message xmpp error", (SIGNAL_FUNC)sig_error);
 	signal_remove("message xmpp channel nick",
 	    (SIGNAL_FUNC)sig_channel_nick);
+	signal_remove("message xmpp channel own_nick",
+	    (SIGNAL_FUNC)sig_channel_own_nick);
 	signal_remove("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
 }

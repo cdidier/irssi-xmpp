@@ -21,7 +21,6 @@ struct _XMPP_CHANNEL_REC {
 	#include "channel-rec.h"
 
 	char	*nick;
-	char	*oldnick;
 
 	gboolean non_anonymous; /* status code 100 */
 	gboolean logging; /* status code 170 */

@@ -29,23 +29,6 @@
 #include "xmpp-channels.h"
 
 static void
-sig_nick_changed(XMPP_SERVER_REC *server, const char *channame)
-{
-	XMPP_CHANNEL_REC *channel;
-
-	if (!IS_XMPP_SERVER(server))
-		return;
-
-	channel = xmpp_channel_find(server, channame);
-	if (channel != NULL && XMPP_CHANNEL(active_win->active) == channel) {
-		g_free(server->nick);
-		server->nick = g_strdup(channel->nick);
-
-		statusbar_redraw(NULL, FALSE);
-	}
-}
-
-static void
 sig_window_changed(WINDOW_REC *window, WINDOW_REC *oldwindow)
 {
 	XMPP_SERVER_REC *server;
@@ -59,7 +42,21 @@ sig_window_changed(WINDOW_REC *window, WINDOW_REC *oldwindow)
 	if (channel != NULL || IS_XMPP_CHANNEL(oldwindow->active)) {
 		g_free(server->nick);
 		server->nick = g_strdup((channel != NULL) ?
-		    channel->nick : server->orignick);
+		    channel->nick : server->nickname);
+	}
+}
+
+static void
+sig_nick_changed(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
+{
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
+		return;
+
+	if (XMPP_CHANNEL(active_win->active) == channel) {
+		g_free(server->nick);
+		server->nick = g_strdup(channel->nick);
+
+		statusbar_redraw(NULL, FALSE);
 	}
 }
 
@@ -67,7 +64,7 @@ void
 text_xmpp_nick_init(void)
 {
 	signal_add("window changed", (SIGNAL_FUNC)sig_window_changed);
-	signal_add_last("xmpp channels own_nick changed",
+	signal_add("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_nick_changed);
 }
 
@@ -75,6 +72,6 @@ void
 text_xmpp_nick_deinit(void)
 {
 	signal_remove("window changed", (SIGNAL_FUNC)sig_window_changed);
-	signal_remove("xmpp channels own_nick changed",
+	signal_remove("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_nick_changed);
 }

@@ -104,6 +104,10 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 	servers = g_slist_remove(servers, server);
 
 	lm_connection_unref(server->lmconn);
+
+	g_free(server->nickname);
+	g_free(server->jid);
+	g_free(server->user);
 	g_free(server->resource);
 
 	signal_emit("xmpp roster cleanup", 1, server);
@@ -117,64 +121,55 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	char *str;
 
 	g_return_val_if_fail(IS_XMPP_SERVER_CONNECT(conn), NULL);
-	if ((conn->address == NULL) || (conn->address[0] == '\0')) return NULL;
-	if ((conn->nick == NULL) || (conn->nick[0] == '\0')) return NULL;
+	if (conn->address == NULL || conn->address[0] == '\0')
+		return NULL;
+	if (conn->nick == NULL || conn->nick[0] == '\0') return NULL;
 
 	server = g_new0(XMPP_SERVER_REC, 1);
 	server->chat_type = XMPP_PROTOCOL;
 
-	server->connrec = (XMPP_SERVER_CONNECT_REC *)conn;
-	server_connect_ref(conn);
+	/* extract user informations */
+	str = conn->nick;
 
-	if (server->connrec->port <= 0) {
-		server->connrec->port = (server->connrec->use_ssl) ?
-		    LM_CONNECTION_DEFAULT_PORT_SSL : LM_CONNECTION_DEFAULT_PORT;
-	}
-	
-	/* don't use irssi's sockets */
-	server->connrec->no_connect = TRUE;
-
-	str = server->connrec->nick;
-
-	server->resource = xmpp_extract_resource(server->connrec->nick);
+	server->user = xmpp_extract_user(str);
+	server->jid = xmpp_jid_have_address(str) ? xmpp_strip_resource(str) :
+	    g_strconcat(server->user, "@", conn->address, NULL);
+	server->resource = xmpp_extract_resource(str);
 	if (server->resource == NULL)
 		server->resource = g_strdup("irssi-xmpp");
 
-	server->connrec->username = xmpp_extract_user(str);
-
-	/* store the full jid */
-	if (xmpp_jid_have_address(str))
-		server->connrec->realname = xmpp_strip_resource(str);
-	else
-		server->connrec->realname = g_strdup_printf("%s@%s",
-		    server->connrec->username, server->connrec->address);
-
-	if (settings_get_bool("xmpp_set_nick_as_username"))
-		server->connrec->nick = g_strdup(server->connrec->username);
-	else
-		server->connrec->nick = g_strdup(server->connrec->realname);
-
 	g_free(str);
 
-	server->priority =
-	    !xmpp_priority_out_of_bound(settings_get_int("xmpp_priority")) ?
-	    settings_get_int("xmpp_priority") : 0;
-	server->default_priority =
-	    (server->priority != settings_get_int("xmpp_priority"));
-
+	/* init xmpp's properties */
+	server->priority = settings_get_int("xmpp_priority");
+	if (xmpp_priority_out_of_bound(server->priority))
+		server->priority = 0;
+	server->default_priority = TRUE;
 	server->roster = NULL;
 
-	server_connect_init((SERVER_REC *)server);
-	server->orignick = g_strdup(server->nick);
+	/* fill connrec record */
+	server->connrec = (XMPP_SERVER_CONNECT_REC *)conn;
+	server_connect_ref(conn);
+
+	/* don't use irssi's sockets */
+	server->connrec->no_connect = TRUE;
+
+	if (server->connrec->port <= 0)
+		server->connrec->port = (server->connrec->use_ssl) ?
+		    LM_CONNECTION_DEFAULT_PORT_SSL : LM_CONNECTION_DEFAULT_PORT;
+
+	server->connrec->nick =
+	    g_strdup(settings_get_bool("xmpp_set_nick_as_username") ?
+	    server->user : server->jid);
+	server->nickname = g_strdup(server->connrec->nick);
 
 	/* init loudmouth connection structure */
 	server->lmconn = lm_connection_new(NULL);
-	lm_connection_set_server(server->lmconn,
-	    server->connrec->address);
+	lm_connection_set_server(server->lmconn, server->connrec->address);
 	lm_connection_set_port(server->lmconn, server->connrec->port);
-	lm_connection_set_jid(server->lmconn,
-	    server->connrec->realname);
+	lm_connection_set_jid(server->lmconn, server->user);
 
+	server_connect_init((SERVER_REC *)server);
 	return (SERVER_REC *)server;
 }
 
@@ -330,7 +325,7 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 	} else
 		signal_emit("server connecting", 1, server, &ip);
 
-	if (!lm_connection_authenticate(connection, server->connrec->username,
+	if (!lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
 	    (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
 		goto err;

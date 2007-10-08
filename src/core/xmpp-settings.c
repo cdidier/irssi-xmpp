@@ -49,22 +49,18 @@ read_settings(void)
 
 		/* update nick */
 		if (settings_get_bool("xmpp_set_nick_as_username")) {
-			if (strcmp(server->connrec->nick,
-			    server->connrec->username) != 0) {
-				g_free(server->connrec->nick);
+			if (strcmp(server->nickname, server->user) != 0) {
 				g_free(server->nick);
-				server->connrec->nick =
-				    g_strdup(server->connrec->username);
-				server->nick = g_strdup(server->connrec->nick);
+				g_free(server->nickname);
+				server->nick = g_strdup(server->user);
+				server->nickname = g_strdup(server->user);
 			}
 		} else {
-			if (strcmp(server->connrec->nick,
-			    server->connrec->realname) != 0) {
-				g_free(server->connrec->nick);
+			if (strcmp(server->nickname, server->jid) != 0) {
 				g_free(server->nick);
-				server->connrec->nick =
-				    g_strdup(server->connrec->realname);
-				server->nick = g_strdup(server->connrec->nick);
+				g_free(server->nickname);
+				server->nick = g_strdup(server->jid);
+				server->nickname = g_strdup(server->jid);
 			}
 		}
 
