@@ -29,7 +29,8 @@
 #include "xmpp-channels.h"
 
 static void
-update_nick_statusbar(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
+update_nick_statusbar(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
+    gboolean redraw)
 {
 	g_return_if_fail(server != NULL);
 
@@ -40,7 +41,8 @@ update_nick_statusbar(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 	server->nick = g_strdup(IS_XMPP_CHANNEL(channel) ?
 	    channel->nick : server->nickname);
 
-	statusbar_redraw(NULL, FALSE);
+	if (redraw)
+		statusbar_redraw(NULL, TRUE);
 }
 
 static void
@@ -58,7 +60,7 @@ sig_window_changed(WINDOW_REC *window, WINDOW_REC *oldwindow)
 	channel = XMPP_CHANNEL(window->active);
 	if (channel != NULL ||
 	    (oldwindow != NULL && IS_XMPP_CHANNEL(oldwindow->active)))
-		update_nick_statusbar(server, channel);
+		update_nick_statusbar(server, channel, FALSE);
 }
 
 static void
@@ -75,7 +77,7 @@ sig_window_destroyed(WINDOW_REC *window)
 
 	channel = XMPP_CHANNEL(window->active);
 	if (channel != NULL || !IS_XMPP_CHANNEL(active_win->active))
-		update_nick_statusbar(server, NULL);
+		update_nick_statusbar(server, NULL, TRUE);
 }
 
 static void
@@ -85,7 +87,7 @@ sig_nick_changed(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 		return;
 
 	if (XMPP_CHANNEL(active_win->active) == channel)
-		update_nick_statusbar(server, channel);
+		update_nick_statusbar(server, channel, TRUE);
 }
 
 static void
@@ -97,7 +99,7 @@ sig_channel_joined(XMPP_CHANNEL_REC *channel)
 		return;
 
 	if (XMPP_CHANNEL(active_win->active) == channel)
-		update_nick_statusbar(channel->server, channel);
+		update_nick_statusbar(channel->server, channel, TRUE);
 }
 
 static void
@@ -109,7 +111,7 @@ sig_channel_destroyed(XMPP_CHANNEL_REC *channel)
 		return;
 
 	if (XMPP_CHANNEL(active_win->active) == channel)
-			update_nick_statusbar(channel->server, NULL);
+		update_nick_statusbar(channel->server, NULL, TRUE);
 }
 
 void
