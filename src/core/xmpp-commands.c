@@ -724,7 +724,7 @@ cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	}
 
 	if (*msg == '\0')
-		 msg = (char *) settings_get_str("part_message");
+		 msg = (char *)settings_get_str("part_message");
 
 	signal_emit("xmpp channels part", 3, server, channame, msg);
 
@@ -744,8 +744,9 @@ cmd_nick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	    PARAM_FLAG_OPTCHAN, item, &channame, &nick))
 		return;
 
-	if (*channame == '\0' || *nick == '\0')
+	if (*channame == '\0' || *nick == '\0') {
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	}
 
 	signal_emit("xmpp channels nick", 3, server, channame, nick);
 

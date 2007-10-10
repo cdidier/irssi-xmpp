@@ -227,6 +227,7 @@ channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	channel_name = nick = NULL;
 
 	for (tmp = chanlist; *tmp != NULL; tmp++) {
+		g_strstrip(*tmp);
 
 		nick = xmpp_extract_nick(*tmp);
 		if (nick != NULL)
@@ -264,9 +265,11 @@ channels_part(XMPP_SERVER_REC *server, const char *channels,
 	chanlist = g_strsplit(channels, ",", -1);
 
 	for (tmp = chanlist; *tmp != NULL; tmp++) {
+		g_strstrip(*tmp);
 		channel = xmpp_channel_find(server, *tmp);
 		if (channel != NULL) {
 			send_part(server, channel, reason);
+			channel->left = TRUE;
 
 			signal_emit("message part", 5, server, channel->name,
 			    channel->ownnick->nick, channel->ownnick->host,
@@ -292,6 +295,7 @@ channels_nick(XMPP_SERVER_REC *server, const char *channels, const char *nick)
 	chanlist = g_strsplit(channels, ",", -1);
 
 	for (tmp = chanlist; *tmp != NULL; tmp++) {
+		g_strstrip(*tmp);
 		channel = xmpp_channel_find(server, *tmp);
 		if (channel != NULL)
 			send_nick(server, channel, nick);
@@ -329,10 +333,9 @@ sig_channel_destroyed(XMPP_CHANNEL_REC *channel)
 	if (!IS_XMPP_CHANNEL(channel))
 		return;
 
-	/* destroying channel without actually having left it yet */
-	if (!channel->server->disconnected && !channel->left) {
-		signal_emit("command part", 3, "", channel->server, channel);
-	}
+	if (!channel->server->disconnected && !channel->left)
+		send_part(channel->server, channel,
+		    settings_get_str("part_message"));
 
 	g_free(channel->nick);
 }
