@@ -46,8 +46,8 @@ xmpp_channel_create(XMPP_SERVER_REC *server, const char *name,
 	rec->chat_type = XMPP_PROTOCOL;
 
 	rec->nick = g_strdup((nick != NULL) ? nick :
-	  (*settings_get_str("muc_default_nick") != '\0') ?
-	  settings_get_str("muc_default_nick") : server->user);
+	  (*settings_get_str("nick") != '\0') ?
+	  settings_get_str("nick") : server->user);
 
 	channel_init((CHANNEL_REC *)rec, (SERVER_REC *)server, name,
 	    visible_name, automatic);
@@ -627,8 +627,6 @@ xmpp_channels_init(void)
 	signal_add("xmpp channel nick change", (SIGNAL_FUNC)nick_change);
 	signal_add("xmpp channel nick kick", (SIGNAL_FUNC)nick_kick);
 	signal_add("xmpp channel joined", (SIGNAL_FUNC)joined);
-
-	settings_add_str("xmpp", "muc_default_nick", "");
 }
 
 void
