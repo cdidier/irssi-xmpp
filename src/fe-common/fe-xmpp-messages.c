@@ -38,6 +38,7 @@
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"
+#include "xmpp-tools.h"
 
 static void
 sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
@@ -132,6 +133,7 @@ sig_channel_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	g_return_if_fail(channel != NULL);
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(oldnick != NULL);
+
 	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
 		return;
 
@@ -152,6 +154,7 @@ sig_channel_own_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	g_return_if_fail(channel != NULL);
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(oldnick != NULL);
+
 	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
 		return;
 
@@ -172,6 +175,8 @@ sig_channel_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(channel != NULL);
 	g_return_if_fail(nick != NULL);
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
+		return;
 
 	mode = g_strconcat("+", affiliation, "/+", role, " ", nick,  NULL);
 
@@ -179,6 +184,105 @@ sig_channel_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	    IRCTXT_CHANMODE_CHANGE, channel->name, mode, channel->name);
 
 	g_free(mode);
+}
+
+static void
+sig_message_own_public(XMPP_SERVER_REC *server, char *msg, char *target)
+{
+	WINDOW_REC *window;
+	XMPP_CHANNEL_REC *channel;
+	const char *nickmode;
+	char *freemsg = NULL, *recoded;
+	gboolean print_channel;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(msg != NULL);
+	g_return_if_fail(target != NULL);
+
+	if (!IS_XMPP_SERVER(server))
+		return;
+
+	channel = xmpp_channel_find(server, target);
+	if (channel == NULL)
+		return;
+
+	nickmode = channel_get_nickmode(CHANNEL(channel), channel->nick);
+
+	window = (channel == NULL) ?
+	    NULL : window_item_window((WI_ITEM_REC *)channel);
+
+	print_channel = (window == NULL ||
+	    window->active != (WI_ITEM_REC *) channel);
+
+	if (!print_channel && settings_get_bool("print_active_channel") &&
+	    window != NULL && g_slist_length(window->items) > 1)
+		print_channel = TRUE;
+
+	if (settings_get_bool("emphasis"))
+		msg = freemsg = expand_emphasis((WI_ITEM_REC *)channel, msg);
+
+	recoded = xmpp_recode_in(msg);
+
+	if (!print_channel)
+		printformat_module(CORE_MODULE_NAME, server, target,
+		    MSGLEVEL_PUBLIC | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
+		    TXT_OWN_MSG, channel->nick, recoded, nickmode);
+	else
+		printformat_module(CORE_MODULE_NAME, server, target,
+		    MSGLEVEL_PUBLIC | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
+		    TXT_OWN_MSG_CHANNEL, channel->nick, target, recoded,
+		    nickmode);
+
+	g_free(recoded);
+	g_free_not_null(freemsg);
+
+	signal_stop();
+	/* emit signal for chat-completion */
+}
+
+static void
+sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
+    char *origtarget)
+{
+	QUERY_REC *query;
+	char *freemsg = NULL, *recoded;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(msg != NULL);
+
+	if (!IS_XMPP_SERVER(server))
+		return;
+
+	if (target == NULL) {
+		/* this should only happen if some special target failed and
+		 * we should display some error message. currently the special
+		 * targets are only ',' and '.'. */
+		g_return_if_fail(strcmp(origtarget, ",") == 0 ||
+		    strcmp(origtarget, ".") == 0);
+
+		printformat_module(CORE_MODULE_NAME, NULL, NULL,
+		    MSGLEVEL_CLIENTNOTICE, *origtarget == ',' ?
+		    TXT_NO_MSGS_GOT : TXT_NO_MSGS_SENT);
+		signal_stop();
+		return;
+	}
+
+	query = privmsg_get_query(SERVER(server), target, TRUE, MSGLEVEL_MSGS);
+
+	if (settings_get_bool("emphasis"))
+		msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
+
+	recoded = xmpp_recode_in(msg);
+
+	printformat_module(CORE_MODULE_NAME, server, target,
+	    MSGLEVEL_MSGS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
+	    query == NULL ? TXT_OWN_MSG_PRIVATE : TXT_OWN_MSG_PRIVATE_QUERY,
+	    target, recoded, server->nickname);
+
+	g_free(recoded);
+	g_free_not_null(freemsg);
+
+	signal_stop();
 }
 
 void
@@ -191,6 +295,10 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_channel_own_nick);
 	signal_add("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
+	signal_add_first("message own_public",
+	    (SIGNAL_FUNC)sig_message_own_public);
+	signal_add_first("message own_private",
+	    (SIGNAL_FUNC)sig_message_own_private);
 }
 
 void
@@ -204,4 +312,8 @@ fe_xmpp_messages_deinit(void)
 	signal_remove("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_channel_own_nick);
 	signal_remove("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
+	signal_add_first("message own_public",
+	    (SIGNAL_FUNC)sig_message_own_public);
+	signal_add_first("message own_private",
+	    (SIGNAL_FUNC)sig_message_own_private);
 }
