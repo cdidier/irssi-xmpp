@@ -223,12 +223,16 @@ cmd_away(const char *data, XMPP_SERVER_REC *server)
 static void
 cmd_quote(const char *data, XMPP_SERVER_REC *server)
 {
+	char *recoded;
+
 	CMD_XMPP_SERVER(server);
 
 	if (*data == '\0')
 		return;
 
-	lm_connection_send_raw(server->lmconn, data, NULL);
+	recoded = xmpp_recode_out(data);
+	lm_connection_send_raw(server->lmconn, recoded, NULL);
+	g_free(recoded);
 }
 
 static void
