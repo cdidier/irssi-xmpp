@@ -353,7 +353,8 @@ set_topic(XMPP_SERVER_REC *server, const char *channel_name, const char *topic,
 		return;
 
 	g_free(channel->topic);
-	channel->topic = (*topic != '\0') ? g_strdup(topic) : NULL;
+	channel->topic = (topic != NULL && *topic != '\0') ?
+	    g_strdup(topic) : NULL;
 
 	g_free(channel->topic_by);
 	channel->topic_by = g_strdup(nick_name);
@@ -362,10 +363,11 @@ set_topic(XMPP_SERVER_REC *server, const char *channel_name, const char *topic,
 
 	if (channel->joined)
 		signal_emit("message topic", 5, server, channel->name,
-		    channel->topic, channel->topic_by, "");
+		    (channel->topic != NULL) ? channel->topic : "",
+		    channel->topic_by, "");
 	else {
 		char *data = g_strconcat(" ", channel->name, " :",
-		    channel->topic, NULL);
+		    (channel->topic != NULL) ? channel->topic : "", NULL);
 		signal_emit("event 332", 2, server, data);
 		g_free(data);
 	}

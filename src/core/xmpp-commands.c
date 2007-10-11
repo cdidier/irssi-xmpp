@@ -776,6 +776,42 @@ cmd_nick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: TOPIC [-delete] [<channel>] [<topic>] */
+static void
+cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	GHashTable *optlist;
+	LmMessage *msg;
+	char *channame, *topic, *recoded;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_OPTIONS | PARAM_FLAG_GETREST, item, "topic", &optlist,
+	    &channame, &topic))
+		return;
+
+	if (*topic != '\0' || g_hash_table_lookup(optlist, "delete") != NULL) {
+		msg = lm_message_new_with_sub_type(channame,
+		    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_GROUPCHAT);
+
+		if (g_hash_table_lookup(optlist, "delete") != NULL)
+			lm_message_node_add_child(msg->node, "subject", NULL);
+		else {
+			recoded = xmpp_recode_in(topic);
+			lm_message_node_add_child(msg->node, "subject",
+			    recoded);
+			g_free(recoded);
+		}
+
+		lm_connection_send(server->lmconn, msg, NULL);
+		lm_message_unref(msg);
+	}
+
+	cmd_params_free(free_arg);
+}
+
 void
 xmpp_commands_init(void)
 {
@@ -804,6 +840,7 @@ xmpp_commands_init(void)
 	command_bind_xmpp("ver", NULL, (SIGNAL_FUNC)cmd_ver);
 	command_bind_xmpp("part", NULL, (SIGNAL_FUNC)cmd_part);
 	command_bind_xmpp("nick", NULL, (SIGNAL_FUNC)cmd_nick);
+	command_bind_xmpp("topic", NULL, (SIGNAL_FUNC)cmd_topic);
 
 	command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
@@ -838,4 +875,5 @@ xmpp_commands_deinit(void)
 	command_unbind("ver", (SIGNAL_FUNC)cmd_ver);
 	command_unbind("part", (SIGNAL_FUNC)cmd_part);
 	command_unbind("nick", (SIGNAL_FUNC)cmd_nick);
+	command_unbind("topic", (SIGNAL_FUNC)cmd_topic);
 }
