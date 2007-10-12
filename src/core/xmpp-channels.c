@@ -216,6 +216,8 @@ channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(data != NULL);
 
+	g_debug("ok");
+
 	if (!xmpp_server_is_alive(server) || *data == '\0')
 		return;
 
