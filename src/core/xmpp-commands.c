@@ -231,6 +231,10 @@ cmd_quote(const char *data, XMPP_SERVER_REC *server)
 		return;
 
 	recoded = xmpp_recode_out(data);
+
+	if (settings_get_bool("xmpp_raw_window"))
+		signal_emit("xmpp raw out", 2, server, recoded);
+
 	lm_connection_send_raw(server->lmconn, recoded, NULL);
 	g_free(recoded);
 }
@@ -241,7 +245,7 @@ cmd_roster_show_users(gpointer data, gpointer user_data)
 	XMPP_SERVER_REC *server = XMPP_SERVER(user_data);
 	XMPP_ROSTER_USER_REC *user = (XMPP_ROSTER_USER_REC *)data;
 
-	if (xmpp_show_user(user))
+	if (xmpp_rosters_show_user(user))
 		signal_emit("xmpp roster nick", 2, server, user);
 }
 
@@ -258,12 +262,12 @@ cmd_roster_show_groups(gpointer data, gpointer user_data)
 	group_visible = FALSE;
 	while (!group_visible && user_list != NULL) {
 		user = (XMPP_ROSTER_USER_REC *)user_list->data;
-		group_visible = xmpp_show_user(user);
+		group_visible = xmpp_rosters_show_user(user);
 		user_list = user_list->next;
 	}
 
 	if (group_visible) {
-		xmpp_reorder_users(group);
+		xmpp_rosters_reorder(group);
 
 		signal_emit("xmpp roster group", 2, server, group->name);
 		g_slist_foreach(group->users, (GFunc)cmd_roster_show_users,
@@ -333,13 +337,13 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 	item_node = lm_message_node_add_child(query_node, "item", NULL);
 	lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	if (settings_get_bool("roster_add_send_subscribe")) {
 		msg = lm_message_new_with_sub_type(jid_recoded,
 		    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBE);
-		lm_connection_send(server->lmconn, msg, NULL);
+		lm_send(server, msg, NULL);
 		lm_message_unref(msg);
 	}
 
@@ -368,7 +372,7 @@ cmd_roster_remove(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_jid_have_address(jid))
 		goto out;
 
-	user = xmpp_find_user(server, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;
@@ -386,7 +390,7 @@ cmd_roster_remove(const char *data, XMPP_SERVER_REC *server)
 	lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 	lm_message_node_set_attribute(item_node, "subscription", "remove");
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -415,7 +419,7 @@ cmd_roster_name(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_jid_have_address(jid))
 		goto out;
 
-	user = xmpp_find_user(server, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;
@@ -444,7 +448,7 @@ cmd_roster_name(const char *data, XMPP_SERVER_REC *server)
 		g_free(name_recoded);
 	}
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -473,7 +477,7 @@ cmd_roster_group(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_jid_have_address(jid))
 		goto out;
 
-	user = xmpp_find_user(server, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;
@@ -502,7 +506,7 @@ cmd_roster_group(const char *data, XMPP_SERVER_REC *server)
 		g_free(name_recoded);
 	}
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -531,7 +535,7 @@ cmd_roster_accept(const char *data, XMPP_SERVER_REC *server)
 
 	msg = lm_message_new_with_sub_type(jid_recoded,
 	    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBED);
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -560,7 +564,7 @@ cmd_roster_deny(const char *data, XMPP_SERVER_REC *server)
 
 	msg = lm_message_new_with_sub_type(jid_recoded,
 	    LM_MESSAGE_TYPE_PRESENCE,LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED);
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -597,7 +601,7 @@ cmd_roster_subscribe(const char *data, XMPP_SERVER_REC *server)
 		g_free(reason_recoded);
 	}
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -627,7 +631,7 @@ cmd_roster_unsubscribe(const char *data, XMPP_SERVER_REC *server)
 
 	msg = lm_message_new_with_sub_type(jid_recoded,
 	    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE);
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -651,13 +655,13 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 		return;
 
 	if (*jid == '\0')
-		jid_recoded = xmpp_recode_out(server->connrec->realname);
+		jid_recoded = xmpp_recode_out(server->jid);
 
 	else if (xmpp_jid_have_address(jid))
 		jid_recoded = xmpp_recode_out(jid);
 
 	else {
-		full_jid = xmpp_get_full_jid(server, jid);
+		full_jid = xmpp_rosters_get_full_jid(server->roster, jid);
 		if (full_jid == NULL)
 			goto out;
 	
@@ -671,7 +675,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 	node = lm_message_node_add_child(msg->node, "vCard", NULL);
 	lm_message_node_set_attribute(node, "xmlns", "vcard-temp");
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(jid_recoded);
@@ -695,8 +699,8 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 		return;
 
 	if (*jid == '\0') {
-		full_jid = g_strdup_printf("%s/%s",
-		    server->connrec->realname, server->resource);
+		full_jid = g_strconcat(server->jid, "/",
+		    server->resource, NULL);
 		full_jid_recoded = xmpp_recode_out(full_jid);
 		g_free(full_jid);
 
@@ -704,7 +708,7 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 		full_jid_recoded = xmpp_recode_out(jid);
 
 	else {
-		full_jid = xmpp_get_full_jid(server, jid);
+		full_jid = xmpp_rosters_get_full_jid(server->roster, jid);
 		if (full_jid == NULL || !xmpp_jid_have_resource(full_jid)) {
 			g_free(full_jid);
 			goto out;
@@ -720,7 +724,7 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 	node = lm_message_node_add_child(msg->node, "query", NULL);
 	lm_message_node_set_attribute(node, "xmlns", "jabber:iq:version");
 
-	lm_connection_send(server->lmconn, msg, NULL);
+	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
 	g_free(full_jid_recoded);
@@ -771,7 +775,7 @@ cmd_nick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 	}
 
-	signal_emit("xmpp channels nick", 3, server, channame, nick);
+	signal_emit("xmpp channels own_nick", 3, server, channame, nick);
 
 	cmd_params_free(free_arg);
 }
@@ -805,7 +809,7 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 			g_free(recoded);
 		}
 
-		lm_connection_send(server->lmconn, msg, NULL);
+		lm_send(server, msg, NULL);
 		lm_message_unref(msg);
 	}
 
@@ -845,7 +849,6 @@ xmpp_commands_init(void)
 	command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
 	command_set_options("xmppconnect", "ssl -server @port @priority");
-	command_set_options("away", "one all");
 
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
 	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);

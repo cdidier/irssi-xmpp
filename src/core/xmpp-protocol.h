@@ -5,6 +5,14 @@
 
 #define XMPP_PROTOCOL_LEVEL 1
 
+#define XMLNS_ROSTER "jabber:iq:roster"
+#define XMLNS_VERSION "jabber:iq:version"
+#define XMLNS_VCARD "vcard-temp"
+#define XMLNS_EVENT "jabber:x:event"
+#define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
+#define XMLNS_MUC "http://jabber.org/protocol/muc"
+#define XMLNS_MUC_USER "http://jabber.org/protocol/muc#user"
+
 __BEGIN_DECLS
 void	xmpp_send_message(XMPP_SERVER_REC *, const char *, const char *);
 

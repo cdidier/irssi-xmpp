@@ -27,13 +27,27 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-rosters.h"
+#include "fe-xmpp-status.h"
 
 static void
 sig_roster_group(XMPP_SERVER_REC *server, const char *group)
 {
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
-	    group : settings_get_str("roster_default_group"));
+	WINDOW_REC *window = NULL;
+
+	if (settings_get_bool("xmpp_status_window")) { 
+		window = fe_xmpp_status_get_window(server);
+		if (window != active_win)
+			window = NULL;
+	}
+
+	if (window != NULL)
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
+		    group : settings_get_str("roster_default_group"));
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
+		    group : settings_get_str("roster_default_group"));
 }
 
 static void
@@ -41,9 +55,11 @@ sig_roster_nick(XMPP_SERVER_REC *server, const XMPP_ROSTER_USER_REC *user)
 {
 	GSList *resource_list;
 	XMPP_ROSTER_RESOURCE_REC *resource;
+	WINDOW_REC *window;
 	const char *first_show, *show;
 	char *name, *resource_str, *str;
 
+	window = NULL;
 	first_show = NULL;
 	resource_str = NULL;
 
@@ -101,34 +117,68 @@ sig_roster_nick(XMPP_SERVER_REC *server, const XMPP_ROSTER_USER_REC *user)
 
 	} else
 		name = user->jid;
-	
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
+
+	if (settings_get_bool("xmpp_status_window")) { 
+		window = fe_xmpp_status_get_window(server);
+		if (window != active_win)
+			window = NULL;
+	}
+
+	if (window != NULL)
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
 	
 	g_free(resource_str);
 }
 
 static void
 sig_begin_of_roster(XMPP_SERVER_REC *server)
-{   
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_BEGIN_OF_ROSTER);
+{
+	WINDOW_REC *window = NULL;
+
+	if (settings_get_bool("xmpp_status_window")) { 
+		window = fe_xmpp_status_get_window(server);
+		if (window != active_win)
+			window = NULL;
+	}
+
+	if (window != NULL)
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_BEGIN_OF_ROSTER);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_BEGIN_OF_ROSTER);
 }
 
 static void
 sig_end_of_roster(XMPP_SERVER_REC *server)
-{   
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_END_OF_ROSTER);
+{
+	WINDOW_REC *window = NULL;
+
+	if (settings_get_bool("xmpp_status_window")) { 
+		window = fe_xmpp_status_get_window(server);
+		if (window != active_win)
+			window = NULL;
+	}
+
+	if (window != NULL)
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_END_OF_ROSTER);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_END_OF_ROSTER);
 }
 
 static void
 sig_not_in_roster(XMPP_SERVER_REC *server, const char *jid)
-{ 
+{
 	g_return_if_fail(jid != NULL);
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CLIENTERROR,
-	    XMPPTXT_NOT_IN_ROSTER, jid);
+	printformat_module(MODULE_NAME, server, NULL,
+	    MSGLEVEL_CLIENTERROR, XMPPTXT_NOT_IN_ROSTER, jid);
 }
 
 static void
@@ -136,8 +186,13 @@ sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 {
 	g_return_if_fail(jid != NULL);
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_SUBSCRIBE, jid, status);
+	if (settings_get_bool("xmpp_status_window"))
+		printformat_module_window(MODULE_NAME,
+		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
+		    XMPPTXT_SUBSCRIBE, jid, status);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_SUBSCRIBE, jid, status);
 }
 
 static void
@@ -145,8 +200,13 @@ sig_subscribed(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_SUBSCRIBED, jid);
+	if (settings_get_bool("xmpp_status_window"))
+		printformat_module_window(MODULE_NAME,
+		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
+		    XMPPTXT_SUBSCRIBED, jid);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_SUBSCRIBED, jid);
 }
 
 static void
@@ -154,8 +214,13 @@ sig_unsubscribe(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_UNSUBSCRIBE, jid);
+	if (settings_get_bool("xmpp_status_window"))
+		printformat_module_window(MODULE_NAME,
+		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
+		    XMPPTXT_UNSUBSCRIBE, jid);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_UNSUBSCRIBE, jid);
 }
 
 static void
@@ -163,8 +228,13 @@ sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(jid != NULL);
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		XMPPTXT_UNSUBSCRIBED, jid);
+	if (settings_get_bool("xmpp_status_window"))
+		printformat_module_window(MODULE_NAME,
+		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
+		    XMPPTXT_UNSUBSCRIBED, jid);
+	else
+		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+		    XMPPTXT_UNSUBSCRIBED, jid);
 }
 
 void

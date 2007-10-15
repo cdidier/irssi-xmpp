@@ -1,6 +1,9 @@
-0.14 - ??/09/2007
+0.20 - ??/09/2007
 
 	- add MUC support
+	- add status window to show contact's presence in a window, setting
+	"xmpp_status_window" to enable it
+	- add raw window, setting "xmpp_raw_window" to enable it
 	- add command /ME
 	- add commands /XMPPCONNECT and /XMPPSERVER to connect to a jabber
 	server

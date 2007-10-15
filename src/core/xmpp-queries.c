@@ -64,7 +64,7 @@ xmpp_query_create(const char *server_tag, const char *data, int automatic)
 	}
 	
 	if (rec->name == NULL)
-		rec->name = xmpp_get_full_jid(server, data);
+		rec->name = xmpp_rosters_get_full_jid(server->roster, data);
 
 	if (rec->name != NULL) {
 		/* test if the query already exist */

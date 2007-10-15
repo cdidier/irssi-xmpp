@@ -21,6 +21,13 @@
 #include <string.h>
 #include "loudmouth/loudmouth.h"
 
+#include "module.h"
+#include "settings.h"
+#include "signals.h"
+
+#include "xmpp-servers.h"
+#include "xmpp-tools.h"
+
 GSList *
 lm_message_node_find_childs(LmMessageNode *node, const char *child_name)
 {
@@ -66,4 +73,18 @@ lm_message_nodes_attribute_found(GSList *list, const char *name,
 	}
 
 	return FALSE;
+}
+
+gboolean
+lm_send(XMPP_SERVER_REC *server, LmMessage *message, GError **error)
+{
+
+	if (settings_get_bool("xmpp_raw_window")) {
+		char *text =
+		    xmpp_recode_in(lm_message_node_to_string(message->node));
+		signal_emit("xmpp raw out", 2, server, text);
+		g_free(text);
+	}
+
+	return lm_connection_send(server->lmconn, message, error);
 }

@@ -37,6 +37,7 @@
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
+#include "xmpp-nicklist.h"
 #include "xmpp-queries.h"
 #include "xmpp-tools.h"
 
@@ -168,7 +169,7 @@ sig_channel_own_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 
 static void
 sig_channel_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    const char *nick, const char *affiliation, const char *role)
+    const char *nick, int affiliation, int role)
 {
 	char *mode;
 
@@ -178,7 +179,8 @@ sig_channel_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
 		return;
 
-	mode = g_strconcat("+", affiliation, "/+", role, " ", nick,  NULL);
+	mode = g_strconcat("+", xmpp_nicklist_affiliation[affiliation], "/+",
+	    xmpp_nicklist_role[role], " ", nick,  NULL);
 
 	printformat_module(IRC_MODULE_NAME, server, channel->name, MSGLEVEL_MODES,
 	    IRCTXT_CHANMODE_CHANGE, channel->name, mode, channel->name);

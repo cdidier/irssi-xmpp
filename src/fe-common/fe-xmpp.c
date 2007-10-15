@@ -32,13 +32,15 @@
 #include "fe-xmpp-composing.h"
 #include "fe-xmpp-messages.h"
 #include "fe-xmpp-queries.h"
+#include "fe-xmpp-raw.h"
 #include "fe-xmpp-rosters.h"
+#include "fe-xmpp-status.h"
 #include "fe-xmpp-whois.h"
 #include "fe-xmpp-windows.h"
 #include "xmpp-completion.h"
 
 static void
-event_server_status(XMPP_SERVER_REC *server, const char *msg)
+sig_server_status(SERVER_REC *server, const char *msg)
 {
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CLIENTNOTICE,
 	    XMPPTXT_DEFAULT_EVENT, NULL, msg, NULL);
@@ -62,14 +64,16 @@ fe_xmpp_init(void)
 {
 	theme_register(fecommon_xmpp_formats);
 
-	signal_add("xmpp server status", (SIGNAL_FUNC)event_server_status);
+	signal_add("xmpp server status", (SIGNAL_FUNC)sig_server_status);
 	signal_add("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
 
 	fe_xmpp_commands_init();
 	fe_xmpp_composing_init();
 	fe_xmpp_messages_init();
 	fe_xmpp_queries_init();
+	fe_xmpp_raw_init();
 	fe_xmpp_rosters_init();
+	fe_xmpp_status_init();
 	fe_xmpp_whois_init();
 	fe_xmpp_windows_init();
 	xmpp_completion_init();
@@ -88,14 +92,16 @@ fe_xmpp_init(void)
 void
 fe_xmpp_deinit(void)
 {
-	signal_remove("xmpp server status", (SIGNAL_FUNC)event_server_status);
+	signal_remove("xmpp server status", (SIGNAL_FUNC)sig_server_status);
 	signal_remove("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
 
 	fe_xmpp_commands_deinit();
 	fe_xmpp_composing_deinit();
 	fe_xmpp_messages_deinit();
 	fe_xmpp_queries_deinit();
+	fe_xmpp_raw_deinit();
 	fe_xmpp_rosters_deinit();
+	fe_xmpp_status_deinit();
 	fe_xmpp_whois_deinit();
 	fe_xmpp_windows_deinit();
 	xmpp_completion_deinit();

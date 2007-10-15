@@ -299,7 +299,7 @@ update_user(XMPP_SERVER_REC *server, const char *jid, const char *subscription,
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_find_user(server, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group);
 	if (user == NULL)
 		user = add_user(server, jid, name, group_name, &group);
 	else {
@@ -380,6 +380,7 @@ presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *jid, *resource_jid;
 	int show, priority;
+	gboolean new = FALSE;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(full_jid != NULL);
@@ -387,56 +388,42 @@ presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 	jid = xmpp_strip_resource(full_jid);
 	resource_jid = xmpp_extract_resource(full_jid);
 	
-	user = xmpp_find_user(server, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group);
 	if (user == NULL)
 		return;
 	user->error = FALSE;
 
 	/* find resource or create it if it doesn't exist */	
-	resource = xmpp_find_resource(user, resource_jid);
+	resource = xmpp_rosters_find_resource(user, resource_jid);
 	if (resource == NULL) {
 		resource = create_resource(resource_jid);
+		new = TRUE;
 		user->resources = g_slist_prepend(user->resources, resource);
 	}
 
-	if (show_str != NULL) {
-		if (g_ascii_strcasecmp(show_str,
-		    xmpp_presence_show[XMPP_PRESENCE_CHAT]) == 0)
-			show = XMPP_PRESENCE_CHAT;
-
-		else if (g_ascii_strcasecmp(show_str,
-		    xmpp_presence_show[XMPP_PRESENCE_DND]) == 0)
-			show = XMPP_PRESENCE_DND;
-
-		else if (g_ascii_strcasecmp(show_str,
-		    xmpp_presence_show[XMPP_PRESENCE_XA]) == 0)
-			show = XMPP_PRESENCE_XA;
-
-		else if (g_ascii_strcasecmp(show_str,
-		    xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0)
-			show = XMPP_PRESENCE_AWAY;
-
-		else
-			show = XMPP_PRESENCE_AVAILABLE;
-	} else
-		show = XMPP_PRESENCE_AVAILABLE;
-
-	resource->show = show;
-
-	g_free_and_null(resource->status);
-	if (status != NULL)
-		resource->status = g_strdup(status);
+	show = xmpp_presence_get_show(show_str);
 
 	priority = (priority_str != NULL) ?
 	    atoi(priority_str) : resource->priority;
-	if (resource->priority != priority) {
-		resource->priority = priority;
-		user->resources = g_slist_sort(user->resources,
-		    (GCompareFunc)func_sort_resource);
-	}
 
-	signal_emit("xmpp presence changed", 5, server, full_jid,
-	    resource->show, resource->status, resource->priority);
+	if (new || xmpp_presence_changed(show, resource->show, status,
+	    resource->status, priority, resource->priority)) {
+
+		resource->show = show;
+
+		g_free_and_null(resource->status);
+		if (status != NULL)
+			resource->status = g_strdup(status);
+
+		if (resource->priority != priority) {
+			resource->priority = priority;
+			user->resources = g_slist_sort(user->resources,
+			    (GCompareFunc)func_sort_resource);
+		}
+
+		signal_emit("xmpp presence changed", 5, server, full_jid,
+		    resource->show, resource->status, resource->priority);
+	}
 
 	g_free(jid);
 	g_free(resource_jid);
@@ -453,7 +440,7 @@ presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 
 	jid = xmpp_strip_resource(full_jid);
 
-	user = xmpp_find_user(server, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
 	if (user == NULL)
 		return;
 
@@ -477,15 +464,15 @@ presence_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
 
-	user = xmpp_find_user(server, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group);
 	if (user == NULL)
 		return;
 
-	resource = xmpp_find_resource(user, res);
+	resource = xmpp_rosters_find_resource(user, res);
 	if (resource == NULL)
 		return;
 
-	signal_emit("xmpp jid presence change", 4, server, full_jid,
+	signal_emit("xmpp presence changed", 4, server, full_jid,
 	    XMPP_PRESENCE_UNAVAILABLE, status);
 
 	user->resources = g_slist_remove(user->resources, resource);

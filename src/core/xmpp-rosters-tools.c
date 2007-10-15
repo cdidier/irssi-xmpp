@@ -103,7 +103,7 @@ by_name:
 }
 
 XMPP_ROSTER_GROUP_REC *
-xmpp_find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
+find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 {
 	GSList *group_list, *group_list_found;
 
@@ -121,7 +121,7 @@ xmpp_find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 }
 
 XMPP_ROSTER_USER_REC *
-xmpp_find_user(XMPP_SERVER_REC *server, const char *full_jid,
+xmpp_rosters_find_user(GSList *groups, const char *full_jid,
     XMPP_ROSTER_GROUP_REC **group)
 {
 	GSList *group_list, *group_tmp, *user_list;
@@ -129,7 +129,7 @@ xmpp_find_user(XMPP_SERVER_REC *server, const char *full_jid,
 
 	jid = xmpp_strip_resource(full_jid);
 
-	group_list = server->roster;
+	group_list = groups;
 	group_tmp = NULL;
 	user_list = NULL;
 
@@ -152,12 +152,11 @@ xmpp_find_user(XMPP_SERVER_REC *server, const char *full_jid,
 }
 
 XMPP_ROSTER_USER_REC *
-xmpp_find_username(XMPP_SERVER_REC *server, const char *name,
-    XMPP_ROSTER_GROUP_REC **group)
+find_username(GSList *groups, const char *name, XMPP_ROSTER_GROUP_REC **group)
 {
 	GSList *group_list, *group_tmp, *user_list;
 
-	group_list = server->roster;
+	group_list = groups;
 	group_tmp = NULL;
 	user_list = NULL;
 
@@ -178,7 +177,7 @@ xmpp_find_username(XMPP_SERVER_REC *server, const char *name,
 
 
 XMPP_ROSTER_RESOURCE_REC *
-xmpp_find_resource(XMPP_ROSTER_USER_REC *user, const char *resource)
+xmpp_rosters_find_resource(XMPP_ROSTER_USER_REC *user, const char *resource)
 {
 	GSList *resource_list;
 
@@ -192,27 +191,27 @@ xmpp_find_resource(XMPP_ROSTER_USER_REC *user, const char *resource)
 }
 
 char *
-xmpp_get_full_jid(XMPP_SERVER_REC *server, const char *str)
+xmpp_rosters_get_full_jid(GSList *groups, const char *str)
 {
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	const char *tmp;
 
-	g_return_val_if_fail(server != NULL, NULL);
+	g_return_val_if_fail(groups != NULL, NULL);
 
-	user = xmpp_find_username(server, str, NULL);
+	user = find_username(groups, str, NULL);
 	tmp = (user != NULL) ? user->jid : str;
 
 	/* if unspecified, use the highest resource */
 	if (!xmpp_jid_have_resource(tmp)) {
 		if (user == NULL)
-			user = xmpp_find_user(server, tmp, NULL);
+			user = xmpp_rosters_find_user(groups, tmp, NULL);
 
 		if (user != NULL && user->resources != NULL) {
 			resource = user->resources->data;
 			if (resource->name != NULL)
-				return g_strdup_printf("%s/%s", user->jid,
-				     resource->name);
+				return g_strconcat(user->jid, "/",
+				    resource->name, NULL);
 		}
 	}
 
@@ -220,7 +219,7 @@ xmpp_get_full_jid(XMPP_SERVER_REC *server, const char *str)
 }
 
 gboolean
-xmpp_show_user(XMPP_ROSTER_USER_REC *user)
+xmpp_rosters_show_user(XMPP_ROSTER_USER_REC *user)
 {
 	g_return_val_if_fail(user != NULL, FALSE);
 
@@ -232,10 +231,33 @@ xmpp_show_user(XMPP_ROSTER_USER_REC *user)
 }
 
 void
-xmpp_reorder_users(XMPP_ROSTER_GROUP_REC *group)
+xmpp_rosters_reorder(XMPP_ROSTER_GROUP_REC *group)
 {
 	g_return_if_fail(group != NULL);
 
 	group->users = g_slist_sort(group->users,
 	    (GCompareFunc)func_sort_user);
+}
+
+int
+xmpp_presence_get_show(const char *show)
+{
+	if (show != NULL) {
+		if (g_ascii_strcasecmp(show,
+		    xmpp_presence_show[XMPP_PRESENCE_CHAT]) == 0)
+			return XMPP_PRESENCE_CHAT;
+
+		else if (g_ascii_strcasecmp(show,
+		    xmpp_presence_show[XMPP_PRESENCE_DND]) == 0)
+			return XMPP_PRESENCE_DND;
+
+		else if (g_ascii_strcasecmp(show,
+		    xmpp_presence_show[XMPP_PRESENCE_XA]) == 0)
+			return XMPP_PRESENCE_XA;
+
+		else if (g_ascii_strcasecmp(show,
+		    xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0)
+			return XMPP_PRESENCE_AWAY;
+	}
+	return XMPP_PRESENCE_AVAILABLE;
 }

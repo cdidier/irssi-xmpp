@@ -1,5 +1,16 @@
 LIB= xmpp_core
-SRCS= loudmouth-tools.c xmpp-channels.c xmpp-commands.c xmpp-core.c xmpp-protocol.c xmpp-queries.c xmpp-rosters.c xmpp-rosters-tools.c xmpp-servers.c xmpp-settings.c xmpp-tools.c
+SRCS=	loudmouth-tools.c \
+	xmpp-channels.c \
+	xmpp-commands.c \
+	xmpp-core.c \
+	xmpp-nicklist.c \
+	xmpp-protocol.c \
+	xmpp-queries.c \
+	xmpp-rosters.c \
+	xmpp-rosters-tools.c \
+	xmpp-servers.c \
+	xmpp-settings.c \
+	xmpp-tools.c
 OBJS= $(SRCS:.c=.o)
 
 CFLAGS+=	-fPIC -std=c99 \

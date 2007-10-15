@@ -7,6 +7,7 @@
 #include "servers.h"
 
 #include "loudmouth/loudmouth.h"
+#include "loudmouth-tools.h"
 
 /* returns XMPP_SERVER_REC if it's XMPP server, NULL if it isn't */
 #define XMPP_SERVER(server)						\
