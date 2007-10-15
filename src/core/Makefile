@@ -35,11 +35,15 @@ $(LIB): $(OBJS)
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-.PHONY: clean user-install
+.PHONY: clean user-install install
+
+clean:
+	rm -rf *.o *.so *.core
 
 user-install:
 	install -d ~/.irssi/modules
 	install lib$(LIB).so ~/.irssi/modules
 
-clean:
-	rm -rf *.o *.so *.core
+install:
+	install -d $(IRSSI_MODULES)
+	install lib$(LIB).so $(IRSSI_MODULES)
