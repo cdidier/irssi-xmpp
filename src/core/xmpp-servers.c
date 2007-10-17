@@ -82,14 +82,12 @@ send_message(SERVER_REC *server, const char *target, const char *msg,
 static void
 xmpp_server_cleanup(XMPP_SERVER_REC *server)
 {
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 
 	if (server->connected) {
-		signal_emit("server disconnected", 1, server);
+		server_disconnect(SERVER(server));
 		return;
 	}
-
-	signal_emit("xmpp handlers unregister", 1, server);
 
 	if (lm_connection_is_open(server->lmconn))
 		lm_connection_close(server->lmconn, NULL);
@@ -105,8 +103,6 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 	g_free(server->host);
 	g_free(server->resource);
 	g_free(server->ping_id);
-
-	signal_emit("xmpp roster cleanup", 1, server);
 }
 
 
@@ -220,33 +216,16 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 	const char *msg;
 		
 	server = XMPP_SERVER(user_data);
-
-	switch (reason) {
-	case LM_DISCONNECT_REASON_OK:
-		/* normal deconnection */
+	if (server != NULL)
 		return;
-	case LM_DISCONNECT_REASON_PING_TIME_OUT:
-		msg = "Connection timed out";
-		break;
-	case LM_DISCONNECT_REASON_HUP:
-		msg = "Connection hung up";
-		break;
-	case LM_DISCONNECT_REASON_ERROR:
-		msg = NULL;
-		break;
-	case LM_DISCONNECT_REASON_UNKNOWN:
-	default:
-		msg = "Unknown error";
-	}
 
-	/* do reconnect here ! */
+	/* normal disconnection */
+	if (reason == LM_DISCONNECT_REASON_OK)
+		return;
 
-	if (server->connected) {
-		if (msg != NULL)
-			signal_emit("server quit", 2, server, msg);
-		signal_emit("server disconnected", 1, server);
-	} else
-		signal_emit("server connect failed", 2, server, msg);
+	/* connection lost */
+	server->connection_lost = TRUE;
+	server_disconnect(SERVER(server));
 }
 
 static void
@@ -333,7 +312,7 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 
 	if (!lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
-	    (LmResultFunction) xmpp_server_auth_cb, server, NULL, &error))
+	    (LmResultFunction)xmpp_server_auth_cb, server, NULL, &error))
 		goto err;
 
 	lookup_servers = g_slist_remove(lookup_servers, server);
@@ -435,7 +414,6 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 		return;
 
 	server->connected = FALSE;
-
 	xmpp_server_cleanup(server);
 }
 
@@ -497,7 +475,8 @@ xmpp_servers_deinit(void)
 
 		server = XMPP_SERVER(tmp->data);
 		if (server != NULL)
-			signal_emit("server disconnected", 1, server);
+			signal_emit("server quit", 2, server,
+			    "unloading irssi-xmpp");
 
 		tmp = oldnext;
 	}

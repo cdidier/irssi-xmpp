@@ -41,7 +41,7 @@ xmpp_channel_create(XMPP_SERVER_REC *server, const char *name,
 {
 	XMPP_CHANNEL_REC *rec;
 
-	g_return_val_if_fail(server == NULL || IS_XMPP_SERVER(server), NULL);
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(name != NULL, NULL);
 
 	rec = g_new0(XMPP_CHANNEL_REC, 1);
@@ -66,7 +66,7 @@ xmpp_channel_send_message(XMPP_SERVER_REC *server, const char *name,
 	LmMessage *msg;
 	char *room, *message_recoded;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(name != NULL);
 	g_return_if_fail(message != NULL);
 
@@ -110,7 +110,7 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	LmMessageNode *child;
 	char *room, *room_recoded;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
 
 	if (!xmpp_server_is_alive(server))
@@ -143,7 +143,7 @@ send_join(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 	LmMessageNode *child;
 	char *room_recoded;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
 
 	if (!xmpp_server_is_alive(server))
@@ -171,7 +171,7 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	char **chanlist, **tmp, *channels, *keys, *channel_name, *nick;
 	void *free_arg;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(data != NULL);
 
 	if (!xmpp_server_is_alive(server) || *data == '\0')
@@ -218,7 +218,7 @@ send_part(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	LmMessageNode *child;
 	char *room, *room_recoded, *reason_recoded;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
 
 	if (!xmpp_server_is_alive(server))
@@ -253,7 +253,7 @@ sig_part(XMPP_SERVER_REC *server, const char *channels,
 	XMPP_CHANNEL_REC *channel;
 	char **chanlist, **tmp;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channels != NULL);
 
 	chanlist = g_strsplit(channels, ",", -1);
@@ -284,7 +284,7 @@ sig_own_nick(XMPP_SERVER_REC *server, const char *channels, const char *nick)
 	XMPP_CHANNEL_REC *channel;
 	char **chanlist, **tmp;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channels != NULL);
 	g_return_if_fail(nick != NULL);
 

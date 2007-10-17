@@ -107,7 +107,7 @@ find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 {
 	GSList *group_list, *group_list_found;
 
-	g_return_val_if_fail(server != NULL, NULL);
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 
 	group_list = server->roster;
 	group_list_found = NULL;

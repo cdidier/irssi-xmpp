@@ -50,6 +50,9 @@ struct _XMPP_SERVER_REC {
 	GSList		*roster;
 
 	LmConnection	*lmconn;
+	LmMessageHandler *hmessage;
+	LmMessageHandler *hpresence;
+	LmMessageHandler *hiq;
 };
 
 __BEGIN_DECLS
