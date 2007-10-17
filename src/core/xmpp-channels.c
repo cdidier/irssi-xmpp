@@ -483,7 +483,7 @@ sig_nick_kicked(XMPP_CHANNEL_REC *channel, const char *nick_name,
 }
 
 static XMPP_CHANNELS_FEATURES
-parse_info_var(const char *var, XMPP_CHANNELS_FEATURES features)
+disco_parse_channels_features(const char *var, XMPP_CHANNELS_FEATURES features)
 {
 	g_return_val_if_fail(var != NULL, 0);
 
@@ -540,7 +540,7 @@ parse_info_var(const char *var, XMPP_CHANNELS_FEATURES features)
 }
 
 static void
-sig_info(XMPP_CHANNEL_REC *channel, LmMessageNode *query)
+sig_disco(XMPP_CHANNEL_REC *channel, LmMessageNode *query)
 {
 	LmMessageNode *item;
 	const char *var;
@@ -558,7 +558,7 @@ sig_info(XMPP_CHANNEL_REC *channel, LmMessageNode *query)
 
 		var = lm_message_node_get_attribute(item, "var");
 		if (var != NULL)
-			channel->features |= parse_info_var(var,
+			channel->features |= disco_parse_channels_features(var,
 			    channel->features);
 
 next:
@@ -634,7 +634,7 @@ xmpp_channels_init(void)
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_add("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
 	signal_add("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
-	signal_add("xmpp channel info", (SIGNAL_FUNC)sig_info);
+	signal_add("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_add("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
 	signal_add_last("channel created", (SIGNAL_FUNC)sig_channel_created);
 	signal_add("channel destroyed", (SIGNAL_FUNC)sig_channel_destroyed);
@@ -656,7 +656,7 @@ xmpp_channels_deinit(void)
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_remove("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
 	signal_remove("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
-	signal_remove("xmpp channel info", (SIGNAL_FUNC)sig_info);
+	signal_remove("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_remove("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
 	signal_remove("channel created", (SIGNAL_FUNC)sig_channel_created);
 	signal_remove("channel destroyed",(SIGNAL_FUNC)sig_channel_destroyed);

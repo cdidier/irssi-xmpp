@@ -27,6 +27,10 @@ struct _XMPP_SERVER_CONNECT_REC {
 	#include "server-connect-rec.h"
 };
 
+typedef enum {
+	XMPP_SERVERS_FEATURE_PING				= 1 << 0
+} XMPP_SERVERS_FEATURES;
+
 #define STRUCT_SERVER_CONNECT_REC XMPP_SERVER_CONNECT_REC
 struct _XMPP_SERVER_REC {
 	#include "server-rec.h"
@@ -35,15 +39,17 @@ struct _XMPP_SERVER_REC {
 
 	char		*jid;
 	char		*user;
+	char		*host;
 	char		*resource;
 
 	int		 show;
 	int		 priority;
 	gboolean	 default_priority;
+	char		*ping_id;
+	XMPP_SERVERS_FEATURES features;
+	GSList		*roster;
 
 	LmConnection	*lmconn;
-
-	GSList		*roster;
 };
 
 __BEGIN_DECLS

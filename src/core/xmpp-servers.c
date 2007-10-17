@@ -25,8 +25,7 @@
 #include "network.h"
 #include "settings.h"
 #include "signals.h"
-/*#include "channels-setup.h"
-#include "servers-reconnect.h"*/
+/*#include "servers-reconnect.h"*/
 
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
@@ -40,11 +39,6 @@ xmpp_server_is_alive(XMPP_SERVER_REC *server)
 	return (server != NULL
 	    && g_slist_find(servers, server) != NULL
 	    && server->connected);
-}
-
-static void
-channels_join(SERVER_REC *server, const char *channel, int automatic)
-{
 }
 
 static int
@@ -108,7 +102,9 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 	g_free(server->nickname);
 	g_free(server->jid);
 	g_free(server->user);
+	g_free(server->host);
 	g_free(server->resource);
+	g_free(server->ping_id);
 
 	signal_emit("xmpp roster cleanup", 1, server);
 }
@@ -132,8 +128,9 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	str = conn->nick;
 
 	server->user = xmpp_extract_user(str);
+	server->host = g_strdup(conn->address);
 	server->jid = xmpp_jid_have_address(str) ? xmpp_strip_resource(str) :
-	    g_strconcat(server->user, "@", conn->address, NULL);
+	    g_strconcat(server->user, "@", server->host, NULL);
 	server->resource = xmpp_extract_resource(str);
 	if (server->resource == NULL)
 		server->resource = g_strdup("irssi-xmpp");
@@ -145,6 +142,8 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	if (xmpp_priority_out_of_bound(server->priority))
 		server->priority = 0;
 	server->default_priority = TRUE;
+	server->ping_id = NULL;
+	server->features = 0;
 	server->roster = NULL;
 
 	/* fill connrec record */
@@ -274,9 +273,16 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	signal_emit("xmpp server status", 2, server, "Requesting the roster.");
 	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
-	query = lm_message_node_add_child(lm_message_get_node(msg), "query",
-	    NULL);
-	lm_message_node_set_attribute(query, "xmlns", "jabber:iq:roster");
+	query = lm_message_node_add_child(msg->node, "query", NULL);
+	lm_message_node_set_attribute(query, "xmlns", XMLNS_ROSTER);
+	lm_send(server, msg, NULL);
+	lm_message_unref(msg);
+
+	/* discover server's features */
+	msg = lm_message_new_with_sub_type(server->host, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_GET);
+	query = lm_message_node_add_child(msg->node, "query", NULL);
+	lm_message_node_set_attribute(query, "xmlns", XMLNS_DISCO_INFO);
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
@@ -287,8 +293,7 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	    LM_MESSAGE_SUB_TYPE_AVAILABLE);
 
 	priority = g_strdup_printf("%d", server->priority);
-	lm_message_node_add_child(lm_message_get_node(msg), "priority",
-	    priority);
+	lm_message_node_add_child(msg->node, "priority", priority);
 	g_free(priority);
 
 	lm_send(server, msg, NULL);
@@ -397,7 +402,6 @@ sig_connected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
-	server->channels_join = channels_join;
 	server->isnickflag = (void *)isnickflag_func;
 	server->ischannel = ischannel_func;
 	server->get_nick_flags = (void *)get_nick_flags;

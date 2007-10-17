@@ -4,6 +4,7 @@ SRCS=	loudmouth-tools.c \
 	xmpp-commands.c \
 	xmpp-core.c \
 	xmpp-nicklist.c \
+	xmpp-ping.c \
 	xmpp-protocol.c \
 	xmpp-queries.c \
 	xmpp-rosters.c \
