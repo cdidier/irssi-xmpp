@@ -861,7 +861,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 				    subchild, "actor")) != NULL)
 					actor = xmpp_recode_in(
 					    lm_message_node_get_attribute(
-					    subchild, "jid"));
+					    child, "jid"));
 			}
 			g_slist_free(x);
 			
