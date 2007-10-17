@@ -95,7 +95,9 @@ void
 own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
     const int priority)
 {
+	GSList *tmp;
 	LmMessage *msg;
+	const char *show_str;
 	char *status_recoded, *priority_str;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
@@ -104,27 +106,21 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	    server->away_reason, priority, server->priority))
 		return;
 
-	msg = lm_message_new(NULL, LM_MESSAGE_TYPE_PRESENCE);
-
 	switch (show) {
 	case XMPP_PRESENCE_AWAY:
-		lm_message_node_add_child(msg->node, "show",
-		    xmpp_presence_show[XMPP_PRESENCE_AWAY]);
+		show_str = xmpp_presence_show[XMPP_PRESENCE_AWAY];
 		break;
 
 	case XMPP_PRESENCE_CHAT:
-		lm_message_node_add_child(msg->node, "show",
-		    xmpp_presence_show[XMPP_PRESENCE_CHAT]); 
+		show_str = xmpp_presence_show[XMPP_PRESENCE_CHAT];
 		break;
 
 	case XMPP_PRESENCE_DND:
-		lm_message_node_add_child(msg->node, "show",
-		    xmpp_presence_show[XMPP_PRESENCE_DND]);
+		show_str = xmpp_presence_show[XMPP_PRESENCE_DND];
 		break;
 
 	case XMPP_PRESENCE_XA:
-		lm_message_node_add_child(msg->node, "show",
-		    xmpp_presence_show[XMPP_PRESENCE_XA]);
+		show_str = xmpp_presence_show[XMPP_PRESENCE_XA];
 		break;
 
 	default:
@@ -132,34 +128,64 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 		if (server->usermode_away)
 			signal_emit("event 305", 2, server, server->nick);
 
+		show_str = NULL;
 		server->show = XMPP_PRESENCE_AVAILABLE;
 		g_free_and_null(server->away_reason);
 	}
 
+
 	/* away */
-	if (lm_message_node_get_child(msg->node, "show") != NULL) {
+	if (show_str != NULL) {
 		signal_emit("event 306", 2, server, server->nick);
 
 		server->show = show;
 		g_free(server->away_reason);
 		server->away_reason = g_strdup(status);
 
-		if (server->away_reason != NULL) {
-			status_recoded = xmpp_recode_out(server->away_reason);
-			lm_message_node_add_child(msg->node, "status",
-			    status_recoded);
-			g_free(status_recoded);
-		}
+		status_recoded = (server->away_reason != NULL) ?
+		    xmpp_recode_out(server->away_reason) : NULL;
 	}
 
 	if (!xmpp_priority_out_of_bound(priority))
 		server->priority = priority;
 	priority_str = g_strdup_printf("%d", server->priority);
-	lm_message_node_add_child(msg->node, "priority", priority_str);
-	g_free(priority_str);
 
+	/* send presence to the server */
+	msg = lm_message_new(NULL, LM_MESSAGE_TYPE_PRESENCE);
+	lm_message_node_add_child(msg->node, "show", show_str);
+	if (show_str != NULL)
+		lm_message_node_add_child(msg->node, "show", show_str);
+	if (status_recoded != NULL)
+		lm_message_node_add_child(msg->node, "status", status_recoded);
+	lm_message_node_add_child(msg->node, "priority", priority_str);
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
+
+	/* send presence to channels */
+	msg = lm_message_new(NULL, LM_MESSAGE_TYPE_PRESENCE);
+	if (show_str != NULL)
+		lm_message_node_add_child(msg->node, "show", show_str);
+	if (status_recoded != NULL)
+		lm_message_node_add_child(msg->node, "status", status_recoded);
+
+	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+		XMPP_CHANNEL_REC *channel;
+		char *dest_recoded;
+			
+		channel = XMPP_CHANNEL(tmp->data);
+		if (channel == NULL || !channel->joined)
+			continue;
+
+		dest_recoded = xmpp_recode_out(channel->name);
+		lm_message_node_set_attribute(msg->node, "to", dest_recoded);
+		g_free(dest_recoded);
+
+		lm_send(server, msg, NULL);
+	}
+
+	lm_message_unref(msg);
+	g_free(status_recoded);
+	g_free(priority_str);
 }
 
 
