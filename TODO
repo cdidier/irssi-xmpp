@@ -1,15 +1,2 @@
-next:
-	- autoreconnection
-	- ping support (XEP-0199)
-
----
-To discuss with irssi's developpers:
-	- implement own message levels
-	- format strings without printing them (strdup_formattext ?)
-
-When message levels will be implemented:
-	/WINDOW NEW HIDE
-	/WINDOW SERVER -sticky <network>
-	/WINDOW LEVEL <irssi-xmpp MSGLEVEL>
-
-An other way can be to create a fake channel window.
+- auto-rejoin rooms when the connection is lost
+- fix character set recoding
