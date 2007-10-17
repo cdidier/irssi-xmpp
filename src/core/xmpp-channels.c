@@ -164,7 +164,7 @@ send_join(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 	lm_message_unref(msg);
 }
 
-static void
+void
 xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 {
 	XMPP_CHANNEL_REC *channel;

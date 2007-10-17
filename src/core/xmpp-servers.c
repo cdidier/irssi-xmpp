@@ -245,9 +245,6 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	signal_emit("xmpp server status", 2, server,
 	    "Authenticated successfully.");
 
-	/* handle incoming messages */
-	signal_emit("xmpp handlers register", 1, server);
-
 	/* fetch the roster */
 	signal_emit("xmpp server status", 2, server, "Requesting the roster.");
 	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
@@ -279,6 +276,9 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	lm_message_unref(msg);
 	
 	server->show = XMPP_PRESENCE_AVAILABLE;
+
+	signal_emit("event connected", 1, server);
+
 	return;
 
 err:
@@ -381,6 +381,7 @@ sig_connected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
+	server->channels_join = (void *)xmpp_channels_join;
 	server->isnickflag = (void *)isnickflag_func;
 	server->ischannel = ischannel_func;
 	server->get_nick_flags = (void *)get_nick_flags;
@@ -389,8 +390,6 @@ sig_connected(XMPP_SERVER_REC *server)
 	/* connection to server finished, fill the rest of the fields */
 	server->connected = TRUE;
 	server->connect_time = time(NULL);
-
-	signal_emit("event connected", 1, server);
 }
 
 static void
