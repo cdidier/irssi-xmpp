@@ -569,8 +569,11 @@ next:
 	if (!channel->joined && channel->ownnick != NULL) {
 		channel->names_got = TRUE;
 		channel->joined = TRUE;
+
 		signal_emit("channel joined", 1, channel);
 		signal_emit("channel sync", 1, channel);
+
+		channel_send_autocommands(CHANNEL(channel));
 	}
 }
 
