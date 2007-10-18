@@ -282,13 +282,13 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	
 	server->show = XMPP_PRESENCE_AVAILABLE;
 
+	lookup_servers = g_slist_remove(lookup_servers, server);
+	server_connect_finished(SERVER(server));
 	signal_emit("event connected", 1, server);
-
 	return;
 
 err:
-	signal_emit("server connect failed", 2, server,
-	    "Authentication failed");
+	server_connect_failed(SERVER(server), "Authentication failed");
 }
 
 static void
@@ -301,10 +301,8 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 	GError *error = NULL;
 
 	server = XMPP_SERVER(user_data);
-
-	if (!success)
-		/* goto err; */
-		return;
+	if (!success || server == NULL)
+		goto err;
 
 	/* get the server address */
 	host = lm_connection_get_local_host(server->lmconn);
@@ -313,23 +311,19 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 		signal_emit("server connecting", 2, server, &ip);
 		g_free(host);
 	} else
-		signal_emit("server connecting", 1, server, &ip);
+		signal_emit("server connecting", 1, server);
 
 	if (!lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
 	    (LmResultFunction)xmpp_server_auth_cb, server, NULL, &error))
 		goto err;
 
-	lookup_servers = g_slist_remove(lookup_servers, server);
-	servers = g_slist_append(servers, server);
-
-	signal_emit("server connected", 1, server);
 	return;
 
 err:
-	signal_emit("server connect failed", 2, server,
+	server->connection_lost = TRUE;
+	server_connect_failed(SERVER(server),
 	    (error != NULL) ? error->message : "Connection failed");
-	g_free(error);
 }
 
 void
@@ -363,6 +357,7 @@ xmpp_server_connect(SERVER_REC *server)
 	    (LmDisconnectFunction)xmpp_server_close_cb, (gpointer)server,
 	    NULL);
 
+	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
 
 	if (!lm_connection_open(xmppserver->lmconn, 
@@ -370,12 +365,11 @@ xmpp_server_connect(SERVER_REC *server)
 	    &error))
 		goto err;
 
-	lookup_servers = g_slist_append(lookup_servers, server);
-
 	return;
 
 err:
-	signal_emit("server connect failed", 2, server,
+	server->connection_lost = TRUE;
+	server_connect_failed(SERVER(server),
 	    (error != NULL) ? error->message : NULL);
 	g_free(error);
 }
@@ -392,9 +386,7 @@ sig_connected(XMPP_SERVER_REC *server)
 	server->get_nick_flags = (void *)get_nick_flags;
 	server->send_message = send_message;
 	
-	/* connection to server finished, fill the rest of the fields */
 	server->connected = TRUE;
-	server->connect_time = time(NULL);
 }
 
 static void
@@ -417,7 +409,6 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
-	server->connected = FALSE;
 	xmpp_server_cleanup(server);
 }
 
@@ -469,20 +460,18 @@ xmpp_servers_init(void)
 void
 xmpp_servers_deinit(void)
 {
-	GSList *tmp, *oldnext;
-	XMPP_SERVER_REC *server;
+	GSList *tmp, *next;
 
 	/* disconnect all servers before unloading the module */
-	tmp = servers;
-	while (tmp != NULL) {
-		oldnext = tmp->next;
-
-		server = XMPP_SERVER(tmp->data);
-		if (server != NULL)
-			signal_emit("server quit", 2, server,
-			    "unloading irssi-xmpp");
-
-		tmp = oldnext;
+	for (tmp = lookup_servers; tmp != NULL; tmp = next) {
+		next = tmp->next;
+		if (IS_XMPP_SERVER(tmp->data))
+			server_connect_failed(SERVER(tmp->data), NULL);
+	}
+	for (tmp = servers; tmp != NULL; tmp = next) {
+		next = tmp->next;
+		if (IS_XMPP_SERVER(tmp->data))
+			server_disconnect(SERVER(tmp->data));
 	}
 
 	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);

@@ -53,8 +53,8 @@ xmpp_channel_create(XMPP_SERVER_REC *server, const char *name,
 	rec->features = 0;
 	rec->error = FALSE;
 
-	channel_init((CHANNEL_REC *)rec, (SERVER_REC *)server, name,
-	    visible_name, automatic);
+	channel_init((CHANNEL_REC *)rec, SERVER(server), name, visible_name,
+	    automatic);
 
 	return (CHANNEL_REC *)rec;
 }
