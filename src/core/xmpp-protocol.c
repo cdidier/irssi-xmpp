@@ -141,11 +141,9 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 		server->show = show;
 		g_free(server->away_reason);
 		server->away_reason = g_strdup(status);
-
-		status_recoded = (server->away_reason != NULL) ?
-		    xmpp_recode_out(server->away_reason) : NULL;
 	}
 
+	status_recoded = xmpp_recode_out(server->away_reason);
 	if (!xmpp_priority_out_of_bound(priority))
 		server->priority = priority;
 	priority_str = g_strdup_printf("%d", server->priority);
