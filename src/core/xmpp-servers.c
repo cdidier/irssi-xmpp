@@ -23,6 +23,7 @@
 
 #include "module.h"
 #include "network.h"
+#include "recode.h"
 #include "settings.h"
 #include "signals.h"
 /*#include "servers-reconnect.h"*/
@@ -63,20 +64,24 @@ static void
 send_message(SERVER_REC *server, const char *target, const char *msg,
     int target_type)
 {
-	XMPP_SERVER_REC *xmppserver;
+	char *recoded;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(target != NULL);
 	g_return_if_fail(msg != NULL);
 
-	xmppserver = XMPP_SERVER(server);
-	if (xmppserver == NULL)
+	if (!IS_XMPP_SERVER(server))
 		return;
 	
+	/* ugly from irssi: recode the sent message back */
+	recoded = recode_in(server, msg, target);
+
 	if (target_type == SEND_TARGET_CHANNEL)
-		xmpp_channel_send_message(xmppserver, target, msg);
+		xmpp_channel_send_message(XMPP_SERVER(server), target, recoded);
 	else
-		xmpp_send_message(xmppserver, target, msg);
+		xmpp_send_message(XMPP_SERVER(server), target, recoded);
+
+	g_free(recoded);
 }
 
 static void

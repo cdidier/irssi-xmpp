@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "module.h"
+#include "recode.h"
 #include "settings.h"
 
 #define XMPP_PRIORITY_MIN -128
@@ -29,34 +30,29 @@
 static const char *utf8_charset = "UTF-8";
 
 static gboolean
-get_local_charset(G_CONST_RETURN char **charset)
+xmpp_get_local_charset(G_CONST_RETURN char **charset)
 {
-	G_CONST_RETURN char *local_charset;
-	gboolean is_utf8 = FALSE;
+	*charset = settings_get_str("term_charset");
+	if (is_valid_charset(*charset))
+		return (g_ascii_strcasecmp(*charset, utf8_charset) == 0);
 
-	local_charset = settings_get_str("term_charset");
-	is_utf8 = (local_charset == NULL) ? g_get_charset(&local_charset)
-	    : (g_ascii_strcasecmp(local_charset, utf8_charset) == 0);
-
-	*charset = local_charset;
-	return is_utf8;
+	return g_get_charset(charset);
 }
 
 char *
 xmpp_recode_out(const char *str)
 {
-	G_CONST_RETURN char *local_charset;
+	G_CONST_RETURN char *charset;
 	char *recoded;
 
-	if (str == NULL)
+	if (str == NULL || *str == '\0')
 		return NULL;
 
-	if (*str == '\0')
+	if (xmpp_get_local_charset(&charset) || charset == NULL)
 		return g_strdup(str);
 
-	recoded = !get_local_charset(&local_charset) ?
-	    g_convert(str, -1, utf8_charset, local_charset, NULL, NULL, NULL)
-	    : NULL;
+	recoded = g_convert_with_fallback(str, -1, utf8_charset, charset, NULL,
+	    NULL, NULL, NULL);
 
 	return (recoded != NULL) ? recoded : g_strdup(str);
 }
@@ -64,19 +60,23 @@ xmpp_recode_out(const char *str)
 char *
 xmpp_recode_in(const char *str)
 {
-	G_CONST_RETURN char *local_charset;
-	char *recoded;
+	G_CONST_RETURN char *charset;
+	char *recoded, *to = NULL;
 
-	if (str == NULL)
+	if (str == NULL || *str == '\0')
 		return NULL;
 
-	if (*str == '\0')
+	if (xmpp_get_local_charset(&charset) || charset == NULL)
 		return g_strdup(str);
 
-	recoded = !get_local_charset(&local_charset) ?
-	    g_convert(str, -1, local_charset, utf8_charset, NULL, NULL, NULL)
-	    : NULL;
+	if (settings_get_bool("recode_transliterate") &&
+	    g_ascii_strcasecmp(charset, "//TRANSLIT") != 0)
+		charset = to = g_strconcat(charset ,"//TRANSLIT", NULL);
 
+	recoded = g_convert_with_fallback(str, -1, charset, utf8_charset, NULL,
+	    NULL, NULL, NULL);
+
+	g_free(to);
 	return (recoded != NULL) ? recoded : g_strdup(str);
 }
 

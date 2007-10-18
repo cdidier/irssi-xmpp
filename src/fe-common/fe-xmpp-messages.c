@@ -26,6 +26,7 @@
 #include "module-formats.h"
 #include "nicklist.h"
 #include "printtext.h"
+#include "recode.h"
 #include "settings.h"
 #include "signals.h"
 #include "window-items.h"
@@ -223,7 +224,8 @@ sig_message_own_public(XMPP_SERVER_REC *server, char *msg, char *target)
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *)channel, msg);
 
-	recoded = xmpp_recode_in(msg);
+	/* ugly from irssi: recode the sent message back for printing */
+        recoded = recode_in(SERVER(server), msg, target);
 
 	if (!print_channel)
 		printformat_module(CORE_MODULE_NAME, server, target,
@@ -274,12 +276,13 @@ sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
 
-	recoded = xmpp_recode_in(msg);
+	/* ugly from irssi: recode the sent message back for printing */
+        recoded = recode_in(SERVER(server), msg, target);
 
 	printformat_module(CORE_MODULE_NAME, server, target,
 	    MSGLEVEL_MSGS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
 	    query == NULL ? TXT_OWN_MSG_PRIVATE : TXT_OWN_MSG_PRIVATE_QUERY,
-	    target, recoded, server->nickname);
+	    target, msg, server->nickname);
 
 	g_free(recoded);
 	g_free_not_null(freemsg);
