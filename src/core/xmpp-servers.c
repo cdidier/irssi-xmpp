@@ -243,6 +243,8 @@ xmpp_server_auth_cb(LmConnection *connection, gboolean success,
 	char *priority;
 	
 	server = XMPP_SERVER(user_data);
+	if (server == NULL)
+		return;
 
 	if (!success)
 		goto err;
@@ -301,7 +303,10 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 	GError *error = NULL;
 
 	server = XMPP_SERVER(user_data);
-	if (!success || server == NULL)
+	if (server == NULL)
+		return;
+
+	if (!success)
 		goto err;
 
 	/* get the server address */
@@ -324,6 +329,7 @@ err:
 	server->connection_lost = TRUE;
 	server_connect_failed(SERVER(server),
 	    (error != NULL) ? error->message : "Connection failed");
+	g_free(error);
 }
 
 void
@@ -368,6 +374,11 @@ xmpp_server_connect(SERVER_REC *server)
 	return;
 
 err:
+	if (!IS_SERVER(server)) {
+		g_free(error);
+		return;
+	}
+
 	server->connection_lost = TRUE;
 	server_connect_failed(SERVER(server),
 	    (error != NULL) ? error->message : NULL);
