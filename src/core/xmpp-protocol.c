@@ -823,26 +823,23 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		if (channel != NULL) {
 			GSList *x;
 			const char *status_code;
-			char *nick, *status, *reason, *actor, *item_nick;
+			char *nick, *reason, *actor, *item_nick;
 
 			nick = xmpp_extract_nick(jid);
 			status_code = NULL;
-			status = reason = actor = item_nick = NULL;
+			reason = actor = item_nick = NULL;
 
 			x = lm_message_node_find_childs(msg->node, "x");
 			if (x != NULL &&
 			    lm_message_nodes_attribute_found(x, "xmlns",
 			    XMLNS_MUC_USER, &child) && child != NULL) {
 
-				/* in <X> */
+				/* in <x> */
 				if ((subchild = lm_message_node_get_child(
-				    child, "status")) != NULL) {
-					status =
-					    xmpp_recode_in(subchild->value);
+				    child, "status")) != NULL)
 					status_code =
 					    lm_message_node_get_attribute(
 					    subchild, "code");
-				}
 
 				/* in <x> */
 				if ((subchild = lm_message_node_get_child(
@@ -883,12 +880,19 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					signal_emit("xmpp channel nick kicked",
 					    4, channel, nick, actor, reason);
 
-			} else
+			} else {
+				child = lm_message_node_get_child(msg->node,
+				    "status");
+				text = (child != NULL) ?
+				    xmpp_recode_in(child->value) : NULL;
+
 				signal_emit("xmpp channel nick part", 3,
-				    channel, nick, status);
+				    channel, nick, text);
+
+				g_free(text);
+			}
 
 			g_free(item_nick);
-			g_free(status);
 			g_free(reason);
 			g_free(actor);
 			g_free(nick);
