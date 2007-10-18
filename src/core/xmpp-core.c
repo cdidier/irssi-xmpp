@@ -34,6 +34,7 @@
 #include "xmpp-protocol.h"
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
+#include "xmpp-session.h"
 #include "xmpp-settings.h"
 
 static CHATNET_REC *
@@ -100,6 +101,7 @@ xmpp_core_init(void)
 	xmpp_protocol_init();
 	xmpp_rosters_init();
 	xmpp_servers_init();
+	xmpp_session_init();
 	xmpp_settings_init();
 
 	module_register("xmpp", "core");
@@ -115,6 +117,7 @@ xmpp_core_deinit(void)
 	xmpp_protocol_deinit();
 	xmpp_rosters_deinit();
 	xmpp_servers_deinit();
+	xmpp_session_deinit();
 	xmpp_settings_deinit();
 
 	signal_emit("chat protocol deinit", 1, chat_protocol_find("XMPP"));
