@@ -485,6 +485,9 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 	char *jid, *text;
 
 	server = XMPP_SERVER(user_data);
+	if (server == NULL)
+		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
+
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
 	if (settings_get_bool("xmpp_raw_window")) {
@@ -654,6 +657,9 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 	char *jid, *text;
 
 	server = XMPP_SERVER(user_data);
+	if (server == NULL)
+		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
+
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
 	if (settings_get_bool("xmpp_raw_window")) {
@@ -928,6 +934,9 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	char *jid, *text;
 
 	server = XMPP_SERVER(user_data);
+	if (server == NULL)
+		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
+
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
 	if (settings_get_bool("xmpp_raw_window")) {
@@ -1004,7 +1013,7 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 }
 
 static void
-handlers_register(XMPP_SERVER_REC *server)
+sig_server_connected(XMPP_SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;
@@ -1035,22 +1044,27 @@ handlers_register(XMPP_SERVER_REC *server)
 }
 
 static void
-handlers_unregister(XMPP_SERVER_REC *server)
+sig_server_disconnected(XMPP_SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;
 
+	/* unregister handlers */
+	lm_message_handler_invalidate(server->hmessage);
 	lm_message_handler_unref(server->hmessage);
+	lm_message_handler_invalidate(server->hpresence);
 	lm_message_handler_unref(server->hpresence);
+	lm_message_handler_invalidate(server->hiq);
 	lm_message_handler_unref(server->hiq);
 }
 
 void
 xmpp_protocol_init(void)
 {
-	signal_add_first("server connected", (SIGNAL_FUNC)handlers_register);
+	signal_add_first("server connected",
+	    (SIGNAL_FUNC)sig_server_connected);
 	signal_add("server disconnected",
-	    (SIGNAL_FUNC)handlers_unregister);
+	    (SIGNAL_FUNC)sig_server_disconnected);
 	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)own_presence);
 	signal_add_first("xmpp server disco",
 	    (SIGNAL_FUNC)disco_servers_services);
@@ -1066,9 +1080,9 @@ void
 xmpp_protocol_deinit(void)
 {
 	signal_remove("server connected",
-	    (SIGNAL_FUNC)handlers_register);
+	    (SIGNAL_FUNC)sig_server_connected);
 	signal_remove("server disconnected",
-	    (SIGNAL_FUNC)handlers_unregister);
+	    (SIGNAL_FUNC)sig_server_connected);
 	signal_remove("xmpp own_presence", (SIGNAL_FUNC)own_presence);
 	signal_remove("xmpp server disco", (SIGNAL_FUNC)disco_servers_services);
 	signal_remove("xmpp composing start", (SIGNAL_FUNC)composing_start);

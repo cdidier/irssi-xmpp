@@ -44,6 +44,8 @@ const char *fe_xmpp_presence_show[] = {
 static char *
 get_window_name(XMPP_SERVER_REC *server)
 {
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+
 	return g_strconcat("(", (server->connrec->chatnet == NULL ||
 	    *server->connrec->chatnet == '\0') ? server->jid :
 	    server->connrec->chatnet, ")", NULL);
@@ -55,7 +57,12 @@ fe_xmpp_status_get_window_name(XMPP_SERVER_REC *server)
 	WINDOW_REC *window;
 	char *name;
 
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+
 	name = get_window_name(server);
+	if (name == NULL)
+		return NULL;
+
 	window = window_find_name(name);
 	g_free(name);
 
@@ -68,8 +75,9 @@ fe_xmpp_status_get_window(XMPP_SERVER_REC *server)
 	WINDOW_REC *window;
 	char *name;
 
-	name = get_window_name(server);
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 
+	name = get_window_name(server);
 	window = window_find_name(name);
 	if (window == NULL) {
 		window = window_create(NULL, TRUE);
@@ -89,7 +97,7 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 	WINDOW_REC *window;
 	const char *msg;
 
-	g_return_if_fail(server != NULL);
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
 	g_return_if_fail(0 <= show && show < XMPP_PRESENCE_SHOW_LEN);	
 
