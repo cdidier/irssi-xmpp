@@ -146,7 +146,7 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 }
 
 static void
-sig_complete_command_roster(GList **list, WINDOW_REC *window,
+sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
 	GSList *group_list;
@@ -161,18 +161,16 @@ sig_complete_command_roster(GList **list, WINDOW_REC *window,
 	g_return_if_fail(args != NULL);
 
 	server = XMPP_SERVER(window->active_server);
-	if (server == NULL || args[0] == '\0')
+	if (server == NULL || *args == '\0')
 		return;
 
 	g_list_free(*list);
 	*list = NULL;
 	len = strlen(word);
-	tmp = g_strsplit(args, " ", 3);
+	tmp = g_strsplit(args, " ", 2);
 
 	/* complete groups */
-	if (tmp[0] != NULL && tmp[1] != NULL && tmp[2] == NULL
-	    && g_ascii_strcasecmp(tmp[0],
-	    xmpp_command_roster[XMPP_COMMAND_ROSTER_PARAM_GROUP]) == 0) {
+	if (tmp[0] != NULL && tmp[1] == NULL) {
 
 		for (group_list = server->roster; group_list != NULL;
 		    group_list = group_list->next) {
@@ -184,7 +182,6 @@ sig_complete_command_roster(GList **list, WINDOW_REC *window,
 		}
 
 	}
-
 	g_strfreev(tmp);
 }
 
@@ -192,14 +189,14 @@ void
 xmpp_completion_init(void)
 {
 	signal_add("complete word", (SIGNAL_FUNC)sig_complete_word);
-	signal_add("complete command roster",
-	    (SIGNAL_FUNC)sig_complete_command_roster);
+	signal_add("complete command roster group",
+	    (SIGNAL_FUNC)sig_complete_command_roster_group);
 }
 
 void
 xmpp_completion_deinit(void)
 {
 	signal_remove("complete word", (SIGNAL_FUNC)sig_complete_word);
-	signal_remove("complete command roster",
-	    (SIGNAL_FUNC) sig_complete_command_roster);
+	signal_remove("complete command roster group",
+	    (SIGNAL_FUNC) sig_complete_command_roster_group);
 }
