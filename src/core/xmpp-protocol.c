@@ -1050,11 +1050,16 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 		return;
 
 	/* unregister handlers */
-	lm_message_handler_invalidate(server->hmessage);
+	if (lm_message_handler_is_valid(server->hmessage))
+		lm_message_handler_invalidate(server->hmessage);
 	lm_message_handler_unref(server->hmessage);
-	lm_message_handler_invalidate(server->hpresence);
+
+	if (lm_message_handler_is_valid(server->hpresence))
+		lm_message_handler_invalidate(server->hpresence);
 	lm_message_handler_unref(server->hpresence);
-	lm_message_handler_invalidate(server->hiq);
+
+	if (lm_message_handler_is_valid(server->hiq))
+		lm_message_handler_invalidate(server->hiq);
 	lm_message_handler_unref(server->hiq);
 }
 
