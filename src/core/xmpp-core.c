@@ -109,13 +109,15 @@ xmpp_core_init(void)
 void
 xmpp_core_deinit(void) 
 {
+	/* deinit servers first to disconnecet servers before unloading */
+	xmpp_servers_deinit();
+
 	xmpp_channels_deinit();
 	xmpp_commands_deinit();
 	xmpp_nicklist_deinit();
 	xmpp_ping_deinit();
 	xmpp_protocol_deinit();
 	xmpp_rosters_deinit();
-	xmpp_servers_deinit();
 	xmpp_session_deinit();
 	xmpp_settings_deinit();
 

@@ -143,9 +143,13 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	if (xmpp_priority_out_of_bound(server->priority))
 		server->priority = 0;
 	server->default_priority = TRUE;
+
 	server->ping_id = NULL;
 	server->features = 0;
 	server->roster = NULL;
+	server->hmessage = NULL;
+	server->hpresence = NULL;
+	server->hiq = NULL;
 
 	/* fill connrec record */
 	server->connrec = (XMPP_SERVER_CONNECT_REC *)conn;
