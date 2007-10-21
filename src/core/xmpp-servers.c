@@ -428,6 +428,19 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 }
 
 static void
+sig_server_disconnected_first(XMPP_SERVER_REC *server)
+{
+	if (!IS_XMPP_SERVER(server))
+		return;
+
+	/* failed server, if not connected */
+	if (!server->connected) {
+		server_connect_failed(SERVER(server), NULL);
+		signal_stop();
+	}
+}
+
+static void
 sig_server_connect_failed(XMPP_SERVER_REC *server, char *msg)
 {
 	if (!IS_XMPP_SERVER(server))
@@ -463,6 +476,8 @@ xmpp_servers_init(void)
 	signal_add_first("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_add("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
+	signal_add_first("server disconnected",
+	    (SIGNAL_FUNC)sig_server_disconnected_first);
 	signal_add("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
@@ -492,6 +507,8 @@ xmpp_servers_deinit(void)
 	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
+	signal_remove("server disconnected",
+	    (SIGNAL_FUNC)sig_server_disconnected_first);
 	signal_remove("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_remove("server quit", (SIGNAL_FUNC)sig_server_quit);
