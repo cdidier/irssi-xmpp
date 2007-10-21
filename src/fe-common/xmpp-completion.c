@@ -21,10 +21,13 @@
 #include <string.h>
 
 #include "module.h"
+#include "channels-setup.h"
+#include "misc.h"
 #include "signals.h"
 #include "window-items.h"
 
 #include "xmpp-servers.h"
+#include "xmpp-channels.h"
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
 #include "xmpp-rosters.h"
@@ -41,11 +44,10 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	size_t len;
 
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(nick != NULL, NULL);
-	if (!IS_XMPP_SERVER(server))
-		return NULL;
 
-	if (resource_name)
+	if (resource_name != NULL)
 		len = strlen(resource_name);
 
 	list = NULL;
@@ -80,7 +82,7 @@ get_nicks(XMPP_SERVER_REC *server, const char *nick)
 	gchar *jid, *resource;
 	int len;
 	
-	g_return_val_if_fail(server != NULL, NULL);
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(nick != NULL, NULL);
 
 	len = strlen(nick);
@@ -143,6 +145,9 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 		g_list_free(*list);
 		*list = get_nicks(server, word);
 	}
+
+	if (*list != NULL)
+		signal_stop();
 }
 
 static void
@@ -183,6 +188,67 @@ sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
 
 	}
 	g_strfreev(tmp);
+
+	if (*list != NULL)
+		signal_stop();
+}
+
+static GList *
+get_channels(XMPP_SERVER_REC *server, const char *word)
+{
+	GSList *tmp;
+	GList *list;
+	XMPP_CHANNEL_REC *channel;
+	CHANNEL_SETUP_REC *channel_setup;
+	int len;
+	
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+	g_return_val_if_fail(word != NULL, NULL);
+
+	len = strlen(word);
+	list = NULL;
+
+	/* get joined channels */
+	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+		channel = XMPP_CHANNEL(tmp->data);
+
+		if (channel != NULL &&
+		    g_strncasecmp(channel->name, word, len) == 0)
+			list = g_list_append(list, g_strdup(channel->name));
+	}
+
+	/* get channels from setup */
+	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
+		channel_setup = tmp->data;
+
+		if (*channel_setup->name != '#' &&
+		    g_strncasecmp(channel_setup->name, word, len) == 0 &&
+		    glist_find_string(list, channel_setup->name) == NULL)
+			list = g_list_append(list,
+			    g_strdup(channel_setup->name));
+	}
+
+	return list;
+}
+
+static void
+sig_complete_command_channels(GList **list, WINDOW_REC *window,
+    const char *word, const char *args, int *want_space)
+{
+	XMPP_SERVER_REC *server;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(window != NULL);
+	g_return_if_fail(word != NULL);
+
+	server = XMPP_SERVER(window->active_server);
+	if (server == NULL)
+		return;
+
+	*list = get_channels(server, word);
+
+	if (*list != NULL)
+		signal_stop();
 }
 
 void
@@ -191,6 +257,10 @@ xmpp_completion_init(void)
 	signal_add("complete word", (SIGNAL_FUNC)sig_complete_word);
 	signal_add("complete command roster group",
 	    (SIGNAL_FUNC)sig_complete_command_roster_group);
+	signal_add("complete command join",
+	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_add("complete command part",
+	    (SIGNAL_FUNC)sig_complete_command_channels);
 }
 
 void
@@ -199,4 +269,8 @@ xmpp_completion_deinit(void)
 	signal_remove("complete word", (SIGNAL_FUNC)sig_complete_word);
 	signal_remove("complete command roster group",
 	    (SIGNAL_FUNC) sig_complete_command_roster_group);
+	signal_remove("complete command join",
+	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_remove("complete command part",
+	    (SIGNAL_FUNC)sig_complete_command_channels);
 }
