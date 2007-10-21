@@ -193,6 +193,12 @@ sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
 		signal_stop();
 }
 
+#define XMPP_CHANNEL_SETUP(chansetup) \
+	PROTO_CHECK_CAST(CHANNEL_SETUP(chansetup), CHANNEL_SETUP_REC, chat_type, "XMPP")
+
+#define IS_XMPP_CHANNEL_SETUP(chansetup) \
+	(XMPP_CHANNEL_SETUP(chansetup) ? TRUE : FALSE)
+
 static GList *
 get_channels(XMPP_SERVER_REC *server, const char *word)
 {
@@ -221,7 +227,8 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
 		channel_setup = tmp->data;
 
-		if (*channel_setup->name != '#' &&
+		if ((IS_XMPP_CHANNEL_SETUP(channel_setup) ||
+		    *channel_setup->name != '#') &&
 		    g_strncasecmp(channel_setup->name, word, len) == 0 &&
 		    glist_find_string(list, channel_setup->name) == NULL)
 			list = g_list_append(list,
