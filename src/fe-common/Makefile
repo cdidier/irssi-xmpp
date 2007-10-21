@@ -1,6 +1,5 @@
 LIB= fe_xmpp
-SRCS=	fe-xmpp-commands.c \
-	fe-xmpp-composing.c \
+SRCS=	fe-xmpp-composing.c \
 	fe-xmpp-messages.c \
 	fe-xmpp-queries.c \
 	fe-xmpp-raw.c \

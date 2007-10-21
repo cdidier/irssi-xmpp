@@ -21,12 +21,15 @@
 #include <stdlib.h>
 
 #include "module.h"
+#include "recode.h"
 #include "settings.h"
 #include "signals.h"
+#include "window-item-def.h"
 
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
+#include "xmpp-queries.h"
 #include "xmpp-rosters.h"
 #include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
@@ -733,6 +736,34 @@ out:
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: ME <message> */
+static void
+cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	const char *target;
+	char *text, *recoded;
+	int type;
+
+	CMD_XMPP_SERVER(server);
+
+	if (!IS_XMPP_ITEM(item) || !xmpp_server_is_alive(server))
+		return;
+
+	target = window_item_get_target(item);
+	type = IS_CHANNEL(item) ? SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+
+	signal_emit("message xmpp own_action", 3, server, data, target,
+	    GINT_TO_POINTER(type));
+
+	text = g_strconcat(settings_get_str("cmdchars"), "me ", data, NULL);
+
+	recoded = recode_out(SERVER(server), text, target);
+	server->send_message(SERVER(server), target, recoded, type);
+	g_free(recoded);
+
+	g_free(text);
+}
+
 /* SYNTAX: PART [<channels>] [<message>] */
 static void
 cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
@@ -842,6 +873,7 @@ xmpp_commands_init(void)
 	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
 	command_bind_xmpp("whois", NULL, (SIGNAL_FUNC)cmd_whois);
 	command_bind_xmpp("ver", NULL, (SIGNAL_FUNC)cmd_ver);
+	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
 	command_bind_xmpp("part", NULL, (SIGNAL_FUNC)cmd_part);
 	command_bind_xmpp("nick", NULL, (SIGNAL_FUNC)cmd_nick);
 	command_bind_xmpp("topic", NULL, (SIGNAL_FUNC)cmd_topic);
@@ -876,6 +908,7 @@ xmpp_commands_deinit(void)
 	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
 	command_unbind("whois", (SIGNAL_FUNC)cmd_whois);
 	command_unbind("ver", (SIGNAL_FUNC)cmd_ver);
+	command_unbind("me", (SIGNAL_FUNC)cmd_me);
 	command_unbind("part", (SIGNAL_FUNC)cmd_part);
 	command_unbind("nick", (SIGNAL_FUNC)cmd_nick);
 	command_unbind("topic", (SIGNAL_FUNC)cmd_topic);
