@@ -58,8 +58,8 @@ static char *
 cmd_connect_get_line(const char *data)
 {
 	GHashTable *optlist;
-	char *line, *jid, *password, *server, *port,
-	     *username, *jid_server, *resource;
+	const char *host, *port;
+	char *line, *jid, *password, *username, *jid_host, *resource;
 	void *free_arg;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
@@ -69,11 +69,11 @@ cmd_connect_get_line(const char *data)
 	if (*jid == '\0' || *password == '\0' || !xmpp_jid_have_address(jid))
 		goto err;
 
-	xmpp_jid_extract(jid, &username, &jid_server, &resource);
+	xmpp_jid_extract(jid, &username, &jid_host, &resource);
 
-	server = g_hash_table_lookup(optlist, "server");
-	if (server == NULL || *server == '\0')
-		server = jid_server;
+	host = g_hash_table_lookup(optlist, "host");
+	if (host == NULL || *host == '\0')
+		host = jid_host;
 
 	port = g_hash_table_lookup(optlist, "port");
 	if (port == NULL)
@@ -81,8 +81,8 @@ cmd_connect_get_line(const char *data)
 
 	line = g_strdup_printf("%s-xmppnet xmpp:%s@%s %s %d %s %s@%s%s%s",
 	    (g_hash_table_lookup(optlist, "ssl") != NULL) ? "-ssl " : "",
-	    username, jid_server, server, atoi(port), password, username,
-	    jid_server, (resource != NULL) ? "/" : "",
+	    username, jid_host, host, atoi(port), password, username,
+	    jid_host, (resource != NULL) ? "/" : "",
 	    (resource != NULL) ? resource : "");
 
 	cmd_params_free(free_arg);
@@ -93,7 +93,7 @@ err:
 	return NULL;
 }
 
-/* SYNTAX: XMPPCONNECT [-ssl] [-server <server>] [-port <port>]
+/* SYNTAX: XMPPCONNECT [-ssl] [-host <server>] [-port <port>]
  *                     <jid>[/<resource>] <password> */
 static void
 cmd_xmppconnect(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
@@ -112,7 +112,7 @@ cmd_xmppconnect(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	g_free(cmd_line);
 }
 
-/* SYNTAX: XMPPSERVER [-ssl] [-server <server>] [-port <port>]
+/* SYNTAX: XMPPSERVER [-ssl] [-host <server>] [-port <port>]
  *                    <jid>[/<resource>] <password> */
 static void
 cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
@@ -131,7 +131,7 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	g_free(cmd_line);
 }
 
-/* SYNTAX: XMPPREGISTER [-ssl] [-server <server>] [-port <port>]
+/* SYNTAX: XMPPREGISTER [-ssl] [-host <server>] [-port <port>]
  *                      <jid> <password> */
 static void
 cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
@@ -139,7 +139,7 @@ cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	/* TODO !!! */
 }
 
-/* SYNTAX: XMPPUNREGISTER [-ssl] [-server <server>] [-port <port>]
+/* SYNTAX: XMPPUNREGISTER [-ssl] [-host <server>] [-port <port>]
  *                        <jid> <password> */
 static void
 cmd_xmppunregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
@@ -880,7 +880,7 @@ xmpp_commands_init(void)
 
 	command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
-	command_set_options("xmppconnect", "ssl -server @port @priority");
+	command_set_options("xmppconnect", "ssl -host @port @priority");
 
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
 	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);

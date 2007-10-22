@@ -171,7 +171,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	server->lmconn = lm_connection_new(NULL);
 	lm_connection_set_server(server->lmconn, server->connrec->address);
 	lm_connection_set_port(server->lmconn, server->connrec->port);
-	lm_connection_set_jid(server->lmconn, server->user);
+	lm_connection_set_jid(server->lmconn, server->jid);
 	lm_connection_set_keep_alive_rate(server->lmconn, 30);
 
 	server_connect_init((SERVER_REC *)server);
