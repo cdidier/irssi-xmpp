@@ -104,8 +104,8 @@ cmd_xmppconnect(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	if (line == NULL)
 		return;
 
-	cmd_line = g_strdup_printf("%sCONNECT %s",
-	    settings_get_str("cmdchars"), line);
+	cmd_line = g_strconcat(settings_get_str("cmdchars"), "CONNECT ",
+	    line, NULL);
 	g_free(line);
 
 	signal_emit("send command", 3, cmd_line, server, item);
@@ -123,8 +123,8 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	if (line == NULL)
 		return;
 
-	cmd_line = g_strdup_printf("%sSERVER %s",
-	    settings_get_str("cmdchars"), line);
+	cmd_line = g_strconcat(settings_get_str("cmdchars"), "SERVER ",
+	    line, NULL);
 	g_free(line);
 
 	signal_emit("send command", 3, cmd_line, server, item);
@@ -151,7 +151,8 @@ static void
 send_away(XMPP_SERVER_REC *server, const char *data)
 {
 	char **tmp;
-	const char *show, *reason;
+	const char *show_str, *reason;
+	int show;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
@@ -159,43 +160,45 @@ send_away(XMPP_SERVER_REC *server, const char *data)
 	tmp = g_strsplit(data, " ", 2);
 
 	if (data[0] == '\0')
-		show = NULL;
+		show_str = NULL;
 	else {
-		show = tmp[0];
+		show_str = tmp[0];
 		reason = tmp[1];
 	}
 
 again:
-	if (show == NULL || show[0] == '\0')
-		signal_emit("xmpp own_presence", 4, server,
-		    XMPP_PRESENCE_AVAILABLE, NULL, server->priority);
+	if (show_str == NULL || show_str[0] == '\0') {
+		show = XMPP_PRESENCE_AVAILABLE;
+		reason = NULL;
 
-	else if (g_ascii_strcasecmp(show,
+	} else if (g_ascii_strcasecmp(show_str,"online") == 0)
+		show = XMPP_PRESENCE_AVAILABLE;
+
+	else if (g_ascii_strcasecmp(show_str,
 	    xmpp_presence_show[XMPP_PRESENCE_CHAT]) == 0)
-		signal_emit("xmpp own_presence", 4, server, XMPP_PRESENCE_CHAT,
-		    reason, server->priority);
+		show = XMPP_PRESENCE_CHAT;
 
-	else if (g_ascii_strcasecmp(show,
+	else if (g_ascii_strcasecmp(show_str,
 	    xmpp_presence_show[XMPP_PRESENCE_DND]) == 0)
-		signal_emit("xmpp own_presence", 4, server, XMPP_PRESENCE_DND,
-		    reason, server->priority);
+		show = XMPP_PRESENCE_DND;
 
-	else if (g_ascii_strcasecmp(show,
+	else if (g_ascii_strcasecmp(show_str,
 	    xmpp_presence_show[XMPP_PRESENCE_XA]) == 0)
-		signal_emit("xmpp own_presence", 4, server, XMPP_PRESENCE_XA,
-		    reason, server->priority);
+		show = XMPP_PRESENCE_XA;
 
-	else if (g_ascii_strcasecmp(show,
+	else if (g_ascii_strcasecmp(show_str,
 	    xmpp_presence_show[XMPP_PRESENCE_AWAY]) == 0 || reason == data)
-		signal_emit("xmpp own_presence", 4, server, XMPP_PRESENCE_AWAY,
-		    reason, server->priority);
+		show = XMPP_PRESENCE_AWAY;
 
 	else {
 		reason = data;
-		show = settings_get_str("xmpp_default_away_mode");
+		show_str = settings_get_str("xmpp_default_away_mode");
 
 		goto again;
 	}
+
+	signal_emit("xmpp own_presence", 4, server, show, reason,
+	    server->priority);
 
 	g_strfreev(tmp);
 }
