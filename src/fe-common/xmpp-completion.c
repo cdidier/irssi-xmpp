@@ -258,6 +258,49 @@ sig_complete_command_channels(GList **list, WINDOW_REC *window,
 		signal_stop();
 }
 
+static void
+sig_complete_command_away(GList **list, WINDOW_REC *window,
+    const char *word, const char *args, int *want_space)
+{
+	XMPP_SERVER_REC *server;
+	int len;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(window != NULL);
+	g_return_if_fail(word != NULL);
+
+	server = XMPP_SERVER(window->active_server);
+	if (server == NULL)
+		return;
+
+	len = strlen(word);
+
+	if (g_strncasecmp(word,
+	    xmpp_presence_show[XMPP_PRESENCE_AWAY], len) == 0)
+		*list = g_list_append(*list,
+		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_AWAY]));
+
+	if (g_strncasecmp(word,
+	    xmpp_presence_show[XMPP_PRESENCE_XA], len) == 0)
+		*list = g_list_append(*list,
+		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_XA]));
+
+	if (g_strncasecmp(word,
+	    xmpp_presence_show[XMPP_PRESENCE_DND], len) == 0)
+		*list = g_list_append(*list,
+		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_DND]));
+
+	if (g_strncasecmp(word,
+	    xmpp_presence_show[XMPP_PRESENCE_CHAT], len) == 0)
+		*list = g_list_append(*list,
+		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_CHAT]));
+
+	if (g_strncasecmp(word, "online", len) == 0)
+		*list = g_list_append(*list, g_strdup("online"));
+
+	signal_stop();
+}
+
 void
 xmpp_completion_init(void)
 {
@@ -268,6 +311,8 @@ xmpp_completion_init(void)
 	    (SIGNAL_FUNC)sig_complete_command_channels);
 	signal_add("complete command part",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_add("complete command away",
+	    (SIGNAL_FUNC)sig_complete_command_away);
 }
 
 void
@@ -280,4 +325,6 @@ xmpp_completion_deinit(void)
 	    (SIGNAL_FUNC)sig_complete_command_channels);
 	signal_remove("complete command part",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_remove("complete command away",
+	    (SIGNAL_FUNC)sig_complete_command_away);
 }
