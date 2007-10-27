@@ -94,13 +94,13 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 		return;
 	}
 
-	if (lm_connection_is_open(server->lmconn))
+	/* close the connection */
+	if (server->lmconn.state != LM_CONNECTION_STATE_CLOSED)
 		lm_connection_close(server->lmconn, NULL);
+	lm_connection_unref(server->lmconn);
 
 	lookup_servers = g_slist_remove(lookup_servers, server);
 	servers = g_slist_remove(servers, server);
-
-	lm_connection_unref(server->lmconn);
 
 	g_free(server->nickname);
 	g_free(server->jid);
@@ -226,7 +226,7 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 	const char *msg;
 		
 	server = XMPP_SERVER(user_data);
-	if (server != NULL)
+	if (!xmpp_server_is_alive(server))
 		return;
 
 	/* normal disconnection */
