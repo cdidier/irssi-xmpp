@@ -385,7 +385,11 @@ sig_nick_part(XMPP_CHANNEL_REC *channel, const char *nick_name,
 	signal_emit("message part", 5, channel->server, channel->name,
 	    nick->nick, nick->host, status);
 
-	nicklist_remove(CHANNEL(channel), NICK(nick));
+	if (channel->ownnick == NICK(nick)) {
+		channel->left = TRUE;
+		channel_destroy(CHANNEL(channel));
+	} else
+		nicklist_remove(CHANNEL(channel), NICK(nick));
 }
 
 static void
