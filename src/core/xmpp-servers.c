@@ -89,14 +89,11 @@ xmpp_server_cleanup(XMPP_SERVER_REC *server)
 {
 	g_return_if_fail(IS_XMPP_SERVER(server));
 
-	if (server->connected) {
-		server_disconnect(SERVER(server));
-		return;
-	}
-
 	/* close the connection */
-	if (server->lmconn.state != LM_CONNECTION_STATE_CLOSED)
+	if (lm_connection_get_state(server->lmconn) !=
+	    LM_CONNECTION_STATE_CLOSED) {
 		lm_connection_close(server->lmconn, NULL);
+	}
 	lm_connection_unref(server->lmconn);
 
 	lookup_servers = g_slist_remove(lookup_servers, server);
@@ -475,11 +472,11 @@ void
 xmpp_servers_init(void)
 {
 	signal_add_first("server connected", (SIGNAL_FUNC)sig_connected);
-	signal_add("server disconnected",
+	signal_add_last("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
 	signal_add_first("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected_first);
-	signal_add("server connect failed",
+	signal_add_last("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
 	signal_add("server connect copy",
