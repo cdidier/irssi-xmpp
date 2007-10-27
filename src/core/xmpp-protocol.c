@@ -535,6 +535,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 		break;
 
+	case LM_MESSAGE_TYPE_UNKNOWN:
 	case LM_MESSAGE_SUB_TYPE_CHAT:
 		/* XEP-0022: Message Events */
 		child = lm_message_node_get_child(msg->node, "x");
