@@ -155,6 +155,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	/* don't use irssi's sockets */
 	server->connrec->no_connect = TRUE;
+	server->connect_pid = -1;
 
 	if (server->connrec->port <= 0)
 		server->connrec->port = (server->connrec->use_ssl) ?
@@ -173,6 +174,8 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	lm_connection_set_keep_alive_rate(server->lmconn, 30);
 
 	server_connect_init((SERVER_REC *)server);
+	server->connect_tag = 1;
+
 	return (SERVER_REC *)server;
 }
 
@@ -400,6 +403,7 @@ sig_connected(XMPP_SERVER_REC *server)
 	server->send_message = send_message;
 	
 	server->connected = TRUE;
+	server->connect_tag = -1;
 }
 
 static void
@@ -423,19 +427,6 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 		return;
 
 	xmpp_server_cleanup(server);
-}
-
-static void
-sig_server_disconnected_first(XMPP_SERVER_REC *server)
-{
-	if (!IS_XMPP_SERVER(server))
-		return;
-
-	/* failed server, if not connected */
-	if (!server->connected) {
-		server_connect_failed(SERVER(server), NULL);
-		signal_stop();
-	}
 }
 
 static void
@@ -474,8 +465,6 @@ xmpp_servers_init(void)
 	signal_add_first("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_add_last("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
-	signal_add_first("server disconnected",
-	    (SIGNAL_FUNC)sig_server_disconnected_first);
 	signal_add_last("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
@@ -505,8 +494,6 @@ xmpp_servers_deinit(void)
 	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)sig_server_disconnected);
-	signal_remove("server disconnected",
-	    (SIGNAL_FUNC)sig_server_disconnected_first);
 	signal_remove("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_remove("server quit", (SIGNAL_FUNC)sig_server_quit);
