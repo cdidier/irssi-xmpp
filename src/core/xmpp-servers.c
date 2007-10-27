@@ -120,7 +120,8 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	g_return_val_if_fail(IS_XMPP_SERVER_CONNECT(conn), NULL);
 	if (conn->address == NULL || conn->address[0] == '\0')
 		return NULL;
-	if (conn->nick == NULL || conn->nick[0] == '\0') return NULL;
+	if (conn->nick == NULL || conn->nick[0] == '\0')
+		return NULL;
 
 	server = g_new0(XMPP_SERVER_REC, 1);
 	server->chat_type = XMPP_PROTOCOL;
