@@ -66,7 +66,7 @@ cmd_connect_get_line(const char *data)
 	    "xmppconnect", &optlist, &jid, &password))
 		return NULL;
 
-	if (*jid == '\0' || *password == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid))
 		goto err;
 
 	xmpp_jid_extract(jid, &username, &jid_host, &resource);
@@ -330,7 +330,7 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 	jid_recoded = xmpp_recode_out(jid);
 
@@ -375,7 +375,7 @@ cmd_roster_remove(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, NULL);
@@ -422,7 +422,7 @@ cmd_roster_name(const char *data, XMPP_SERVER_REC *server)
 	    &name))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, &group);
@@ -480,7 +480,7 @@ cmd_roster_group(const char *data, XMPP_SERVER_REC *server)
 	    &group_name))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, &group);
@@ -534,7 +534,7 @@ cmd_roster_accept(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -563,7 +563,7 @@ cmd_roster_deny(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -593,7 +593,7 @@ cmd_roster_subscribe(const char *data, XMPP_SERVER_REC *server)
 	    &reason))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -629,7 +629,7 @@ cmd_roster_unsubscribe(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_jid_have_address(jid))
+	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -652,7 +652,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *msg;
 	LmMessageNode *node;
-	char *jid, *full_jid, *jid_recoded;
+	char *jid, *jid_recoded;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
@@ -662,31 +662,23 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 
 	if (*jid == '\0')
 		jid_recoded = xmpp_recode_out(server->jid);
-
-	else if (xmpp_jid_have_address(jid))
-		jid_recoded = xmpp_recode_out(jid);
-
 	else {
-		full_jid = xmpp_rosters_get_full_jid(server->roster, jid);
-		if (full_jid == NULL)
-			goto out;
-	
-		jid_recoded = xmpp_recode_out(full_jid);
-		g_free(full_jid);
+		jid = xmpp_rosters_resolve_name(server, data);
+		jid_recoded = xmpp_recode_out((jid != NULL) ? jid : data);
+		g_free(jid);
 	}
 
-	/* request the vcard */
 	msg = lm_message_new_with_sub_type(jid_recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
+	g_free(jid_recoded);
+
+	/* request the vcard */
 	node = lm_message_node_add_child(msg->node, "vCard", NULL);
 	lm_message_node_set_attribute(node, "xmlns", "vcard-temp");
 
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
-	g_free(jid_recoded);
-
-out:
 	cmd_params_free(free_arg);
 }
 
@@ -696,7 +688,7 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *msg;
 	LmMessageNode *node;
-	char *jid, *full_jid, *full_jid_recoded;
+	char *jid, *jid_recoded;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
@@ -704,39 +696,29 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 
-	if (*jid == '\0') {
-		full_jid = g_strconcat(server->jid, "/",
-		    server->resource, NULL);
-		full_jid_recoded = xmpp_recode_out(full_jid);
-		g_free(full_jid);
+	if (*jid == '\0')
+		jid = g_strconcat(server->jid, "/", server->resource, NULL);
+	else
+		jid = xmpp_rosters_resolve_name(server, data);
 
-	} else if (xmpp_jid_have_address(jid) && xmpp_jid_have_resource(jid))
-		full_jid_recoded = xmpp_recode_out(jid);
-
-	else {
-		full_jid = xmpp_rosters_get_full_jid(server->roster, jid);
-		if (full_jid == NULL || !xmpp_jid_have_resource(full_jid)) {
-			g_free(full_jid);
-			goto out;
-		}
-
-		full_jid_recoded = xmpp_recode_out(full_jid);
-		g_free(full_jid);
-	}
+	if (!xmpp_have_resource(jid))
+		goto out;	
+	
+	jid_recoded = xmpp_recode_out((jid != NULL) ? jid : data);
+	msg = lm_message_new_with_sub_type(jid_recoded,
+	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
+	g_free(jid_recoded);
 
 	/* request the software version */
-	msg = lm_message_new_with_sub_type(full_jid_recoded,
-	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
 	node = lm_message_node_add_child(msg->node, "query", NULL);
 	lm_message_node_set_attribute(node, "xmlns", "jabber:iq:version");
 
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
-	g_free(full_jid_recoded);
-
 out:
 	cmd_params_free(free_arg);
+	g_free(jid);
 }
 
 /* SYNTAX: ME <message> */
@@ -767,7 +749,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	g_free(text);
 }
 
-/* SYNTAX: PART [<channels>] [<message>] */
+/* SYNTAX: PART [<channel] [<message>] */
 static void
 cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
@@ -781,6 +763,7 @@ cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		return;
 
 	if (*channame == '\0') {
+		cmd_params_free(free_arg);
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 	}
 
@@ -792,7 +775,7 @@ cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: NICK [<channels>] <nick> */
+/* SYNTAX: NICK [<channel>] <nick> */
 static void
 cmd_nick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
@@ -806,6 +789,7 @@ cmd_nick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		return;
 
 	if (*channame == '\0' || *nick == '\0') {
+		cmd_params_free(free_arg);
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 	}
 

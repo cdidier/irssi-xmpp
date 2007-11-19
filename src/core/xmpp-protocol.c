@@ -35,44 +35,38 @@
 #include "xmpp-tools.h"
 
 void
-xmpp_send_message(XMPP_SERVER_REC *server, const char *to_jid,
+xmpp_send_message(XMPP_SERVER_REC *server, const char *dest,
     const char *message)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	char *jid, *res, *to_full_jid, *to_jid_recoded, *message_recoded;
+	char *jid, *res, *jid_recoded, *message_recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(to_jid != NULL);
+	g_return_if_fail(dest != NULL);
 	g_return_if_fail(message != NULL);
 
-	to_full_jid = xmpp_rosters_get_full_jid(server->roster, to_jid);
-	to_jid_recoded =
-	    xmpp_recode_out((to_full_jid != NULL) ? to_full_jid : to_jid);
-	g_free(to_full_jid);
+	jid = xmpp_rosters_resolve_name(server, dest);
+	jid_recoded = xmpp_recode_out((jid != NULL) ? jid : dest);
+
+	msg = lm_message_new_with_sub_type(jid_recoded,
+	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
+	g_free(jid_recoded);
 
 	message_recoded = xmpp_recode_out(message);
-
-	msg = lm_message_new_with_sub_type(to_jid_recoded,
-	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
-	g_free(to_jid_recoded);
-
 	lm_message_node_add_child(msg->node, "body", message_recoded);
 	g_free(message_recoded);
 
-	jid = xmpp_strip_resource(to_jid);
-	res = xmpp_extract_resource(to_jid);
-
-	if (jid == NULL || res == NULL)
+	if (jid == NULL || !xmpp_have_resource(jid))
 		goto send;
 
 	user = xmpp_rosters_find_user(server->roster, jid, NULL);
 	if (user == NULL)
 		goto send;
-	g_free(jid);
 
+	res = xmpp_strip_resource(jid);
 	resource = xmpp_rosters_find_resource(user, res);
 	if (resource == NULL)
 		goto send;
@@ -81,7 +75,7 @@ xmpp_send_message(XMPP_SERVER_REC *server, const char *to_jid,
 	/* stop composing */
 	if (resource->composing_id != NULL) {
 		child = lm_message_node_add_child(msg->node, "x", NULL);
-		lm_message_node_set_attribute(child, "xmlns", XMLNS_EVENT);
+		lm_message_node_set_attribute(child, XMLNS, XMLNS_EVENT);
 		lm_message_node_add_child(child, "id", resource->composing_id);
 		g_free_and_null(resource->composing_id);
 	}
@@ -89,6 +83,8 @@ xmpp_send_message(XMPP_SERVER_REC *server, const char *to_jid,
 send:
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
+
+	g_free(jid);
 }
 
 void
@@ -126,7 +122,9 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	case XMPP_PRESENCE_AVAILABLE:
 	default:
 		/* unaway */
-		if (server->usermode_away)
+		if (server->show == XMPP_PRESENCE_AVAILABLE)
+			server->usermode_away = FALSE;
+		else if (server->usermode_away)
 			signal_emit("event 305", 2, server, server->nick);
 
 		show_str = NULL;
@@ -136,9 +134,9 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	/* away */
 	if (show_str != NULL) {
 		signal_emit("event 306", 2, server, server->nick);
-
 		server->show = show;
-	}
+	} else if (status != NULL)
+		server->usermode_away = TRUE;
 
 	g_free(server->away_reason);
 	server->away_reason = g_strdup(status);
@@ -150,7 +148,6 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 
 	/* send presence to the server */
 	msg = lm_message_new(NULL, LM_MESSAGE_TYPE_PRESENCE);
-	lm_message_node_add_child(msg->node, "show", show_str);
 	if (show_str != NULL)
 		lm_message_node_add_child(msg->node, "show", show_str);
 	if (status_recoded != NULL)
@@ -210,7 +207,7 @@ composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 	g_free(dest_recoded);
 
 	child = lm_message_node_add_child(msg->node, "x", NULL);
-	lm_message_node_set_attribute(child, "xmlns", XMLNS_EVENT);
+	lm_message_node_set_attribute(child, XMLNS, XMLNS_EVENT);
 
 	lm_message_node_add_child(child, "composing", NULL);
 
@@ -259,7 +256,7 @@ composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
 	g_free(full_jid_recoded);
 
 	child = lm_message_node_add_child(msg->node, "x", NULL);
-	lm_message_node_set_attribute(child, "xmlns", XMLNS_EVENT);
+	lm_message_node_set_attribute(child, XMLNS, XMLNS_EVENT);
 
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
@@ -351,7 +348,7 @@ version_send(XMPP_SERVER_REC *server, const char *to_jid,
 		lm_message_node_set_attribute(msg->node, "id", id);
 
 	query_node = lm_message_node_add_child(msg->node, "query", NULL);
-	lm_message_node_set_attribute(query_node, "xmlns", XMLNS_VERSION);
+	lm_message_node_set_attribute(query_node, XMLNS, XMLNS_VERSION);
 
 	if (settings_get_bool("xmpp_send_version")) {
 		lm_message_node_add_child(query_node, "name",
@@ -679,6 +676,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		g_free(text);
 		if (channel != NULL) {
 			const char *code;
+			char *nick;
 
 			child = lm_message_node_get_child(msg->node, "error");
 			if (child == NULL)
@@ -687,6 +685,8 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			code = lm_message_node_get_attribute(child, "code");
 			if (code == NULL)
 				goto out;
+
+			nick = xmpp_extract_nick(jid);
 
 			if (!channel->joined) {
 				if (g_ascii_strcasecmp(code, "401") == 0)
@@ -708,16 +708,18 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NOT_ON_MEMBERS_LIST);
 				else if (g_ascii_strcasecmp(code, "409") == 0)
-					signal_emit("xmpp channel joinerror", 2,
-					    channel, XMPP_CHANNELS_ERROR_NICK_IN_USE);
+					signal_emit("xmpp channel nick in use",
+					    2, channel, nick);
 				else if (g_ascii_strcasecmp(code, "503") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED);
 			} else {
 				if (g_ascii_strcasecmp(code, "409") == 0)
 					signal_emit("xmpp channel nick in use",
-					    2, channel, "");
+					    2, channel, nick);
 			}
+
+			g_free(nick);
 
 		/* general */
 		} else
@@ -751,7 +753,6 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		channel = xmpp_channel_find(server, text);
 		g_free(text);
 		if (channel != NULL) {
-			GSList *x;
 			const char *item_affiliation, *item_role;
 			char *nick, *item_jid, *item_nick;
 
@@ -759,10 +760,9 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			item_affiliation = item_role = NULL;
 			item_jid = item_nick = NULL;
 
-			x = lm_message_node_find_childs(msg->node, "x");
-			if (x != NULL &&
-			    lm_message_nodes_attribute_found(x, "xmlns",
-			    XMLNS_MUC_USER, &child) && child != NULL) {
+			child = lm_tools_message_node_find(msg->node, "x",
+			    XMLNS, XMLNS_MUC_USER);
+			if (child != NULL) {
 
 				if ((subchild = lm_message_node_get_child(
 				    child, "item")) != NULL) {
@@ -780,7 +780,6 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					    subchild, "nick"));
 				}
 			}
-			g_slist_free(x);
 
 			signal_emit("xmpp channel nick event", 6, channel,
 			    (item_nick != NULL) ? item_nick : nick,
@@ -826,7 +825,6 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		channel = xmpp_channel_find(server, text);
 		g_free(text);
 		if (channel != NULL) {
-			GSList *x;
 			const char *status_code;
 			char *nick, *reason, *actor, *item_nick;
 
@@ -834,10 +832,9 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			status_code = NULL;
 			reason = actor = item_nick = NULL;
 
-			x = lm_message_node_find_childs(msg->node, "x");
-			if (x != NULL &&
-			    lm_message_nodes_attribute_found(x, "xmlns",
-			    XMLNS_MUC_USER, &child) && child != NULL) {
+			child = lm_tools_message_node_find(msg->node, "x",
+			    XMLNS, XMLNS_MUC_USER);
+			if (child != NULL) {
 
 				/* in <x> */
 				if ((subchild = lm_message_node_get_child(
@@ -865,7 +862,6 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					    lm_message_node_get_attribute(
 					    child, "jid"));
 			}
-			g_slist_free(x);
 			
 			if (status_code != NULL) {
 
@@ -951,7 +947,7 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 		child = lm_message_node_get_child(msg->node, "vCard");
 
 	xmlns = (child != NULL) ?
-	    lm_message_node_get_attribute(child, "xmlns") : NULL;
+	    lm_message_node_get_attribute(child, XMLNS) : NULL;
 
 	switch (lm_message_get_sub_type(msg)) {
 

@@ -28,51 +28,29 @@
 #include "xmpp-servers.h"
 #include "xmpp-tools.h"
 
-GSList *
-lm_message_node_find_childs(LmMessageNode *node, const char *child_name)
+LmMessageNode *
+lm_tools_message_node_find(LmMessageNode *node, const char *name,
+    const char *attribute, const char *value)
 {
-	LmMessageNode *l;
-	GSList *list = NULL;
+	LmMessageNode *l;		
+	const char *v;
 
-	g_return_val_if_fail(node != NULL, NULL);
-	g_return_val_if_fail(child_name != NULL, NULL);
+	g_return_val_if_fail(name != NULL, NULL);
+	g_return_val_if_fail(attribute != NULL, NULL);
+	g_return_val_if_fail(value != NULL, NULL);
 
-	for (l = node->children; l; l = l->next) {
-		if (strcmp(l->name, child_name) == 0)
-			list = g_slist_prepend(list, l);
-	}
+	if (node == NULL)
+		return NULL;
 
-	return list;
-}
+	for (l = node->children; l != NULL; l = l->next)
+		if (g_ascii_strcasecmp(l->name, name) == 0) {
 
-gboolean
-lm_message_nodes_attribute_found(GSList *list, const char *name,
-     const char *value, LmMessageNode **node)
-{
-	LmMessageNode *l;
-	GSList *tmp;
-	const char *attribute_value;
-
-	g_return_val_if_fail(list != NULL, FALSE);
-	g_return_val_if_fail(name != NULL, FALSE);
-	g_return_val_if_fail(value != NULL, FALSE);
-
-	for (tmp = list; tmp != NULL; tmp = tmp->next) {
-		l = tmp->data;
-		
-		attribute_value = lm_message_node_get_attribute(l, name);
-		if (attribute_value != NULL &&
-		    strcmp(attribute_value, value) == 0) {
-
-			if (&*node != NULL)
-				*node = l;
-
-			return TRUE;
+			v = lm_message_node_get_attribute(l, attribute);
+			if (v != NULL && strcmp(value, v) == 0)
+				return l;
 		}
 
-	}
-
-	return FALSE;
+	return NULL;
 }
 
 gboolean

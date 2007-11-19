@@ -5,6 +5,7 @@
 
 #define XMPP_PROTOCOL_LEVEL 1
 
+#define XMLNS "xmlns"
 #define XMLNS_ROSTER "jabber:iq:roster"
 #define XMLNS_VERSION "jabber:iq:version"
 #define XMLNS_VCARD "vcard-temp"

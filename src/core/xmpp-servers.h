@@ -25,6 +25,11 @@
 
 struct _XMPP_SERVER_CONNECT_REC {
 	#include "server-connect-rec.h"
+
+	GSList		*channels_list;
+	int		 show;
+	int		 priority;
+	gboolean	 default_priority;
 };
 
 typedef enum {

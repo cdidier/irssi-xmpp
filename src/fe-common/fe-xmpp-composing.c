@@ -127,7 +127,7 @@ sig_window_changed(WINDOW_REC *new_window, WINDOW_REC *old_window)
 		goto stop;
 
 	query = XMPP_QUERY(active_win->active);
-	if (query == NULL || !xmpp_jid_have_resource(query->name))
+	if (query == NULL || !xmpp_have_resource(query->name))
 		goto stop;
 
 	if (!keylog_active) {

@@ -23,6 +23,7 @@
 #include "module.h"
 #include "channels-setup.h"
 #include "misc.h"
+#include "settings.h"
 #include "signals.h"
 #include "window-items.h"
 
@@ -38,7 +39,7 @@ static GList *
 get_resources(XMPP_SERVER_REC *server, const char *nick,
     const char *resource_name)
 {
-	GSList *resource_list;
+	GSList *rl;
 	GList *list;
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
@@ -56,18 +57,12 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 	if (user == NULL)
 		return NULL;
 
-	for(resource_list = user->resources; resource_list != NULL;
-	    resource_list = resource_list->next) {
-
-		resource = (XMPP_ROSTER_RESOURCE_REC *)resource_list->data;
-		if ((resource_name == NULL
+	for(rl = user->resources; rl != NULL; rl = rl->next) {
+		resource = (XMPP_ROSTER_RESOURCE_REC *)rl->data;
+		if (resource_name == NULL
 		    || g_strncasecmp(resource->name, resource_name, len) == 0)
-		    && resource->name != NULL) {
-			
-			list = g_list_append(list,
-			    (gpointer)g_strdup_printf("%s/%s", nick,
-			    resource->name));
-		}
+			list = g_list_append(list, g_strconcat(nick, "/",
+			    resource->name, NULL));
 	}
 
 	return list;
@@ -76,11 +71,12 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 static GList *
 get_nicks(XMPP_SERVER_REC *server, const char *nick)
 {
-	GSList *group_list, *user_list;
+	GSList *gl, *ul;
 	GList *list;
 	XMPP_ROSTER_USER_REC *user;
-	gchar *jid, *resource;
+	char *jid, *resource;
 	int len;
+	gboolean pass2;
 	
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(nick != NULL, NULL);
@@ -92,7 +88,7 @@ get_nicks(XMPP_SERVER_REC *server, const char *nick)
 	if (resource != NULL) {
 		jid = xmpp_strip_resource(nick);
 
-		list = get_resources(server, jid, NULL);
+		list = get_resources(server, jid, resource);
 
 		g_free(resource);
 		g_free(jid);
@@ -101,27 +97,35 @@ get_nicks(XMPP_SERVER_REC *server, const char *nick)
 	}
 
 	list = NULL;
+	pass2 = FALSE;
 
-	for (group_list = server->roster; group_list != NULL;
-	    group_list = group_list->next) {
+again:
+	/* first complete with online contacts
+	 * then complete with offline contacts */
+	for (gl = server->roster; gl != NULL; gl = gl->next) {
 
-		for (user_list =
-		    ((XMPP_ROSTER_GROUP_REC *)group_list->data)->users;
-		    user_list != NULL ; user_list = user_list->next) {
+		for (ul = ((XMPP_ROSTER_GROUP_REC *)gl->data)->users;
+		    ul != NULL ; ul = ul->next) {
+			user = (XMPP_ROSTER_USER_REC *)ul->data;
 
-			user = (XMPP_ROSTER_USER_REC *)user_list->data;
+			if ((!pass2 && user->resources == NULL)
+			    || (pass2 && user->resources != NULL))
+			    	continue;
 
 			if (user->name != NULL
 			    && g_utf8_strchr(user->name, -1, ' ') == NULL
 			    && g_strncasecmp(user->name, nick, len) == 0)
 				list = g_list_prepend(list,
-				    (gpointer)g_strdup(user->name));
+				    g_strdup(user->name));
 
 			if (g_strncasecmp(user->jid, nick, len) == 0)
 				list = g_list_append(list,
-				    (gpointer)g_strdup(user->jid));
+				    g_strdup(user->jid));
 		}
 	}
+	
+	if ((pass2 = !pass2))
+		goto again;
 
 	return list;
 }
@@ -140,21 +144,16 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 	if (server == NULL)
 		return;
 
-	if (!IS_XMPP_CHANNEL(window->active) ||
-	    g_ascii_strcasecmp(linestart, "/Q") == 0) {
-		g_list_free(*list);
-		*list = get_nicks(server, word);
-	}
-
-	if (*list != NULL)
-		signal_stop();
+	if (!IS_XMPP_CHANNEL(window->active)
+	    || g_ascii_strcasecmp(linestart, settings_get_str("cmdchars")) == 0)
+	*list = g_list_concat(*list, get_nicks(server, word));
 }
 
 static void
 sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
-	GSList *group_list;
+	GSList *gl;
 	XMPP_SERVER_REC *server;
 	XMPP_ROSTER_GROUP_REC *group;
 	int len;
@@ -177,20 +176,17 @@ sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
 	/* complete groups */
 	if (tmp[0] != NULL && tmp[1] == NULL) {
 
-		for (group_list = server->roster; group_list != NULL;
-		    group_list = group_list->next) {
-			group = (XMPP_ROSTER_GROUP_REC *)group_list->data;
-			if (group->name != NULL &&
+		for (gl = server->roster; gl != NULL; gl = gl->next) {
+			group = (XMPP_ROSTER_GROUP_REC *)gl->data;
+			
+			if (group->name == NULL ||
 			    g_ascii_strncasecmp(word, group->name, len) == 0)
 				*list = g_list_append(*list,
-				    (gpointer)g_strdup(group->name));
+				    g_strdup(group->name));
 		}
 
 	}
 	g_strfreev(tmp);
-
-	if (*list != NULL)
-		signal_stop();
 }
 
 #define XMPP_CHANNEL_SETUP(chansetup) \

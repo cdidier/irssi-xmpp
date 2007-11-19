@@ -27,6 +27,7 @@
 
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
+#include "xmpp-rosters-tools.h"
 #include "fe-xmpp-status.h"
 
 static void
@@ -69,11 +70,28 @@ sig_query_raise(XMPP_SERVER_REC *server, QUERY_REC *query)
 	window_item_set_active(active_win, (WI_ITEM_REC *)query);
 }
 
+static void
+sig_query_created(XMPP_QUERY_REC *query, int automatic)
+{
+	XMPP_ROSTER_USER_REC *user;
+
+	if (!IS_XMPP_QUERY(query))
+		return;
+
+	user = xmpp_rosters_find_user(query->server->roster, query->name, NULL);
+	if (user == NULL || user->name == NULL)
+		return;
+
+	printformat_module(MODULE_NAME, query->server, query->name,
+	    MSGLEVEL_CRAP, XMPPTXT_QUERY_AKA, user->name);
+}
+
 void
 fe_xmpp_queries_init(void)
 {
 	signal_add("xmpp query raise", (SIGNAL_FUNC)sig_query_raise);
 	signal_add("xmpp presence changed", (SIGNAL_FUNC)sig_presence_changed);
+	signal_add_last("query created", (SIGNAL_FUNC)sig_query_created);
 }
 
 void
@@ -82,4 +100,5 @@ fe_xmpp_queries_deinit(void)
 	signal_remove("xmpp query raise", (SIGNAL_FUNC)sig_query_raise);
 	signal_remove("xmpp presence changed",
 	    (SIGNAL_FUNC)sig_presence_changed);
+	signal_remove("query created", (SIGNAL_FUNC)sig_query_created);
 }

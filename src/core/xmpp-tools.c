@@ -99,7 +99,7 @@ xmpp_strip_resource(const char *jid)
         g_return_val_if_fail(jid != NULL, NULL);
 
         pos = g_utf8_strchr(jid, -1, '/');
-	return (pos != NULL) ?  g_strndup(jid, pos - jid) : g_strdup(jid);
+	return (pos != NULL) ? g_strndup(jid, pos - jid) : g_strdup(jid);
 }
 
 char *
@@ -117,7 +117,16 @@ xmpp_extract_user(const char *jid)
 char *
 xmpp_extract_host(const char *jid)
 {
-	return NULL;
+	char *pos1, *pos2;
+
+	pos1 = g_utf8_strchr(jid, -1, '@');
+	pos2 = g_utf8_strchr(jid, -1, '/');
+
+	if (pos1 == NULL || (pos2 != NULL && pos2 < pos1))
+		return NULL;
+
+	return (pos2 != NULL) ? 
+		g_strndup(pos1 + 1, pos2 - pos1) : g_strdup(pos1 + 1);
 }
 
 void
@@ -149,7 +158,7 @@ xmpp_jid_extract(char *jid, char **username, char **server,
 }
 
 gboolean
-xmpp_jid_have_address(const char *jid)
+xmpp_have_host(const char *jid)
 {
 	char *pos;
 
@@ -160,7 +169,7 @@ xmpp_jid_have_address(const char *jid)
 }
 
 gboolean
-xmpp_jid_have_resource(const char *jid)
+xmpp_have_resource(const char *jid)
 {
 	char *pos;
 

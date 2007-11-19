@@ -108,7 +108,7 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	char *room, *room_recoded;
+	char *room, *recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
@@ -117,19 +117,33 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 		return;
 
 	room = g_strconcat(channel->name, "/", nick, NULL);
-	room_recoded = xmpp_recode_out(room);
+	recoded = xmpp_recode_out(room);
 	g_free(room);
 
-	msg = lm_message_new(room_recoded, LM_MESSAGE_TYPE_PRESENCE);
-	g_free(room_recoded);
+	msg = lm_message_new(recoded, LM_MESSAGE_TYPE_PRESENCE);
+	g_free(recoded);
 
 	child = lm_message_node_add_child(msg->node, "x", NULL);
 	lm_message_node_set_attribute(child, "xmlns", XMLNS_MUC);
 
-	/* no history */
 	if (!channel->joined) {
+		/* no history */
 		child = lm_message_node_add_child(child, "history", NULL);
 		lm_message_node_set_attribute(child, "maxchars", "0");
+
+		if (server->show != XMPP_PRESENCE_AVAILABLE) {
+			recoded = xmpp_recode_out(
+			    xmpp_presence_show[server->show]);
+			lm_message_node_add_child(msg->node, "show", recoded);
+			g_free(recoded);
+		}
+
+		if (server->away_reason != NULL) {
+			recoded = xmpp_recode_out(server->away_reason);
+			lm_message_node_add_child(msg->node, "status",
+			    recoded);
+			g_free(recoded);
+		}
 	}
 
 	lm_send(server, msg, NULL);
@@ -139,10 +153,6 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 static void
 send_join(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 {
-	LmMessage *msg;
-	LmMessageNode *child;
-	char *room_recoded;
-
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
 
@@ -150,25 +160,13 @@ send_join(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel)
 		return;
 
 	send_nick(server, channel, channel->nick);
-
-	/* request channel properties */
-	room_recoded = xmpp_recode_out(channel->name);
-	msg = lm_message_new_with_sub_type(room_recoded, LM_MESSAGE_TYPE_IQ,
-	    LM_MESSAGE_SUB_TYPE_GET);
-	g_free(room_recoded);
-
-	child = lm_message_node_add_child(msg->node, "x", NULL);
-	lm_message_node_set_attribute(child, "xmlns", XMLNS_DISCO_INFO);
-	
-	lm_send(server, msg, NULL);
-	lm_message_unref(msg);
 }
 
 void
 xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 {
 	XMPP_CHANNEL_REC *channel;
-	char **chanlist, **tmp, *channels, *keys, *channel_name, *nick;
+	char *chanline, *channame, *nick, *key;
 	void *free_arg;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
@@ -178,35 +176,23 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 		return;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST,
-	    &channels, &keys))
+	    &chanline, &key))
 		return;
-	
-	chanlist = g_strsplit(channels, ",", -1);
-	channel_name = nick = NULL;
 
-	for (tmp = chanlist; *tmp != NULL; tmp++) {
-		g_strstrip(*tmp);
+	nick = xmpp_extract_nick(chanline);
+	channame = xmpp_extract_channel(chanline);
 
-		nick = xmpp_extract_nick(*tmp);
-		if (nick != NULL)
-			channel_name = xmpp_extract_channel(*tmp);
+	if (xmpp_channel_find(server, channame) == NULL) {
 
-		channel = xmpp_channel_find(server, (channel_name != NULL) ?
-		    channel_name : *tmp);
-		if (channel == NULL) {
-			channel = (XMPP_CHANNEL_REC *)
-			    xmpp_channel_create(server,
-			    (channel_name != NULL) ? channel_name : *tmp,
-			    NULL, automatic, nick);
+		channel = (XMPP_CHANNEL_REC *)xmpp_channel_create(server,
+		    channame, NULL, automatic, nick);
 
-			send_join(server, channel);
-		}
-
-		g_free_and_null(nick);
-		g_free_and_null(channel_name);
+		channel->key = g_strdup(key);
+		send_join(server, channel);
 	}
-	
-	g_strfreev(chanlist);
+
+	g_free(nick);
+	g_free(channame);
 	cmd_params_free(free_arg);
 }
 
@@ -247,57 +233,43 @@ send_part(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 }
 
 static void
-sig_part(XMPP_SERVER_REC *server, const char *channels,
+sig_part(XMPP_SERVER_REC *server, const char *channame,
     const char *reason)
 {
 	XMPP_CHANNEL_REC *channel;
-	char **chanlist, **tmp;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(channels != NULL);
+	g_return_if_fail(channame != NULL);
 
-	chanlist = g_strsplit(channels, ",", -1);
+	g_strstrip((char *)channame);
+	channel = xmpp_channel_find(server, channame);
+	if (channel != NULL) {
+		if (!channel->error)
+			send_part(server, channel, reason);
+		channel->left = TRUE;
 
-	for (tmp = chanlist; *tmp != NULL; tmp++) {
-		g_strstrip(*tmp);
-		channel = xmpp_channel_find(server, *tmp);
-		if (channel != NULL) {
-			if (!channel->error)
-				send_part(server, channel, reason);
-			channel->left = TRUE;
+		if (channel->ownnick != NULL)
+			signal_emit("message part", 5, server,
+			    channel->name, channel->ownnick->nick,
+			    channel->ownnick->host, reason);
 
-			if (channel->ownnick != NULL)
-				signal_emit("message part", 5, server,
-				    channel->name, channel->ownnick->nick,
-				    channel->ownnick->host, reason);
-
-			channel_destroy(CHANNEL(channel));
-		}
+		channel_destroy(CHANNEL(channel));
 	}
-
-	g_strfreev(chanlist);
 }
 
 static void
-sig_own_nick(XMPP_SERVER_REC *server, const char *channels, const char *nick)
+sig_own_nick(XMPP_SERVER_REC *server, const char *channame, const char *nick)
 {
 	XMPP_CHANNEL_REC *channel;
-	char **chanlist, **tmp;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(channels != NULL);
+	g_return_if_fail(channame != NULL);
 	g_return_if_fail(nick != NULL);
 
-	chanlist = g_strsplit(channels, ",", -1);
-
-	for (tmp = chanlist; *tmp != NULL; tmp++) {
-		g_strstrip(*tmp);
-		channel = xmpp_channel_find(server, *tmp);
-		if (channel != NULL)
-			send_nick(server, channel, nick);
-	}
-
-	g_strfreev(chanlist);
+	g_strstrip((char *)channame);
+	channel = xmpp_channel_find(server, channame);
+	if (channel != NULL)
+		send_nick(server, channel, nick);
 }
 
 static void
@@ -366,6 +338,24 @@ sig_nick_join(XMPP_CHANNEL_REC *channel, const char *nick_name,
 		    nick->nick, nick->host);
 		signal_emit("message xmpp channel mode", 5, channel->server,
 		    channel, nick->nick, nick->affiliation, nick->role);
+	}
+
+	/* request channel properties if we are sure we joined the room */
+	if (channel->ownnick == NICK(nick)) {
+		LmMessage *msg;
+		LmMessageNode *child;
+		char *room_recoded;
+
+		room_recoded = xmpp_recode_out(channel->name);
+		msg = lm_message_new_with_sub_type(room_recoded,
+		    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
+		g_free(room_recoded);
+
+		child = lm_message_node_add_child(msg->node, "x", NULL);
+		lm_message_node_set_attribute(child, "xmlns", XMLNS_DISCO_INFO);
+	
+		lm_send(channel->server, msg, NULL);
+		lm_message_unref(msg);
 	}
 }
 
@@ -463,6 +453,33 @@ sig_nick_changed(XMPP_CHANNEL_REC *channel, const char *oldnick,
 }
 
 static void
+sig_nick_in_use(XMPP_CHANNEL_REC *channel, const char *nick)
+{
+	const char *altnick;
+	char *str;
+
+	g_return_if_fail(IS_XMPP_CHANNEL(channel));
+	g_return_if_fail(nick != NULL);
+
+	if (channel->joined)
+		return;
+
+	altnick = settings_get_str("alternate_nick");
+
+	if (altnick != NULL && *altnick != '\0'
+	    && strcmp(channel->nick, altnick) != 0) {
+		g_free(channel->nick);
+		channel->nick = g_strdup(altnick);
+	} else {
+		str = g_strdup_printf("%s_", channel->nick);
+		g_free(channel->nick);
+		channel->nick = str;
+	}
+
+	send_join(channel->server, channel);
+}
+
+static void
 sig_nick_kicked(XMPP_CHANNEL_REC *channel, const char *nick_name,
     const char *actor, const char *reason)
 {
@@ -491,56 +508,104 @@ disco_parse_channels_features(const char *var, XMPP_CHANNELS_FEATURES features)
 {
 	g_return_val_if_fail(var != NULL, 0);
 
-	if (!(features & XMPP_CHANNELS_FEATURE_HIDDEN) &&
-	    g_ascii_strcasecmp(var, "muc_hidden") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_HIDDEN)
+	    && g_ascii_strcasecmp(var, "muc_hidden") == 0)
 		return XMPP_CHANNELS_FEATURE_HIDDEN;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_MEMBERS_ONLY) &&
-	    g_ascii_strcasecmp(var, "muc_membersonly") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_MEMBERS_ONLY)
+	     && g_ascii_strcasecmp(var, "muc_membersonly") == 0)
 		return XMPP_CHANNELS_FEATURE_MEMBERS_ONLY;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_MODERATED) &&
-	    g_ascii_strcasecmp(var, "muc_moderated") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_MODERATED)
+	    && g_ascii_strcasecmp(var, "muc_moderated") == 0)
 		return XMPP_CHANNELS_FEATURE_MODERATED;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_NONANONYMOUS) &&
-	    g_ascii_strcasecmp(var, "muc_nonanonymous") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_NONANONYMOUS)
+	    && g_ascii_strcasecmp(var, "muc_nonanonymous") == 0)
 		return XMPP_CHANNELS_FEATURE_NONANONYMOUS;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_OPEN) &&
-	    g_ascii_strcasecmp(var, "muc_open") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_OPEN)
+	    && g_ascii_strcasecmp(var, "muc_open") == 0)
 		return XMPP_CHANNELS_FEATURE_OPEN;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_PASSWORD_PROTECTED) &&
-	    g_ascii_strcasecmp(var, "muc_passwordprotected") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_PASSWORD_PROTECTED)
+	    && g_ascii_strcasecmp(var, "muc_passwordprotected") == 0)
 		return XMPP_CHANNELS_FEATURE_PASSWORD_PROTECTED;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_PERSISTENT) &&
-	    g_ascii_strcasecmp(var, "muc_persistent") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_PERSISTENT)
+	    && g_ascii_strcasecmp(var, "muc_persistent") == 0)
 		return XMPP_CHANNELS_FEATURE_PERSISTENT;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_PUBLIC) &&
-	    g_ascii_strcasecmp(var, "muc_public") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_PUBLIC)
+	    && g_ascii_strcasecmp(var, "muc_public") == 0)
 		return XMPP_CHANNELS_FEATURE_PUBLIC;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_SEMIANONYMOUS) &&
-	    g_ascii_strcasecmp(var, "muc_semianonymous") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_SEMIANONYMOUS)
+	    && g_ascii_strcasecmp(var, "muc_semianonymous") == 0)
 		return XMPP_CHANNELS_FEATURE_SEMIANONYMOUS;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_TEMPORARY) &&
-	    g_ascii_strcasecmp(var, "muc_temporary") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_TEMPORARY)
+	    && g_ascii_strcasecmp(var, "muc_temporary") == 0)
 		return XMPP_CHANNELS_FEATURE_TEMPORARY;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_PERSISTENT) &&
-	    g_ascii_strcasecmp(var, "muc_unmoderated") == 0)
-		return XMPP_CHANNELS_FEATURE_PERSISTENT;
+	if (!(features & XMPP_CHANNELS_FEATURE_UNMODERATED)
+	    && g_ascii_strcasecmp(var, "muc_unmoderated") == 0)
+		return XMPP_CHANNELS_FEATURE_UNMODERATED;
 
-	if (!(features & XMPP_CHANNELS_FEATURE_UNSECURED) &&
-	    g_ascii_strcasecmp(var, "muc_unsecured") == 0)
+	if (!(features & XMPP_CHANNELS_FEATURE_UNSECURED)
+	    && g_ascii_strcasecmp(var, "muc_unsecured") == 0)
 		return XMPP_CHANNELS_FEATURE_UNSECURED;
 
 	else
 		return 0;
+}
+
+static void
+update_channel_modes(XMPP_CHANNEL_REC *channel)
+{
+	GString *modes;
+
+	g_return_if_fail(IS_XMPP_CHANNEL(channel));
+
+	modes = g_string_new(NULL);
+
+	if (channel->features & XMPP_CHANNELS_FEATURE_HIDDEN)
+		g_string_append(modes, "h");
+	if (channel->features & XMPP_CHANNELS_FEATURE_MEMBERS_ONLY)
+		g_string_append(modes, "m");
+	if (channel->features & XMPP_CHANNELS_FEATURE_MODERATED)
+		g_string_append(modes, "M");
+	if (channel->features & XMPP_CHANNELS_FEATURE_NONANONYMOUS)
+		g_string_append(modes, "a");
+	if (channel->features & XMPP_CHANNELS_FEATURE_OPEN)
+		g_string_append(modes, "o");
+	if (channel->features & XMPP_CHANNELS_FEATURE_PASSWORD_PROTECTED)
+		g_string_append(modes, "k");
+	if (channel->features & XMPP_CHANNELS_FEATURE_PERSISTENT)
+		g_string_append(modes, "p");
+	if (channel->features & XMPP_CHANNELS_FEATURE_PUBLIC)
+		g_string_append(modes, "u");
+	if (channel->features & XMPP_CHANNELS_FEATURE_SEMIANONYMOUS)
+		g_string_append(modes, "b");
+	if (channel->features & XMPP_CHANNELS_FEATURE_TEMPORARY)
+		g_string_append(modes, "t");
+	if (channel->features & XMPP_CHANNELS_FEATURE_UNMODERATED)
+		g_string_append(modes, "n");
+	if (channel->features & XMPP_CHANNELS_FEATURE_UNSECURED)
+		g_string_append(modes, "d");
+
+	if (channel->features & XMPP_CHANNELS_FEATURE_PASSWORD_PROTECTED
+	    && channel->key != NULL)
+		g_string_append_printf(modes, " %s", channel->key);
+
+	if (strcmp(modes->str, channel->mode) != 0) {
+		g_free(channel->mode);
+		channel->mode = modes->str;
+
+		signal_emit("channel mode changed", 2, channel, channel->name);
+	}
+
+	g_string_free(modes, FALSE);
 }
 
 static void
@@ -568,6 +633,8 @@ sig_disco(XMPP_CHANNEL_REC *channel, LmMessageNode *query)
 next:
 		item = item->next;
 	}
+
+	update_channel_modes(channel);
 	
 	/* assume joined when receiving the info for the first time */
 	if (!channel->joined && channel->ownnick != NULL) {
@@ -640,6 +707,7 @@ xmpp_channels_init(void)
 	signal_add("xmpp channel nick presence",
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_add("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
+	signal_add("xmpp channel nick in use", (SIGNAL_FUNC)sig_nick_in_use);
 	signal_add("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
 	signal_add("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_add("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
@@ -662,6 +730,8 @@ xmpp_channels_deinit(void)
 	signal_remove("xmpp channel nick presence",
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_remove("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
+	signal_remove("xmpp channel nick in use",
+	    (SIGNAL_FUNC)sig_nick_in_use);
 	signal_remove("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
 	signal_remove("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_remove("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);

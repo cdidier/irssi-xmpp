@@ -191,31 +191,40 @@ xmpp_rosters_find_resource(XMPP_ROSTER_USER_REC *user, const char *resource)
 }
 
 char *
-xmpp_rosters_get_full_jid(GSList *groups, const char *str)
+xmpp_rosters_resolve_name(XMPP_SERVER_REC *server, const char *name)
 {
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	const char *tmp;
+	char *res, *str;
 
-	g_return_val_if_fail(groups != NULL, NULL);
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+	g_return_val_if_fail(name != NULL, NULL);
 
-	user = find_username(groups, str, NULL);
-	tmp = (user != NULL) ? user->jid : str;
+	g_strstrip((char *)name);
 
-	/* if unspecified, use the highest resource */
-	if (!xmpp_jid_have_resource(tmp)) {
-		if (user == NULL)
-			user = xmpp_rosters_find_user(groups, tmp, NULL);
+	user = find_username(server->roster, name, NULL);
+	if (user == NULL)
+		user = xmpp_rosters_find_user(server->roster, name, NULL);
 
-		if (user != NULL && user->resources != NULL) {
-			resource = user->resources->data;
-			if (resource->name != NULL)
-				return g_strconcat(user->jid, "/",
-				    resource->name, NULL);
+	if (user != NULL) {
+		if (!xmpp_have_resource(name)) {
+			/* if unspecified, use the highest resource */
+			if (user->resources != NULL) {
+				resource = user->resources->data;
+				if (resource->name != NULL)
+					return g_strconcat(user->jid, "/",
+					    resource->name, NULL);
+			}
+			return g_strdup(user->jid);
 		}
+
+		res = xmpp_extract_resource(name);
+		str = g_strconcat(user->jid, "/", res, NULL);
+		g_free(res);
+		return str;
 	}
 
-	return (user != NULL) ? g_strdup(user->jid) : NULL;
+	return NULL;
 }
 
 gboolean

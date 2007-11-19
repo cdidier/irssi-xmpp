@@ -34,6 +34,7 @@
 #include "xmpp-protocol.h"
 #include "xmpp-queries.h"
 #include "xmpp-rosters.h"
+#include "xmpp-servers-reconnect.h"
 #include "xmpp-session.h"
 #include "xmpp-settings.h"
 
@@ -52,7 +53,9 @@ create_server_setup(void)
 static SERVER_CONNECT_REC *
 create_server_connect(void)
 {
-	return (SERVER_CONNECT_REC *)g_new0(XMPP_SERVER_CONNECT_REC, 1);
+	XMPP_SERVER_CONNECT_REC *rec = g_new0(XMPP_SERVER_CONNECT_REC, 1);
+	rec->channels_list = NULL;
+	return (SERVER_CONNECT_REC *)rec;
 }
 
 static CHANNEL_SETUP_REC *
@@ -64,6 +67,15 @@ create_channel_setup(void)
 static void
 destroy_server_connect(SERVER_CONNECT_REC *conn)
 {
+	XMPP_SERVER_CONNECT_REC *rec = XMPP_SERVER_CONNECT(conn);
+	GSList *tmp;
+
+	if (rec == NULL)
+		return;
+
+	for (tmp = rec->channels_list; tmp != NULL; tmp = tmp->next)
+		g_free(tmp->data);
+	g_slist_free(rec->channels_list);
 }
 
 void
@@ -100,6 +112,7 @@ xmpp_core_init(void)
 	xmpp_protocol_init();
 	xmpp_rosters_init();
 	xmpp_servers_init();
+	xmpp_servers_reconnect_init();
 	xmpp_session_init();
 	xmpp_settings_init();
 
@@ -118,6 +131,7 @@ xmpp_core_deinit(void)
 	xmpp_ping_deinit();
 	xmpp_protocol_deinit();
 	xmpp_rosters_deinit();
+	xmpp_servers_reconnect_deinit();
 	xmpp_session_deinit();
 	xmpp_settings_deinit();
 

@@ -10,6 +10,7 @@ SRCS=	loudmouth-tools.c \
 	xmpp-rosters.c \
 	xmpp-rosters-tools.c \
 	xmpp-servers.c \
+	xmpp-servers-reconnect.c \
 	xmpp-session.c \
 	xmpp-settings.c \
 	xmpp-tools.c

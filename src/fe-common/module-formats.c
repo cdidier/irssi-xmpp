@@ -51,19 +51,19 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "message_not_delivered", "{nick $0}: cannot deliver message {comment $1}", 2,  { 0, 0 } },
 
 	/* ---- */
+	{ NULL, "Queries", 0 },
+
+	{ "query_aka", "Also known as {nick $0}", 1, { 0 } },
+
+	/* ---- */
 	{ NULL, "Channel", 0 },
 
 	{ "joinerror", "Cannot join to channel {channel $0} {comment $1}", 1, { 0 } },
 
 	/* ---- */
-	{ NULL, "Who queries", 0 },
-
-
-
-	/* ---- */
 	{ NULL, "Presence", 0 },
 
-	{ "presence_change", "{nick $0}: is now $1", 2, { 0, 0} },
+	{ "presence_change", "{nick $0}: is now $1", 2, { 0, 0 } },
 	{ "presence_change_reason", "{nick $0}: is now $1 {comment $2}", 3, { 0, 0, 0 } },
 
 	/* ---- */

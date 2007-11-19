@@ -136,10 +136,8 @@ sig_channel_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(oldnick != NULL);
 
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
-		return;
-
-	if (ignore_check(SERVER(server), oldnick, nick->host, channel->nick,
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel)
+	    || ignore_check(SERVER(server), oldnick, nick->host, channel->nick,
 	    nick->nick, MSGLEVEL_NICKS))
 		 return;
 
@@ -157,15 +155,26 @@ sig_channel_own_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(oldnick != NULL);
 
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
-		return;
-
-	if (channel->ownnick != nick)
+	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel)
+	    || channel->ownnick != nick)
 		return;
 
 	printformat_module(CORE_MODULE_NAME, server, channel->name,
 	    MSGLEVEL_NICKS | MSGLEVEL_NO_ACT, TXT_YOUR_NICK_CHANGED, oldnick,
 	    nick->nick, channel->name, nick->host);
+}
+
+void
+sig_nick_in_use(XMPP_CHANNEL_REC *channel, const char *nick)
+{
+	g_return_if_fail(channel != NULL);
+	g_return_if_fail(nick != NULL);
+
+	if (!IS_XMPP_SERVER(channel->server) || !channel->joined)
+		return;
+
+	printformat_module(IRC_MODULE_NAME, channel->server, channel->name,
+	    MSGLEVEL_CRAP, IRCTXT_NICK_IN_USE, nick);
 }
 
 static void
@@ -299,6 +308,7 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp channel nick", (SIGNAL_FUNC)sig_channel_nick);
 	signal_add("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_channel_own_nick);
+	signal_add("xmpp channel nick in use", (SIGNAL_FUNC)sig_nick_in_use);
 	signal_add("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
 	signal_add_first("message own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
@@ -316,9 +326,11 @@ fe_xmpp_messages_deinit(void)
 	    (SIGNAL_FUNC)sig_channel_nick);
 	signal_remove("message xmpp channel own_nick",
 	    (SIGNAL_FUNC)sig_channel_own_nick);
+	signal_remove("xmpp channel nick in use",
+	    (SIGNAL_FUNC)sig_nick_in_use);
 	signal_remove("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
-	signal_add_first("message own_public",
+	signal_remove("message own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
-	signal_add_first("message own_private",
+	signal_remove("message own_private",
 	    (SIGNAL_FUNC)sig_message_own_private);
 }

@@ -128,7 +128,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	server->user = xmpp_extract_user(str);
 	server->host = g_strdup(conn->address);
-	server->jid = xmpp_jid_have_address(str) ? xmpp_strip_resource(str) :
+	server->jid = xmpp_have_host(str) ? xmpp_strip_resource(str) :
 	    g_strconcat(server->user, "@", server->host, NULL);
 	server->resource = xmpp_extract_resource(str);
 	if (server->resource == NULL)
@@ -224,9 +224,9 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 {
 	XMPP_SERVER_REC *server;
 	const char *msg;
-		
+
 	server = XMPP_SERVER(user_data);
-	if (!xmpp_server_is_alive(server))
+	if (server == NULL)
 		return;
 
 	/* normal disconnection */
@@ -334,7 +334,8 @@ err:
 	server->connection_lost = TRUE;
 	server_connect_failed(SERVER(server),
 	    (error != NULL) ? error->message : "Connection failed");
-	g_free(error);
+	if (error != NULL)
+		g_error_free(error);
 }
 
 void
@@ -379,15 +380,13 @@ xmpp_server_connect(SERVER_REC *server)
 	return;
 
 err:
-	if (!IS_SERVER(server)) {
-		g_free(error);
-		return;
+	if (IS_SERVER(server)) {
+		server->connection_lost = TRUE;
+		server_connect_failed(SERVER(server),
+		    (error != NULL) ? error->message : NULL);
 	}
-
-	server->connection_lost = TRUE;
-	server_connect_failed(SERVER(server),
-	    (error != NULL) ? error->message : NULL);
-	g_free(error);
+	if (error != NULL)
+		g_error_free(error);
 }
 
 static void
@@ -404,20 +403,6 @@ sig_connected(XMPP_SERVER_REC *server)
 	
 	server->connected = TRUE;
 	server->connect_tag = -1;
-}
-
-static void
-sig_server_connect_copy(SERVER_CONNECT_REC **dest, XMPP_SERVER_CONNECT_REC *src)
-{
-	XMPP_SERVER_CONNECT_REC *rec;
-
-	g_return_if_fail(dest != NULL);
-	if (!IS_XMPP_SERVER_CONNECT(src))
-		return;
-
-	rec = g_new0(XMPP_SERVER_CONNECT_REC, 1);
-	rec->chat_type = XMPP_PROTOCOL;
-	*dest = (SERVER_CONNECT_REC *)rec;
 }
 
 static void
@@ -468,8 +453,6 @@ xmpp_servers_init(void)
 	signal_add_last("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
-	signal_add("server connect copy",
-	    (SIGNAL_FUNC)sig_server_connect_copy);
 
 	settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
 }
@@ -497,6 +480,4 @@ xmpp_servers_deinit(void)
 	signal_remove("server connect failed",
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_remove("server quit", (SIGNAL_FUNC)sig_server_quit);
-	signal_remove("server connect copy",
-	    (SIGNAL_FUNC)sig_server_connect_copy);
 }
