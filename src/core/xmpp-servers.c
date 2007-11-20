@@ -26,21 +26,12 @@
 #include "recode.h"
 #include "settings.h"
 #include "signals.h"
-/*#include "servers-reconnect.h"*/
 
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
 #include "xmpp-protocol.h"
 #include "xmpp-rosters.h"
 #include "xmpp-tools.h"
-
-gboolean
-xmpp_server_is_alive(XMPP_SERVER_REC *server)
-{
-	return (server != NULL
-	    && g_slist_find(servers, server) != NULL
-	    && server->connected);
-}
 
 static int
 isnickflag_func(char flag)
@@ -226,7 +217,7 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 	const char *msg;
 
 	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if (server == NULL || !server->connected)
 		return;
 
 	/* normal disconnection */

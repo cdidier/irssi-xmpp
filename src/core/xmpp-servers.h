@@ -61,7 +61,6 @@ struct _XMPP_SERVER_REC {
 };
 
 __BEGIN_DECLS
-gboolean	 xmpp_server_is_alive(XMPP_SERVER_REC *);
 SERVER_REC	*xmpp_server_init_connect(SERVER_CONNECT_REC *);
 void		 xmpp_server_connect(SERVER_REC *);
 

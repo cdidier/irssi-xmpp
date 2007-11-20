@@ -42,13 +42,18 @@
 static gboolean	 keylog_active;
 static int 	 last_key;
 
+#define IS_ALIVE_SERVER(server)							\
+	((server) != NULL							\
+	&& g_slist_find(servers, (server)) != NULL				\
+	&& (server)->connected)
+
 static gboolean
 stop_composing(gpointer *user_data)
 {
 	XMPP_QUERY_REC *query = XMPP_QUERY(user_data);
 
 	if (query == NULL || query->composing_time == 0
-	    || !xmpp_server_is_alive(query->server))
+	    || IS_ALIVE_SERVER(query->server))
 		return FALSE;
 
 	/* still composing */
@@ -153,7 +158,7 @@ sig_query_destroyed(QUERY_REC *query_destroyed)
 
 	query = XMPP_QUERY(query_destroyed);
 	if (query != NULL && query->composing_time != 0
-	    && xmpp_server_is_alive(query->server))
+	    && IS_ALIVE_SERVER(query->server))
 		signal_emit("xmpp composing stop", 2, query->server,
 		    query->name);
 }

@@ -731,7 +731,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 
 	CMD_XMPP_SERVER(server);
 
-	if (!IS_XMPP_ITEM(item) || !xmpp_server_is_alive(server))
+	if (!IS_XMPP_ITEM(item))
 		return;
 
 	target = window_item_get_target(item);
