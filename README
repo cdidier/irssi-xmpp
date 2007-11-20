@@ -41,7 +41,7 @@ Connection:
 ===========
 
 Usage:
-    /XMPPCONNECT [-ssl] [-server <server>] [-port <port>]
+    /XMPPCONNECT [-ssl] [-host <host>] [-port <port>]
                  <jid>[/<resource>] <password>
 
 The "jid" is your Jabber ID (something like "username@server"). You can add
