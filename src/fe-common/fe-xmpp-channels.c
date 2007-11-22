@@ -32,46 +32,42 @@
 static void
 sig_joinerror(XMPP_CHANNEL_REC *channel, int error)
 {
-	char *reason = NULL;
-	int format = 0;
+	char *reason;
 
 	if (!IS_XMPP_CHANNEL(channel))
 		return;
 
 	switch(error) {
 	case XMPP_CHANNELS_ERROR_PASSWORD_INVALID_OR_MISSING:
-		format = IRCTXT_JOINERROR_BAD_KEY;
+		reason = "Password required";
 		break;
 	case XMPP_CHANNELS_ERROR_USER_BANNED:
-		format = IRCTXT_JOINERROR_BANNED;
+		reason = "Banned from the room";
 		break;
 	case XMPP_CHANNELS_ERROR_ROOM_NOT_FOUND:
-		format = IRCTXT_JOINERROR_UNAVAIL;
+		reason = "The room does not exist";
 		break;
 	case XMPP_CHANNELS_ERROR_ROOM_CREATION_RESTRICTED:
-		reason = "You cannot create this room";
+		reason = "Room creation is restricted";
 		break;
 	case XMPP_CHANNELS_ERROR_USE_RESERVED_ROOM_NICK:
+		reason = "Your desired nick is reserved (Retrying with your alternate nick...)";
 		break;
 	case XMPP_CHANNELS_ERROR_NOT_ON_MEMBERS_LIST:
 		reason = "You are not on the member list";
 		break;
 	case XMPP_CHANNELS_ERROR_NICK_IN_USE:
-		/* this case never append here because it's handled */
+		reason = "Your desired nick is already in use (Retrying with your alternate nick...)";
 		break;
 	case XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED:
-		format = IRCTXT_JOINERROR_FULL;
+		reason = "Maximum number of users has been reached";
 	default:
-		reason = "unknow reason";
+		reason = "Unknow reason";
 	}
 
-	if (reason != NULL)
-		printformat_module(MODULE_NAME, channel->server,
-		    channel->name, MSGLEVEL_CRAP, XMPPTXT_CHANNEL_JOINERROR,
-		    channel->name, reason);
-	else if (format != 0)
-		printformat_module(IRC_MODULE_NAME, channel->server,
-		    channel->name, MSGLEVEL_CRAP, format, channel->name);
+	printformat_module(MODULE_NAME, channel->server, NULL,
+	    MSGLEVEL_CRAP, XMPPTXT_CHANNEL_JOINERROR,
+	    channel->name, reason);
 }
 
 void

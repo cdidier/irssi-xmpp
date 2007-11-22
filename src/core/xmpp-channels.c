@@ -51,7 +51,6 @@ xmpp_channel_create(XMPP_SERVER_REC *server, const char *name,
 	  (*settings_get_str("nick") != '\0') ?
 	  settings_get_str("nick") : server->user);
 	rec->features = 0;
-	rec->error = FALSE;
 
 	channel_init((CHANNEL_REC *)rec, SERVER(server), name, visible_name,
 	    automatic);
@@ -127,6 +126,12 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 	lm_message_node_set_attribute(child, "xmlns", XMLNS_MUC);
 
 	if (!channel->joined) {
+		if (channel->key != NULL) {
+			recoded = xmpp_recode_out(channel->key);
+			lm_message_node_add_child(child, "password", recoded);
+			g_free(recoded);
+		}
+
 		/* no history */
 		child = lm_message_node_add_child(child, "history", NULL);
 		lm_message_node_set_attribute(child, "maxchars", "0");
@@ -172,6 +177,8 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(data != NULL);
 
+	g_strstrip((char *)data);
+
 	if (!server->connected || *data == '\0')
 		return;
 
@@ -187,7 +194,8 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 		channel = (XMPP_CHANNEL_REC *)xmpp_channel_create(server,
 		    channame, NULL, automatic, nick);
 
-		channel->key = g_strdup(key);
+		channel->key = (key == NULL || *key == '\0') ?
+		    NULL : g_strdup(key);
 		send_join(server, channel);
 	}
 
@@ -244,8 +252,7 @@ sig_part(XMPP_SERVER_REC *server, const char *channame,
 	g_strstrip((char *)channame);
 	channel = xmpp_channel_find(server, channame);
 	if (channel != NULL) {
-		if (!channel->error)
-			send_part(server, channel, reason);
+		send_part(server, channel, reason);
 		channel->left = TRUE;
 
 		if (channel->ownnick != NULL)
@@ -653,9 +660,15 @@ sig_joinerror(XMPP_CHANNEL_REC *channel, int error)
 {
 	g_return_if_fail(IS_XMPP_CHANNEL(channel));
 
-	channel->error = TRUE;
-	signal_emit("xmpp channels part", 3, channel->server, channel->name,
-	    NULL);
+	/* retry with alternate nick */
+	if (error == XMPP_CHANNELS_ERROR_USE_RESERVED_ROOM_NICK
+	    || error == XMPP_CHANNELS_ERROR_NICK_IN_USE) {
+		signal_emit("xmpp channel nick in use",
+		    2, channel, channel->nick);
+		return;
+	}
+
+	channel_destroy(CHANNEL(channel));
 }
 
 static void
@@ -710,7 +723,7 @@ xmpp_channels_init(void)
 	signal_add("xmpp channel nick in use", (SIGNAL_FUNC)sig_nick_in_use);
 	signal_add("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
 	signal_add("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
-	signal_add("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
+	signal_add_last("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
 	signal_add_last("channel created", (SIGNAL_FUNC)sig_channel_created);
 	signal_add("channel destroyed", (SIGNAL_FUNC)sig_channel_destroyed);
 	signal_add_first("server connected",

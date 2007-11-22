@@ -708,8 +708,8 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NOT_ON_MEMBERS_LIST);
 				else if (g_ascii_strcasecmp(code, "409") == 0)
-					signal_emit("xmpp channel nick in use",
-					    2, channel, nick);
+					signal_emit("xmpp channel joinerror", 2,
+					    channel, XMPP_CHANNELS_ERROR_NICK_IN_USE);
 				else if (g_ascii_strcasecmp(code, "503") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED);

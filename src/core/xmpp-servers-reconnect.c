@@ -44,9 +44,9 @@ save_channels(XMPP_SERVER_REC *server, XMPP_SERVER_CONNECT_REC *conn)
 	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
 		channel = tmp->data;
 
-		if (channel->nick != NULL)
+		if (channel->key != NULL)
 			str = g_strdup_printf("\"%s/%s\" \"%s\"",
-			    channel->name, channel->nick, channel->nick);
+			    channel->name, channel->nick, channel->key);
 		else
 			str = g_strdup_printf("\"%s/%s\"", channel->name,
 			    channel->nick);

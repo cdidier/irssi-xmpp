@@ -36,9 +36,7 @@ struct _XMPP_CHANNEL_REC {
 	#include "channel-rec.h"
 
 	char	*nick;
-
 	XMPP_CHANNELS_FEATURES	features;
-	gboolean		error;
 
 	time_t	 composing_time;
 };
