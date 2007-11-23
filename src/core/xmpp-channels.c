@@ -460,33 +460,6 @@ sig_nick_changed(XMPP_CHANNEL_REC *channel, const char *oldnick,
 }
 
 static void
-sig_nick_in_use(XMPP_CHANNEL_REC *channel, const char *nick)
-{
-	const char *altnick;
-	char *str;
-
-	g_return_if_fail(IS_XMPP_CHANNEL(channel));
-	g_return_if_fail(nick != NULL);
-
-	if (channel->joined)
-		return;
-
-	altnick = settings_get_str("alternate_nick");
-
-	if (altnick != NULL && *altnick != '\0'
-	    && strcmp(channel->nick, altnick) != 0) {
-		g_free(channel->nick);
-		channel->nick = g_strdup(altnick);
-	} else {
-		str = g_strdup_printf("%s_", channel->nick);
-		g_free(channel->nick);
-		channel->nick = str;
-	}
-
-	send_join(channel->server, channel);
-}
-
-static void
 sig_nick_kicked(XMPP_CHANNEL_REC *channel, const char *nick_name,
     const char *actor, const char *reason)
 {
@@ -663,8 +636,19 @@ sig_joinerror(XMPP_CHANNEL_REC *channel, int error)
 	/* retry with alternate nick */
 	if (error == XMPP_CHANNELS_ERROR_USE_RESERVED_ROOM_NICK
 	    || error == XMPP_CHANNELS_ERROR_NICK_IN_USE) {
-		signal_emit("xmpp channel nick in use",
-		    2, channel, channel->nick);
+		const char *altnick = settings_get_str("alternate_nick");
+
+		if (altnick != NULL && *altnick != '\0'
+		    && strcmp(channel->nick, altnick) != 0) {
+			g_free(channel->nick);
+			channel->nick = g_strdup(altnick);
+		} else {
+			char *str = g_strdup_printf("%s_", channel->nick);
+			g_free(channel->nick);
+			channel->nick = str;
+		}
+
+		send_join(channel->server, channel);
 		return;
 	}
 
@@ -720,7 +704,6 @@ xmpp_channels_init(void)
 	signal_add("xmpp channel nick presence",
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_add("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
-	signal_add("xmpp channel nick in use", (SIGNAL_FUNC)sig_nick_in_use);
 	signal_add("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
 	signal_add("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_add_last("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
@@ -743,8 +726,6 @@ xmpp_channels_deinit(void)
 	signal_remove("xmpp channel nick presence",
 	    (SIGNAL_FUNC)sig_nick_presence);
 	signal_remove("xmpp channel nick", (SIGNAL_FUNC)sig_nick_changed);
-	signal_remove("xmpp channel nick in use",
-	    (SIGNAL_FUNC)sig_nick_in_use);
 	signal_remove("xmpp channel nick kicked", (SIGNAL_FUNC)sig_nick_kicked);
 	signal_remove("xmpp channel disco", (SIGNAL_FUNC)sig_disco);
 	signal_remove("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
