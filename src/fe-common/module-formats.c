@@ -28,11 +28,13 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ NULL, "Roster", 0 },
 
 	{ "roster_group", "{hilight $0}:", 1, { 0 } },
-	{ "roster_nick", "  ({hilight $0}) {nick $1} $2", 3, { 0, 0, 0 } },
-	{ "roster_resource", "[$0{nick $1}({hilight $2)}$3]", 4, { 0, 0, 0, 0 } },
-	{ "roster_resource_away", "({hilight $0})", 1, { 0 } },
-	{ "roster_resource_away_status", ": {comment $3}", 1, { 0 } },
-	{ "begin_of_roster", " ", 0 },
+	{ "roster_jid", "  ({hilight $0}) {nick $1} $2 $3", 4, { 0, 0, 0, 0 } },
+	{ "roster_name", "  ({hilight $0}) {nick $1} ($2) $3 $4", 5, { 0, 0, 0, 0, 0 } },
+	{ "roster_resource", "[$0{nick $1}($2)$3]", 4, { 0, 0, 0, 0 } },
+	{ "roster_resource_show", "($0)", 1, { 0 } },
+	{ "roster_resource_status", ": $0", 1, { 0 } },
+	{ "roster_subscription", "(subscription: $0)", 1, { 0 } },
+	{ "begin_of_roster", "ROSTER: {nick $0} $1 $2\n", 3, { 0, 0, 0 } },
 	{ "end_of_roster", "End of ROSTER", 0},
 	{ "not_in_roster", "{nick $0}: not in the roster", 1, { 0 } },
 
@@ -53,7 +55,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Queries", 0 },
 
-	{ "query_aka", "Also known as {nick $0}", 1, { 0 } },
+	{ "query_aka", "{nick $0}: Also known as {nick $1}", 2, { 0, 0 } },
 
 	/* ---- */
 	{ NULL, "Channel", 0 },

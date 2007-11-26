@@ -122,39 +122,14 @@ xmpp_extract_host(const char *jid)
 	pos1 = g_utf8_strchr(jid, -1, '@');
 	pos2 = g_utf8_strchr(jid, -1, '/');
 
-	if (pos1 == NULL || (pos2 != NULL && pos2 < pos1))
+	if (pos1 == NULL)
 		return NULL;
 
+	if (pos2 != NULL && pos2 < pos1)
+		return g_strdup(pos1 + 1);
+
 	return (pos2 != NULL) ? 
-		g_strndup(pos1 + 1, pos2 - pos1) : g_strdup(pos1 + 1);
-}
-
-void
-xmpp_jid_extract(char *jid, char **username, char **server,
-    char **resource)
-{
-	g_return_if_fail(jid != NULL);
-
-	*username = jid;
-
-	*server = g_utf8_strchr(jid, -1, '@');
-	if (*server != NULL) {
-		**server = '\0';
-		if (*(*server + 1) != '\0')
-			(*server)++;
-		else
-			*server = NULL;
-
-		*resource = g_utf8_strchr(*server, -1, '/');
-		if (*resource != NULL) {
-			**resource = '\0';
-			if (*(*resource + 1) != '\0')
-				(*resource)++;
-			else
-				*resource = NULL;
-		}
-	} else
-		*resource = NULL;
+		g_strndup(pos1 + 1, pos2 - pos1 - 1) : g_strdup(pos1 + 1);
 }
 
 gboolean

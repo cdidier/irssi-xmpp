@@ -291,7 +291,8 @@ sig_complete_command_away(GList **list, WINDOW_REC *window,
 		*list = g_list_append(*list,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_CHAT]));
 
-	if (g_strncasecmp(word, "online", len) == 0)
+	if (g_strncasecmp(word,
+	    xmpp_presence_show[XMPP_PRESENCE_ONLINE_STR], len) == 0)
 		*list = g_list_append(*list, g_strdup("online"));
 
 	signal_stop();

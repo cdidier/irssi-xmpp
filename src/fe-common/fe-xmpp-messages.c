@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "module.h"
-#include "ignore.h"
 #include "levels.h"
 #include "module-formats.h"
 #include "nicklist.h"
@@ -38,7 +37,6 @@
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
-#include "xmpp-nicklist.h"
 #include "xmpp-queries.h"
 #include "xmpp-tools.h"
 
@@ -125,77 +123,6 @@ sig_error(XMPP_SERVER_REC *server, const char *full_jid,
 
 	printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP,
 	    XMPPTXT_MESSAGE_NOT_DELIVERED, full_jid, msg);
-}
-
-static void
-sig_channel_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    NICK_REC *nick, const char *oldnick)
-{
-	g_return_if_fail(server != NULL);
-	g_return_if_fail(channel != NULL);
-	g_return_if_fail(nick != NULL);
-	g_return_if_fail(oldnick != NULL);
-
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel)
-	    || ignore_check(SERVER(server), oldnick, nick->host, channel->nick,
-	    nick->nick, MSGLEVEL_NICKS))
-		 return;
-
-	printformat_module(CORE_MODULE_NAME, server, channel->name,
-	    MSGLEVEL_NICKS, TXT_NICK_CHANGED, oldnick, nick->nick,
-	    channel->name, nick->host);
-}
-
-static void
-sig_channel_own_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    NICK_REC *nick, const char *oldnick)
-{
-	g_return_if_fail(server != NULL);
-	g_return_if_fail(channel != NULL);
-	g_return_if_fail(nick != NULL);
-	g_return_if_fail(oldnick != NULL);
-
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel)
-	    || channel->ownnick != nick)
-		return;
-
-	printformat_module(CORE_MODULE_NAME, server, channel->name,
-	    MSGLEVEL_NICKS | MSGLEVEL_NO_ACT, TXT_YOUR_NICK_CHANGED, oldnick,
-	    nick->nick, channel->name, nick->host);
-}
-
-void
-sig_nick_in_use(XMPP_CHANNEL_REC *channel, const char *nick)
-{
-	g_return_if_fail(channel != NULL);
-	g_return_if_fail(nick != NULL);
-
-	if (!IS_XMPP_CHANNEL(channel) || !channel->joined)
-		return;
-
-	printformat_module(IRC_MODULE_NAME, channel->server, channel->name,
-	    MSGLEVEL_CRAP, IRCTXT_NICK_IN_USE, nick);
-}
-
-static void
-sig_channel_mode(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
-    const char *nick, int affiliation, int role)
-{
-	char *mode;
-
-	g_return_if_fail(server != NULL);
-	g_return_if_fail(channel != NULL);
-	g_return_if_fail(nick != NULL);
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_CHANNEL(channel))
-		return;
-
-	mode = g_strconcat("+", xmpp_nicklist_affiliation[affiliation], "/+",
-	    xmpp_nicklist_role[role], " ", nick,  NULL);
-
-	printformat_module(IRC_MODULE_NAME, server, channel->name, MSGLEVEL_MODES,
-	    IRCTXT_CHANMODE_CHANGE, channel->name, mode, channel->name);
-
-	g_free(mode);
 }
 
 static void
@@ -305,11 +232,6 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_add("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_add("message xmpp error", (SIGNAL_FUNC)sig_error);
-	signal_add("message xmpp channel nick", (SIGNAL_FUNC)sig_channel_nick);
-	signal_add("message xmpp channel own_nick",
-	    (SIGNAL_FUNC)sig_channel_own_nick);
-	signal_add("xmpp channel nick in use", (SIGNAL_FUNC)sig_nick_in_use);
-	signal_add("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
 	signal_add_first("message own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
 	signal_add_first("message own_private",
@@ -322,13 +244,6 @@ fe_xmpp_messages_deinit(void)
 	signal_remove("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_remove("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_remove("message xmpp error", (SIGNAL_FUNC)sig_error);
-	signal_remove("message xmpp channel nick",
-	    (SIGNAL_FUNC)sig_channel_nick);
-	signal_remove("message xmpp channel own_nick",
-	    (SIGNAL_FUNC)sig_channel_own_nick);
-	signal_remove("xmpp channel nick in use",
-	    (SIGNAL_FUNC)sig_nick_in_use);
-	signal_remove("message xmpp channel mode", (SIGNAL_FUNC)sig_channel_mode);
 	signal_remove("message own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
 	signal_remove("message own_private",

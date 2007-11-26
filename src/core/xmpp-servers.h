@@ -9,6 +9,8 @@
 #include "loudmouth/loudmouth.h"
 #include "loudmouth-tools.h"
 
+#define XMPP_PROXY_HTTP "http"
+
 /* returns XMPP_SERVER_REC if it's XMPP server, NULL if it isn't */
 #define XMPP_SERVER(server)						\
 	PROTO_CHECK_CAST(SERVER(server), XMPP_SERVER_REC, chat_type, "XMPP")
@@ -52,9 +54,10 @@ struct _XMPP_SERVER_REC {
 	gboolean	 default_priority;
 	char		*ping_id;
 	XMPP_SERVERS_FEATURES features;
+	GSList		*resources;
 	GSList		*roster;
 
-	LmConnection	*lmconn;
+	LmConnection	 *lmconn;
 	LmMessageHandler *hmessage;
 	LmMessageHandler *hpresence;
 	LmMessageHandler *hiq;

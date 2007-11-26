@@ -33,6 +33,7 @@ read_settings(void)
 {
 	GSList *tmp;
 	XMPP_SERVER_REC *server;
+	const char *str;
 	
 	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
 
@@ -63,8 +64,23 @@ read_settings(void)
 				server->nickname = g_strdup(server->jid);
 			}
 		}
-
 	}
+
+	/* check validity */
+
+	str = settings_get_str("xmpp_proxy_type");
+	if (settings_get_bool("xmpp_use_proxy")
+	    && (str == NULL || g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) != 0))
+		;
+
+	str = settings_get_str("xmpp_default_away_mode");
+	if (str == NULL
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_AWAY]) != 0
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_CHAT]) != 0
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_DND]) != 0
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_XA]) != 0
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_ONLINE_STR]) != 0)
+		;
 }
 
 void

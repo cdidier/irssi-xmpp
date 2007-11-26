@@ -93,13 +93,18 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 {
 	GSList *tmp;
 	LmMessage *msg;
-	const char *show_str;
+	const char *show_str, *status_tmp;
 	char *status_recoded, *priority_str;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 
+	status_tmp = server->away_reason;
+	if (status == NULL && status_tmp != NULL
+	    && strcmp(status_tmp, " ") == 0)
+		status_tmp = NULL; 
+
 	if (!xmpp_presence_changed(show, server->show, status,
-	    server->away_reason, priority, server->priority))
+	    status_tmp, priority, server->priority))
 		return;
 
 	switch (show) {
@@ -121,22 +126,20 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	
 	case XMPP_PRESENCE_AVAILABLE:
 	default:
-		/* unaway */
-		if (server->show == XMPP_PRESENCE_AVAILABLE)
-			server->usermode_away = FALSE;
-		else if (server->usermode_away)
-			signal_emit("event 305", 2, server, server->nick);
-
 		show_str = NULL;
-		server->show = XMPP_PRESENCE_AVAILABLE;
 	}
 
 	/* away */
 	if (show_str != NULL) {
-		signal_emit("event 306", 2, server, server->nick);
 		server->show = show;
-	} else if (status != NULL)
-		server->usermode_away = TRUE;
+		signal_emit("event 306", 2, server, server->jid);
+
+	/* unaway */
+	} else {
+		server->show = XMPP_PRESENCE_AVAILABLE;
+		if (server->usermode_away)
+			signal_emit("event 305", 2, server, server->jid);
+	}
 
 	g_free(server->away_reason);
 	server->away_reason = g_strdup(status);
@@ -181,6 +184,9 @@ own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 	lm_message_unref(msg);
 	g_free(status_recoded);
 	g_free(priority_str);
+
+	if (server->usermode_away && server->away_reason == NULL)
+		server->away_reason = g_strdup(" ");
 }
 
 
@@ -369,33 +375,32 @@ version_handle(XMPP_SERVER_REC *server, const char *jid,
     LmMessageNode *node)
 {
 	LmMessageNode *child;
-	char *value;
+	char *name, *version, *os;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(jid != NULL);
 	g_return_if_fail(node != NULL);
 
-	signal_emit("xmpp begin of version", 2, server, jid);
+	name = version = os = NULL;
 
-	child = node->children;
-	while(child != NULL) {
-
+	for(child = node->children; child != NULL; child = child->next) {
 		if (child->value == NULL)
-			goto next;
+			continue;
 
-		value = xmpp_recode_in(child->value);
-		g_strstrip(value);
-
-		signal_emit("xmpp version value", 4, server, jid, child->name,
-		    value);
-
-		g_free(value);
-
-next:
-		child = child->next;
+		if (name == NULL && strcmp(child->value, "name") == 0)
+			name = xmpp_recode_in(child->value);
+		else if (version == NULL
+		    && strcmp(child->value, "version") == 0)
+			version = xmpp_recode_in(child->value);
+		else if (os  == NULL && strcmp(child->value, "os") == 0)
+			os = xmpp_recode_in(child->value);
 	}
 
-	signal_emit("xmpp end of version", 2, server, jid);
+	signal_emit("xmpp version", 2, server, jid, name, version, os);
+
+	g_free(name);
+	g_free(version);
+	g_free(os);
 }
 
 
@@ -715,7 +720,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					    channel, XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED);
 			} else {
 				if (g_ascii_strcasecmp(code, "409") == 0)
-					signal_emit("xmpp channel nick in use",
+					signal_emit("message xmpp channel nick in use",
 					    2, channel, nick);
 			}
 
@@ -926,6 +931,7 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	LmMessage *msg, gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
+	XMPP_CHANNEL_REC *channel;
 	LmMessageNode *child;
 	const char *xmlns;
 	char *jid, *text;
@@ -950,6 +956,29 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	    lm_message_node_get_attribute(child, XMLNS) : NULL;
 
 	switch (lm_message_get_sub_type(msg)) {
+
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+
+		/* MUC */
+		text = xmpp_extract_channel(jid);
+		channel = xmpp_channel_find(server, text);
+		g_free(text);
+		if (channel != NULL) {
+			const char *code;
+
+			child = lm_message_node_get_child(msg->node, "error");
+			if (child == NULL)
+				goto out;
+
+			code = lm_message_node_get_attribute(child, "code");
+			if (code == NULL)
+				goto out;
+
+
+
+		} 
+
+		break;
 
 	case LM_MESSAGE_SUB_TYPE_GET:
 		/* XEP-0092: Software Version */
@@ -1005,6 +1034,7 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 		break;
 	}
 
+out:
 	g_free(jid);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }

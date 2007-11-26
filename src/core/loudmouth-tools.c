@@ -28,6 +28,12 @@
 #include "xmpp-servers.h"
 #include "xmpp-tools.h"
 
+const char *
+lm_tools_get_xmlns(LmMessageNode *node, const char *name)
+{
+	return NULL;
+}
+
 LmMessageNode *
 lm_tools_message_node_find(LmMessageNode *node, const char *name,
     const char *attribute, const char *value)

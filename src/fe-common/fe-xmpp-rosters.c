@@ -18,7 +18,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <string.h>
+
 #include "module.h"
+#include "formats.h"
 #include "levels.h"
 #include "module-formats.h"
 #include "printtext.h"
@@ -40,83 +43,72 @@ sig_roster_group(XMPP_SERVER_REC *server, const char *group)
 			window = NULL;
 	}
 
-	if (window != NULL)
-		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
-		    group : settings_get_str("roster_default_group"));
-	else
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
-		    group : settings_get_str("roster_default_group"));
+	printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+	    XMPPTXT_ROSTER_GROUP, (group != NULL) ?
+	    group : settings_get_str("roster_default_group"));
+}
+
+static const char *
+get_first_show(GSList *list)
+{
+	if (list == NULL)
+		return NULL;
+	return xmpp_presence_show[
+	    ((XMPP_ROSTER_RESOURCE_REC *)list->data)->show];
+}
+
+static char *
+get_resources(XMPP_SERVER_REC *server, GSList *list)
+{
+	GSList *tmp;
+	GString *resources;
+	XMPP_ROSTER_RESOURCE_REC *resource;
+	char *show, *status, *priority, *text;
+
+	if (list == NULL)
+		return NULL;
+
+	resources = g_string_new(NULL);
+
+	for (tmp = list; tmp != NULL; tmp = tmp->next) {
+		resource = tmp->data;
+
+		show = (resource->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
+		    format_get_text(MODULE_NAME, NULL, server, NULL,
+		    XMPPTXT_ROSTER_RESOURCE_SHOW,
+		    xmpp_presence_show[resource->show]);
+
+		status = (resource->status == NULL) ? NULL :
+		    format_get_text(MODULE_NAME, NULL, server, NULL,
+		    XMPPTXT_ROSTER_RESOURCE_STATUS, resource->status);
+
+		priority = g_strdup_printf("%d", resource->priority);
+
+		text = format_get_text(MODULE_NAME, NULL, server, NULL,
+		    XMPPTXT_ROSTER_RESOURCE, show, resource->name, priority,
+		    status);
+
+		g_free(show);
+		g_free(status);
+		g_free(priority);
+
+		g_string_append(resources, text);
+
+		g_free(text);
+	}
+
+	text = resources->str;
+	g_string_free(resources, FALSE);
+
+	return text;
 }
 
 static void
 sig_roster_nick(XMPP_SERVER_REC *server, const XMPP_ROSTER_USER_REC *user)
 {
-	GSList *resource_list;
-	XMPP_ROSTER_RESOURCE_REC *resource;
 	WINDOW_REC *window;
-	const char *first_show, *show;
-	char *name, *resource_str, *str;
-
-	window = NULL;
-	first_show = NULL;
-	resource_str = NULL;
-
-	/* offline user ? */
-	if (user->resources == NULL)
-		first_show = xmpp_presence_show[XMPP_PRESENCE_UNAVAILABLE];
-
-	resource_list = user->resources;
-	while (resource_list != NULL) {
-		resource = (XMPP_ROSTER_RESOURCE_REC *)resource_list->data;
-		
-		show = xmpp_presence_show[resource->show];
-		
-		if (first_show == NULL) 
-			first_show = show;
-		
-		if(resource->show == XMPP_PRESENCE_AVAILABLE)
-			show = NULL;
-		
-		if (resource->name != NULL) {
-			str = g_strdup_printf("%s[%s%s%s%s(%d)%s%s]",
-			    resource_str ? resource_str : "",
-			    show ? "(" : "", show ? show : "", show ? ")" : "",
-			    resource->name, resource->priority,
-			    resource->status ? ": " : "",
-			    resource->status ? resource->status : "");
-			
-			g_free(resource_str);
-			resource_str = str;
-		}
-		
-		resource_list = g_slist_next(resource_list);
-	}
-
-	if (user->error)
-		first_show = xmpp_presence_show[XMPP_PRESENCE_ERROR];
-
-	if (user->subscription != XMPP_SUBSCRIPTION_BOTH) {
-		str = g_strdup_printf("%s%s(subscription: %s)",
-		    resource_str ? resource_str : "",
-		    resource_str ? " " : "",
-		    xmpp_subscription[user->subscription]);
-		
-		g_free(resource_str);
-		resource_str = str;
-	}
-
-	if (user->name != NULL) {
-		name = user->name;
-
-		str = g_strdup_printf("(%s) %s", user->jid,
-			resource_str ? resource_str : "");
-		g_free(resource_str);
-		resource_str = str;
-
-	} else
-		name = user->jid;
+	const char *first_show;
+	char *resources, *subscription;
 
 	if (settings_get_bool("xmpp_status_window")) { 
 		window = fe_xmpp_status_get_window(server);
@@ -124,20 +116,38 @@ sig_roster_nick(XMPP_SERVER_REC *server, const XMPP_ROSTER_USER_REC *user)
 			window = NULL;
 	}
 
-	if (window != NULL)
-		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
+	if (user->error)
+		first_show = xmpp_presence_show[XMPP_PRESENCE_ERROR];
+	else if (user->resources == NULL)
+		first_show = xmpp_presence_show[XMPP_PRESENCE_UNAVAILABLE];
 	else
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_ROSTER_NICK, first_show, name, resource_str);
+		first_show = get_first_show(user->resources);
+
+	resources = get_resources(server, user->resources);
+
+	subscription = (user->subscription == XMPP_SUBSCRIPTION_BOTH) ? NULL :
+	    format_get_text(MODULE_NAME, window, server, NULL,
+	    XMPPTXT_ROSTER_SUBSCRIPTION,
+	    xmpp_subscription[user->subscription]);
+
+	if (user->name != NULL)	
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+	    	    XMPPTXT_ROSTER_NAME, first_show, user->name, user->jid,
+		    resources, subscription);
+	else
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+	    	    XMPPTXT_ROSTER_JID, first_show, user->jid,
+		    resources, subscription);
 	
-	g_free(resource_str);
+	g_free(resources);
+	g_free(subscription);
 }
 
 static void
 sig_begin_of_roster(XMPP_SERVER_REC *server)
 {
 	WINDOW_REC *window = NULL;
+	char *show, *status, *priority, *text, *resources;
 
 	if (settings_get_bool("xmpp_status_window")) { 
 		window = fe_xmpp_status_get_window(server);
@@ -145,12 +155,33 @@ sig_begin_of_roster(XMPP_SERVER_REC *server)
 			window = NULL;
 	}
 
-	if (window != NULL)
-		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_BEGIN_OF_ROSTER);
-	else
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_BEGIN_OF_ROSTER);
+	show = (server->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	    XMPPTXT_ROSTER_RESOURCE_SHOW,
+	    xmpp_presence_show[server->show]);
+
+	status = (server->away_reason == NULL
+	    || strcmp(server->away_reason, " ") == 0) ? NULL :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	    XMPPTXT_ROSTER_RESOURCE_STATUS, server->away_reason);
+
+	priority = g_strdup_printf("%d", server->priority);
+
+	text = format_get_text(MODULE_NAME, NULL, server, NULL,
+	    XMPPTXT_ROSTER_RESOURCE, show,  server->resource, priority,
+	    status);
+
+	g_free(show);
+	g_free(status);
+	g_free(priority);
+
+	resources = get_resources(server, server->resources);
+
+	printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+	    XMPPTXT_BEGIN_OF_ROSTER, server->jid, text, resources);
+
+	g_free(text);
+	g_free(resources);
 }
 
 static void
@@ -164,12 +195,8 @@ sig_end_of_roster(XMPP_SERVER_REC *server)
 			window = NULL;
 	}
 
-	if (window != NULL)
-		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_END_OF_ROSTER);
-	else
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_END_OF_ROSTER);
+	printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+	    XMPPTXT_END_OF_ROSTER);
 }
 
 static void

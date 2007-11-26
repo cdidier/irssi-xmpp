@@ -83,7 +83,7 @@ sig_query_created(XMPP_QUERY_REC *query, int automatic)
 		return;
 
 	printformat_module(MODULE_NAME, query->server, query->name,
-	    MSGLEVEL_CRAP, XMPPTXT_QUERY_AKA, user->name);
+	    MSGLEVEL_CRAP, XMPPTXT_QUERY_AKA, user->jid, user->name);
 }
 
 void

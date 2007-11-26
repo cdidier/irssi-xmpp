@@ -76,7 +76,7 @@ send_message(SERVER_REC *server, const char *target, const char *msg,
 }
 
 static void
-xmpp_server_cleanup(XMPP_SERVER_REC *server)
+server_cleanup(XMPP_SERVER_REC *server)
 {
 	g_return_if_fail(IS_XMPP_SERVER(server));
 
@@ -135,6 +135,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	server->ping_id = NULL;
 	server->features = 0;
+	server->resources = NULL;
 	server->roster = NULL;
 	server->hmessage = NULL;
 	server->hpresence = NULL;
@@ -171,7 +172,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 }
 
 static LmSSLResponse
-xmpp_server_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
+lm_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 {
 	XMPP_SERVER_REC *server = XMPP_SERVER(user_data);
 
@@ -210,7 +211,7 @@ xmpp_server_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 }
 
 static void
-xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
+lm_close_cb(LmConnection *connection, LmDisconnectReason reason,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
@@ -230,7 +231,7 @@ xmpp_server_close_cb(LmConnection *connection, LmDisconnectReason reason,
 }
 
 static void
-xmpp_server_auth_cb(LmConnection *connection, gboolean success,
+lm_auth_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
@@ -290,7 +291,7 @@ err:
 }
 
 static void
-xmpp_server_open_cb(LmConnection *connection, gboolean success,
+lm_open_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
@@ -316,7 +317,7 @@ xmpp_server_open_cb(LmConnection *connection, gboolean success,
 
 	if (!lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
-	    (LmResultFunction)xmpp_server_auth_cb, server, NULL, &error))
+	    (LmResultFunction)lm_auth_cb, server, NULL, &error))
 		goto err;
 
 	return;
@@ -327,6 +328,70 @@ err:
 	    (error != NULL) ? error->message : "Connection failed");
 	if (error != NULL)
 		g_error_free(error);
+}
+
+
+static gboolean
+set_proxy(XMPP_SERVER_REC *server, GError **error)
+{
+	LmProxy *proxy;
+	LmProxyType type;
+	const char *str;
+	char *recoded;
+
+	g_return_val_if_fail(IS_XMPP_SERVER(server), FALSE);
+
+	str = settings_get_str("xmpp_proxy_type");
+	if (str != NULL && g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) == 0)
+		type = LM_PROXY_TYPE_HTTP;
+	else {
+		if (error != NULL) {
+			*error = g_new(GError, 1);
+			(*error)->message = g_strdup("Invalid proxy type");
+		}
+		return FALSE;
+	}
+
+	str = settings_get_str("xmpp_proxy_address");
+	if (str == NULL || *str == '\0') {
+		if (error != NULL) {
+			*error = g_new(GError, 1);
+			(*error)->message =
+			    g_strdup("Proxy address not specified");
+		}
+		return FALSE;
+	}
+
+	int port = settings_get_int("xmpp_proxy_port");
+	if (port <= 0) {
+		if (error != NULL) {
+			*error = g_new(GError, 1);
+			(*error)->message =
+			    g_strdup("Invalid proxy port range");
+		}
+		return FALSE;
+	}
+
+	proxy = lm_proxy_new_with_server(type, str, port);
+	
+	str = settings_get_str("xmpp_proxy_user");
+	if (str != NULL && *str != '\0') {
+		recoded = xmpp_recode_out(str);
+		lm_proxy_set_username(proxy, recoded);
+		g_free(recoded);
+	}
+
+	str = settings_get_str("xmpp_proxy_password");
+	if (str != NULL && *str != '\0') {
+		recoded = xmpp_recode_out(str);
+		lm_proxy_set_password(proxy, recoded);
+		g_free(recoded);
+	}
+
+	lm_connection_set_proxy(server->lmconn, proxy);
+	lm_proxy_unref(proxy);
+
+	return TRUE;
 }
 
 void
@@ -344,27 +409,31 @@ xmpp_server_connect(SERVER_REC *server)
 	if (xmppserver->connrec->use_ssl) {
 		if (!lm_ssl_is_supported()) {
 			error = g_new(GError, 1);
-			error->message = "SSL is not supported in this build.";
+			error->message =
+			    g_strdup("SSL is not supported in this build");
 			goto err;
 		}
 
-		ssl = lm_ssl_new(NULL, (LmSSLFunction)xmpp_server_ssl_cb,
+		ssl = lm_ssl_new(NULL, (LmSSLFunction)lm_ssl_cb,
 		    server, NULL);
 		lm_connection_set_ssl(xmppserver->lmconn, ssl);
 		lm_ssl_unref(ssl);
 	} 
 
-	/* Proxy: not supported yet */
+	/* Proxy */
+	if (settings_get_bool("xmpp_use_proxy"))
+		if (!set_proxy(xmppserver, &error))
+			goto err;
 
 	lm_connection_set_disconnect_function(xmppserver->lmconn,
-	    (LmDisconnectFunction)xmpp_server_close_cb, (gpointer)server,
+	    (LmDisconnectFunction)lm_close_cb, (gpointer)server,
 	    NULL);
 
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
 
 	if (!lm_connection_open(xmppserver->lmconn, 
-	    (LmResultFunction)xmpp_server_open_cb, (gpointer)server, NULL,
+	    (LmResultFunction)lm_open_cb, (gpointer)server, NULL,
 	    &error))
 		goto err;
 
@@ -402,7 +471,7 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
-	xmpp_server_cleanup(server);
+	server_cleanup(server);
 }
 
 static void
@@ -411,7 +480,7 @@ sig_server_connect_failed(XMPP_SERVER_REC *server, char *msg)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
-	xmpp_server_cleanup(server);
+	server_cleanup(server);
 }
 
 static void
@@ -446,6 +515,12 @@ xmpp_servers_init(void)
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
 
 	settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
+	settings_add_bool("xmpp_proxy", "xmpp_use_proxy", FALSE);
+	settings_add_str("xmpp_proxy", "xmpp_proxy_type", "http");
+	settings_add_str("xmpp_proxy", "xmpp_proxy_address", NULL);
+	settings_add_int("xmpp_proxy", "xmpp_proxy_port", 8080);
+	settings_add_str("xmpp_proxy", "xmpp_proxy_user", NULL);
+	settings_add_str("xmpp_proxy", "xmpp_proxy_password", NULL);
 }
 
 void

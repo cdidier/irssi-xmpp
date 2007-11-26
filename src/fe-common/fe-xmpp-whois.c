@@ -25,28 +25,15 @@
 #include "signals.h"
 
 static void
-event_begin_of_version(XMPP_SERVER_REC *server, const char *jid)
+sig_version(XMPP_SERVER_REC *server, const char *jid, const char *name,
+    const char *version, const char *os)
 {
-	g_debug("VERSION: %s", jid);
-}
-
-static void
-event_version_value(XMPP_SERVER_REC *server, const char *jid, const char *name,
-    const char *value)
-{
-	g_debug("    %s: %s", name, value);
-}
-
-static void
-event_end_of_version(XMPP_SERVER_REC *server, const char *jid)
-{
-	g_debug("End of VERSION");
 }
 
 static void
 event_begin_of_vcard(XMPP_SERVER_REC *server, const char *jid)
 {
-	g_debug("WHOIS: %s", jid);
+	g_debug("VCARD: %s", jid);
 }
 
 static void
@@ -66,16 +53,13 @@ event_vcard_subvalue(XMPP_SERVER_REC *server, const char *jid,
 static void
 event_end_of_vcard(XMPP_SERVER_REC *server, const char *jid)
 {
-	g_debug("End of WHOIS");
+	g_debug("End of VCARD");
 }
 
 void
 fe_xmpp_whois_init(void)
 {
-	signal_add("xmpp begin of version",
-	    (SIGNAL_FUNC)event_begin_of_version);
-	signal_add("xmpp version value", (SIGNAL_FUNC)event_version_value);
-	signal_add("xmpp end of version", (SIGNAL_FUNC)event_end_of_version);
+	signal_add("xmpp version", (SIGNAL_FUNC)sig_version);
 	signal_add("xmpp begin of vcard", (SIGNAL_FUNC)event_begin_of_vcard);
 	signal_add("xmpp vcard value", (SIGNAL_FUNC)event_vcard_value);
 	signal_add("xmpp vcard subvalue", (SIGNAL_FUNC)event_vcard_subvalue);
@@ -85,11 +69,7 @@ fe_xmpp_whois_init(void)
 void
 fe_xmpp_whois_deinit(void)
 {   
-	signal_remove("xmpp begin of version",
-	    (SIGNAL_FUNC)event_begin_of_version);
-	signal_remove("xmpp version value", (SIGNAL_FUNC)event_version_value);
-	signal_remove("xmpp end of version",
-	    (SIGNAL_FUNC)event_end_of_version);
+	signal_remove("xmpp version", (SIGNAL_FUNC)sig_version);
 	signal_remove("xmpp begin of vcard",
 	    (SIGNAL_FUNC)event_begin_of_vcard);
 	signal_remove("xmpp vcard value", (SIGNAL_FUNC)event_vcard_value);

@@ -343,8 +343,8 @@ sig_nick_join(XMPP_CHANNEL_REC *channel, const char *nick_name,
 	if (channel->names_got || channel->ownnick == NICK(nick)) {
 		signal_emit("message join", 4, channel->server, channel->name,
 		    nick->nick, nick->host);
-		signal_emit("message xmpp channel mode", 5, channel->server,
-		    channel, nick->nick, nick->affiliation, nick->role);
+		signal_emit("message xmpp channel mode", 4, channel,
+		    nick->nick, nick->affiliation, nick->role);
 	}
 
 	/* request channel properties if we are sure we joined the room */
@@ -404,8 +404,8 @@ sig_nick_mode(XMPP_CHANNEL_REC *channel, XMPP_NICK_REC *nick,
 	if (xmpp_nicklist_modes_changed(nick, affiliation, role)) {
 		xmpp_nicklist_set_modes(nick, affiliation, role);
 
-		signal_emit("message xmpp channel mode", 5, channel->server,
-		    channel, nick->nick, affiliation, role);
+		signal_emit("message xmpp channel mode", 4, channel,
+		    nick->nick, affiliation, role);
 	}
 }
 
@@ -451,11 +451,11 @@ sig_nick_changed(XMPP_CHANNEL_REC *channel, const char *oldnick,
 	xmpp_nicklist_rename(channel, nick, oldnick, newnick);
 
 	if (channel->ownnick == NICK(nick))
-		signal_emit("message xmpp channel own_nick", 4,
-		    channel->server, channel, nick, oldnick);
+		signal_emit("message xmpp channel own_nick", 3,
+		    channel, nick, oldnick);
 	else
-		signal_emit("message xmpp channel nick", 4,
-		    channel->server, channel, nick, oldnick);
+		signal_emit("message xmpp channel nick", 3,
+		    channel, nick, oldnick);
 
 }
 

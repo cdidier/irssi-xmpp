@@ -58,9 +58,11 @@ static char *
 cmd_connect_get_line(const char *data)
 {
 	GHashTable *optlist;
-	const char *host, *port;
-	char *line, *jid, *password, *username, *jid_host, *resource;
+	const char *port;
+	char *line, *jid, *password, *network, *network_free, *host, *host_free;
 	void *free_arg;
+
+	line = host_free = network_free = NULL;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
 	    "xmppconnect", &optlist, &jid, &password))
@@ -69,28 +71,31 @@ cmd_connect_get_line(const char *data)
 	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid))
 		goto err;
 
-	xmpp_jid_extract(jid, &username, &jid_host, &resource);
+	network = g_hash_table_lookup(optlist, "network");
+	if (network == NULL || *network == '\0') {
+		char *stripped = xmpp_strip_resource(jid);
+		network = network_free = g_strconcat("xmpp:", stripped, NULL);
+		g_free(stripped);
+	}
 
 	host = g_hash_table_lookup(optlist, "host");
 	if (host == NULL || *host == '\0')
-		host = jid_host;
+		host = host_free = xmpp_extract_host(jid);
 
 	port = g_hash_table_lookup(optlist, "port");
 	if (port == NULL)
 		port = "0";
 
-	line = g_strdup_printf("%s-xmppnet xmpp:%s@%s %s %d %s %s@%s%s%s",
+	line = g_strdup_printf("%s-xmppnet \"%s\" %s %d \"%s\" \"%s\"",
 	    (g_hash_table_lookup(optlist, "ssl") != NULL) ? "-ssl " : "",
-	    username, jid_host, host, atoi(port), password, username,
-	    jid_host, (resource != NULL) ? "/" : "",
-	    (resource != NULL) ? resource : "");
+	    network, host, atoi(port), password, jid);
 
-	cmd_params_free(free_arg);
-	return line;
+	g_free(network_free);
+	g_free(host_free);
 
 err:
 	cmd_params_free(free_arg);
-	return NULL;
+	return line;
 }
 
 /* SYNTAX: XMPPCONNECT [-ssl] [-host <server>] [-port <port>]
@@ -157,6 +162,7 @@ send_away(XMPP_SERVER_REC *server, const char *data)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
+	g_strstrip((char *)data);
 	tmp = g_strsplit(data, " ", 2);
 
 	if (data[0] == '\0')
@@ -171,7 +177,8 @@ again:
 		show = XMPP_PRESENCE_AVAILABLE;
 		reason = NULL;
 
-	} else if (g_ascii_strcasecmp(show_str,"online") == 0)
+	} else if (g_ascii_strcasecmp(show_str,
+	    xmpp_presence_show[XMPP_PRESENCE_ONLINE_STR]) == 0)
 		show = XMPP_PRESENCE_AVAILABLE;
 
 	else if (g_ascii_strcasecmp(show_str,
@@ -821,7 +828,7 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		if (g_hash_table_lookup(optlist, "delete") != NULL)
 			lm_message_node_add_child(msg->node, "subject", NULL);
 		else {
-			recoded = xmpp_recode_in(topic);
+			recoded = xmpp_recode_out(topic);
 			lm_message_node_add_child(msg->node, "subject",
 			    recoded);
 			g_free(recoded);
@@ -867,10 +874,10 @@ xmpp_commands_init(void)
 
 	command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
-	command_set_options("xmppconnect", "ssl -host @port @priority");
+	command_set_options("xmppconnect", "ssl -network -host @port @priority");
 
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
-	settings_add_bool("xmpp", "roster_add_send_subscribe", TRUE);
+	settings_add_bool("xmpp_roster", "roster_add_send_subscribe", TRUE);
 }
 
 void
