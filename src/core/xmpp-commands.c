@@ -252,54 +252,15 @@ cmd_quote(const char *data, XMPP_SERVER_REC *server)
 	g_free(recoded);
 }
 
-static void
-cmd_roster_show_users(gpointer data, gpointer user_data)
-{
-	XMPP_SERVER_REC *server = XMPP_SERVER(user_data);
-	XMPP_ROSTER_USER_REC *user = (XMPP_ROSTER_USER_REC *)data;
-
-	if (xmpp_rosters_show_user(user))
-		signal_emit("xmpp roster nick", 2, server, user);
-}
-
-static void
-cmd_roster_show_groups(gpointer data, gpointer user_data)
-{
-	GSList *user_list;
-	XMPP_SERVER_REC *server = XMPP_SERVER(user_data);
-	XMPP_ROSTER_GROUP_REC *group = (XMPP_ROSTER_GROUP_REC *)data;
-	XMPP_ROSTER_USER_REC *user;
-	gboolean group_visible;
-
-	user_list = group->users;
-	group_visible = FALSE;
-	while (!group_visible && user_list != NULL) {
-		user = (XMPP_ROSTER_USER_REC *)user_list->data;
-		group_visible = xmpp_rosters_show_user(user);
-		user_list = user_list->next;
-	}
-
-	if (group_visible) {
-		xmpp_rosters_reorder(group);
-
-		signal_emit("xmpp roster group", 2, server, group->name);
-		g_slist_foreach(group->users, (GFunc)cmd_roster_show_users,
-		    server);
-	}
-}
-
 /* SYNTAX: ROSTER */
 static void
 cmd_roster(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
 	CMD_XMPP_SERVER(server);
 
-	if (*data == '\0') {
-		signal_emit("xmpp begin of roster", 1, server);
-		g_slist_foreach(server->roster, (GFunc)cmd_roster_show_groups,
-		     server);
-		signal_emit("xmpp end of roster", 1, server);
-	} else
+	if (*data == '\0')
+		signal_emit("xmpp roster show", 1, server);
+	else
 		command_runsub(xmpp_commands[XMPP_COMMAND_ROSTER], data,
 		    server, item);
 }
@@ -313,11 +274,10 @@ cmd_roster_full(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	CMD_XMPP_SERVER(server);
 	
 	oldvalue = settings_get_bool("roster_show_offline");
-
 	if (!oldvalue)
 		settings_set_bool("roster_show_offline", TRUE);
 
-	signal_emit("command roster", 3, "", server, item);
+	signal_emit("xmpp roster show", 1, server);
 
 	if (!oldvalue)
 		settings_set_bool("roster_show_offline", oldvalue);
@@ -728,6 +688,40 @@ out:
 	g_free(jid);
 }
 
+/* SYNTAX: PING [[<jid>[/<resource>]]|[<name]] */
+static void
+cmd_ping(const char *data, XMPP_SERVER_REC *server)
+{
+	char *dest;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+
+	if (!cmd_get_params(data, &free_arg, 1, &dest))
+		return;
+
+
+
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: INVITE [[<jid>[/<resource>]]|[<name]] */
+static void
+cmd_invite(const char *data, XMPP_SERVER_REC *server)
+{
+	char *dest;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+
+	if (!cmd_get_params(data, &free_arg, 1, &dest))
+		return;
+
+
+
+	cmd_params_free(free_arg);
+}
+
 /* SYNTAX: ME <message> */
 static void
 cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
@@ -867,6 +861,8 @@ xmpp_commands_init(void)
 	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
 	command_bind_xmpp("whois", NULL, (SIGNAL_FUNC)cmd_whois);
 	command_bind_xmpp("ver", NULL, (SIGNAL_FUNC)cmd_ver);
+	command_bind_xmpp("ping", NULL, (SIGNAL_FUNC)cmd_ping);
+	command_bind_xmpp("invite", NULL, (SIGNAL_FUNC)cmd_invite);
 	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
 	command_bind_xmpp("part", NULL, (SIGNAL_FUNC)cmd_part);
 	command_bind_xmpp("nick", NULL, (SIGNAL_FUNC)cmd_nick);
@@ -902,6 +898,8 @@ xmpp_commands_deinit(void)
 	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
 	command_unbind("whois", (SIGNAL_FUNC)cmd_whois);
 	command_unbind("ver", (SIGNAL_FUNC)cmd_ver);
+	command_unbind("ping", (SIGNAL_FUNC)cmd_ping);
+	command_unbind("invite", (SIGNAL_FUNC)cmd_invite);
 	command_unbind("me", (SIGNAL_FUNC)cmd_me);
 	command_unbind("part", (SIGNAL_FUNC)cmd_part);
 	command_unbind("nick", (SIGNAL_FUNC)cmd_nick);
