@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "module.h"
+#include "channels-setup.h"
 #include "commands.h"
 #include "settings.h"
 #include "signals.h"
@@ -177,6 +178,9 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(data != NULL);
 
+	if (automatic)
+		return;
+
 	g_strstrip((char *)data);
 
 	if (!server->connected || *data == '\0')
@@ -190,7 +194,6 @@ xmpp_channels_join(XMPP_SERVER_REC *server, const char *data, int automatic)
 	channame = xmpp_extract_channel(chanline);
 
 	if (xmpp_channel_find(server, channame) == NULL) {
-
 		channel = (XMPP_CHANNEL_REC *)xmpp_channel_create(server,
 		    channame, NULL, automatic, nick);
 
@@ -681,6 +684,29 @@ sig_channel_destroyed(XMPP_CHANNEL_REC *channel)
 }
 
 static void
+sig_event_connected(SERVER_REC *server)
+{
+	GSList *tmp;
+	CHANNEL_SETUP_REC *channel_setup;
+
+	if (!IS_XMPP_SERVER(server)
+	    && !server->connrec->no_autojoin_channels)
+		return;
+
+	/* autojoin channels */
+	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
+		channel_setup = tmp->data;
+
+		if (IS_XMPP_CHANNEL_SETUP(channel_setup)
+		    && channel_setup->autojoin
+		    && strcmp(channel_setup->chatnet,
+		    server->connrec->chatnet) == 0)
+			xmpp_channels_join(XMPP_SERVER(server),
+			    channel_setup->name, FALSE);
+	}
+}
+
+static void
 sig_server_connected(SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
@@ -709,6 +735,7 @@ xmpp_channels_init(void)
 	signal_add_last("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
 	signal_add_last("channel created", (SIGNAL_FUNC)sig_channel_created);
 	signal_add("channel destroyed", (SIGNAL_FUNC)sig_channel_destroyed);
+	signal_add_last("event connected", (SIGNAL_FUNC)sig_event_connected);
 	signal_add_first("server connected",
 	    (SIGNAL_FUNC)sig_server_connected);
 }
@@ -731,5 +758,6 @@ xmpp_channels_deinit(void)
 	signal_remove("xmpp channel joinerror", (SIGNAL_FUNC)sig_joinerror);
 	signal_remove("channel created", (SIGNAL_FUNC)sig_channel_created);
 	signal_remove("channel destroyed",(SIGNAL_FUNC)sig_channel_destroyed);
+	signal_remove("event connected", (SIGNAL_FUNC)sig_event_connected);
 	signal_remove("server connected", (SIGNAL_FUNC)sig_server_connected);
 }

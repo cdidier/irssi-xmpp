@@ -474,6 +474,57 @@ next:
 
 
 /*
+ * Misc
+ */
+
+static char *
+get_timestamp(LmMessageNode *node)
+{
+	LmMessageNode *child;
+	const char *xmlns;
+	char *stamp, *tmp;
+
+	return NULL;	
+
+	/*  convert to "struct tm" (ctime(3) for details)
+	 *  then use strftime */
+
+	child = lm_message_node_get_child(node, "x");
+	if (child != NULL) {
+		xmlns = lm_message_node_get_attribute(child, XMLNS);
+		if (xmlns != NULL) {
+
+			if (g_ascii_strcasecmp(xmlns,
+			    XMLNS_DELAYED_DELIVERY) == 0) {
+				stamp = xmpp_recode_in(
+				    lm_message_node_get_attribute(child,
+				    "stamp"));
+				g_free(stamp);
+
+			} else if (g_ascii_strcasecmp(xmlns,
+			    XMLNS_DELAYED_DELIVERY_OLD) == 0) {
+				stamp = xmpp_recode_in(
+				    lm_message_node_get_attribute(child,
+				    "stamp"));
+
+				tmp = g_utf8_strchr(stamp, -1, 'T');
+				if (tmp != NULL) {
+					stamp[tmp - stamp] = '\0';
+					++tmp;
+				}
+				tmp = g_strdup_printf("[%s %s]: ", stamp,
+				    tmp != NULL ? tmp : "");
+				g_free(stamp);
+
+				return tmp;
+			}
+		}
+	}
+	return NULL;
+}
+
+
+/*
  * Incoming messages handlers
  */
 
@@ -484,7 +535,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 	XMPP_SERVER_REC *server;
 	XMPP_CHANNEL_REC *channel;
 	LmMessageNode *child, *subchild;
-	char *jid, *text;
+	char *jid, *text, *stamp, *stamped;
 
 	server = XMPP_SERVER(user_data);
 	if (server == NULL)
@@ -570,14 +621,30 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 		child = lm_message_node_get_child(msg->node, "body");
 		if (child != NULL) {
 			text = xmpp_recode_in(child->value);
-			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+			stamp = get_timestamp(msg->node);
+			if (stamp != NULL)
+				stamped = g_strconcat(stamp, text, NULL);
+
+			if (g_ascii_strncasecmp(text, "/me ", 4) == 0) {
+				if (stamp != NULL)
+					stamped = g_strconcat(stamp,
+					    text+4, NULL);
 				signal_emit("message xmpp action", 5, server,
-				    text+4, jid, jid,
+				    stamp != NULL ? stamped : text+4, jid, jid,
 				    GINT_TO_POINTER(SEND_TARGET_NICK));
-			else
+			} else {
+				if (stamp != NULL)
+					stamped = g_strconcat(stamp,
+					    text, NULL);
 				signal_emit("message private", 4, server,
-				    text, jid, jid);
+				    stamp != NULL ? stamped : text, jid, jid);
+			}
+
 			g_free(text);
+			if (stamp != NULL) {
+				g_free(stamp);
+				g_free(stamped);
+			}
 		}
 		break;
 
@@ -598,8 +665,8 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 			}
 
 			text = xmpp_recode_in(child->value);
-			signal_emit("xmpp channel topic", 3, channel, text,
-			    nick);
+			signal_emit("xmpp channel topic", 3, channel,
+			    stamp != NULL ? stamped : text ,nick);
 			g_free(text);
 
 			g_free(channel_name);
@@ -613,12 +680,13 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 			channel_name = xmpp_extract_channel(jid);
 			nick =  xmpp_extract_resource(jid);
+			stamp = get_timestamp(msg->node);
 
 			/* it's my own message, so ignore it */
 			channel = xmpp_channel_find(server, channel_name);
-			if (channel == NULL || nick == NULL ||
-			    (channel != NULL &&
-			    strcmp(nick, channel->nick) == 0)) {
+			if (stamp == NULL && (channel == NULL
+			    || nick == NULL || (channel != NULL
+			    && strcmp(nick, channel->nick) == 0))) {
 				g_free(channel_name);
 				g_free(nick);
 				goto out;
@@ -626,17 +694,31 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 			text = xmpp_recode_in(child->value);
 
-			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+			if (g_ascii_strncasecmp(text, "/me ", 4) == 0) {
+				if (stamp != NULL)
+					stamped = g_strconcat(stamp,
+					    text+4, NULL);
 				signal_emit("message xmpp action", 5, server,
-				    text+4, nick, channel_name,
+				    stamp != NULL ? stamped : text+4, nick,
+				    channel_name,
 				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else
-				signal_emit("message public", 5, server, text,
-				   nick, "", channel_name);
+			} else {
+				if (stamp != NULL)
+					stamped = g_strconcat(stamp,
+					    text, NULL);
+				signal_emit("message public", 5, server,
+				    stamp != NULL ? stamped : text, nick, "",
+				    channel_name);
+			}
+
+			g_free(text);
+			if (stamp != NULL) {
+				g_free(stamp);
+				g_free(stamped);
+			}
 
 			g_free(channel_name);
 			g_free(nick);
-			g_free(text);
 		}
 
 		break;

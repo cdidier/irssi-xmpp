@@ -14,6 +14,8 @@
 #define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
 #define XMLNS_MUC "http://jabber.org/protocol/muc"
 #define XMLNS_MUC_USER "http://jabber.org/protocol/muc#user"
+#define XMLNS_DELAYED_DELIVERY "urn:xmpp:delay"
+#define XMLNS_DELAYED_DELIVERY_OLD "jabber:x:delay"
 
 __BEGIN_DECLS
 void	xmpp_send_message(XMPP_SERVER_REC *, const char *, const char *);

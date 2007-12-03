@@ -6,6 +6,12 @@
 #include "channels.h"
 #include "xmpp-servers.h"
 
+#define XMPP_CHANNEL_SETUP(chansetup) \
+	PROTO_CHECK_CAST(CHANNEL_SETUP(chansetup), CHANNEL_SETUP_REC, chat_type, "XMPP")
+
+#define IS_XMPP_CHANNEL_SETUP(chansetup) \
+	(XMPP_CHANNEL_SETUP(chansetup) ? TRUE : FALSE)
+
 /* Returns XMPP_CHANNEL_REC if it's XMPP channel, NULL if it isn't. */
 #define XMPP_CHANNEL(channel) 					\
 	PROTO_CHECK_CAST(CHANNEL(channel), XMPP_CHANNEL_REC, chat_type, "XMPP")
