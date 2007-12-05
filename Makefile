@@ -1,23 +1,13 @@
-export IRSSI_MODULES=/usr/lib/irssi/modules
+# $Id$
 
-SUBDIR= src
+include config.mk
 
-.PHONY: clean all user-install install
-
-all:
-	@if [ -z "${IRSSI_INCLUDE}" ] ;					\
-	then								\
-		echo "Please specify a valid IRSSI_INCLUDE environment variable !" ; \
-		exit 1 ;						\
-	else								\
-		${MAKE} -C ${SUBDIR} all ;				\
-	fi
-
-clean:
-	${MAKE} -C ${SUBDIR} clean
-
-user-install:
-	${MAKE} -C ${SUBDIR} user-install
+all clean user-install:
+	@cd src/ && ${MAKE} $@
 
 install:
-	${MAKE} -C ${SUBDIR} install
+	@cd src/ && ${MAKE} $@
+	@echo installing documentation files to ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
+	@echo installing command help files to ${DESTDIR}${IRSSI_HELP}
+
+.PHONY: all clean user-install install

@@ -514,7 +514,8 @@ xmpp_servers_init(void)
 	    (SIGNAL_FUNC)sig_server_connect_failed);
 	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
 
-	settings_add_bool("xmpp", "xmpp_set_nick_as_username", FALSE);
+	settings_add_bool("xmpp_lookandfeel", "xmpp_set_nick_as_username",
+	    FALSE);
 	settings_add_bool("xmpp_proxy", "xmpp_use_proxy", FALSE);
 	settings_add_str("xmpp_proxy", "xmpp_proxy_type", "http");
 	settings_add_str("xmpp_proxy", "xmpp_proxy_address", NULL);

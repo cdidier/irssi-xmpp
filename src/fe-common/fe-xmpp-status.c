@@ -140,7 +140,7 @@ fe_xmpp_status_init(void)
 	signal_add("server connecting", (SIGNAL_FUNC)sig_server_connecting);
 	signal_add("setup changed", (SIGNAL_FUNC)sig_setup_changed);
 
-	settings_add_bool("xmpp", "xmpp_status_window", FALSE);
+	settings_add_bool("xmpp_lookandfeel", "xmpp_status_window", FALSE);
 
 	if (settings_get_bool("xmpp_status_window"))
 		signal_add("xmpp presence changed",

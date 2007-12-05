@@ -1,15 +1,11 @@
-SUBDIR= core fe-common fe-text
+# $Id$
 
-.PHONY: clean all user-install install
+all clean user-install install:
+	@echo "core module:"
+	@cd core/ && ${MAKE} $@
+	@echo "fe-common submodule:"
+	@cd fe-common/ && ${MAKE} $@
+	@echo "fe-text submodule:"
+	@cd fe-text/ && ${MAKE} $@	
 
-all:
-	for dir in ${SUBDIR} ; do (${MAKE} -C $$dir all) ; done
-
-clean:
-	for dir in ${SUBDIR} ; do (${MAKE} -C $$dir clean) ; done
-
-user-install:
-	for dir in ${SUBDIR} ; do (${MAKE} -C $$dir user-install) ; done
-
-install:
-	for dir in ${SUBDIR} ; do (${MAKE} -C $$dir install) ; done
+.PHONY: all clean user-install install

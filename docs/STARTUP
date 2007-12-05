@@ -1,0 +1,30 @@
+Running irssi-xmpp:
+===================
+
+Usage:
+    /LOAD xmpp
+
+Simply load the module in irssi. Currently you cannot load it automatically,
+unless using a script or something like that.
+
+The module must be placed in "~/.irssi/modules/", or you should load it with
+the full path.
+
+You can unload it using:
+    /UNLOAD xmpp
+
+Connection:
+===========
+
+Usage:
+    /XMPPCONNECT [-ssl] [-host <host>] [-port <port>]
+                 <jid>[/<resource>] <password>
+
+The "jid" is your Jabber ID (something like "username@server"). You can add
+"/<resource>" at the end of the "jid" to set your own resource.
+
+Register:
+=========
+
+Currently, you cannot register an account with irssi-xmpp. You must do that
+with another client.

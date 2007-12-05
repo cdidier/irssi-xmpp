@@ -10,192 +10,43 @@ Installation:
 =============
 
 Requirement:
-    o Loudmouth 1.x (http://www.loudmouth-project.org/)
+    o Loudmouth 1.2.x (http://www.loudmouth-project.org/)
     o Irssi and its sources unpacked and configured (http://irssi.org/)
-    o GNU make
 
 Procedure:
-    $ export IRSSI_INCLUDE=/path/to/irssi/sources
-    $ make
-    $ make user-install
+    o edit the file "config.mk" if needed and export this (and maybe others)
+      environment variable:
+        $ export IRSSI_INCLUDE=/path/to/irssi/sources
+    o build the sources:
+    	$ make
+    o install the module in your home directory:
+        $ make user-install
+    o or install it in the base system:
+        # make install
 
-Note: On non-Linux systems (e.g. *BSD) you might need to use "gmake" instead of
-"make".
+Documentation:
+==============
 
-Running irssi-xmpp:
-===================
-
-Usage:
-    /LOAD xmpp
-
-Simply load the module in irssi. Currently you cannot load it automatically,
-unless using a script or something like that.
-
-The module must be placed in "~/.irssi/modules/", or you should load it with
-the full path.
-
-You can unload it using:
-    /UNLOAD xmpp
-
-Connection:
-===========
-
-Usage:
-    /XMPPCONNECT [-ssl] [-host <host>] [-port <port>]
-                 <jid>[/<resource>] <password>
-
-The "jid" is your Jabber ID (something like "username@server"). You can add
-"/<resource>" at the end of the "jid" to set your own resource.
-
-
-You can put these things in your config file (The config file can be found
-here : "~.irssi/config"):
-
-To create a XMPP network, add to "chatnets" section,
-    <network> = { type = "XMPP"; nick = "<jid>[/<resource>]"; };
-For example:
-    "xmpp:username@server" = { type = "XMPP"; nick = "username@server/resource"; };
-
-Then you can add this to "servers" section:
-    { address = "<address>"; port="<port>"; use_ssl = "{yes|no}"; chatnet = "<network>"; password = "<password>"; };
-For example:
-    { address = "server"; port="5223"; use_ssl = "yes"; chatnet = "xmpp:username@server"; password = "password"; };
-
-Now you can connect to your jabber account by typing:
-    /CONNECT <network>
-
-
-The old connection command still available:
-    /SERVER [-ssl] -xmppnet <network> <address> <port> <password> <jid>
-
-Register:
-=========
-
-Currently, you cannot register an account with irssi-xmpp. You must do that
-with another client.
-
-General commands:
-=================
-
-/QUERY <jid>[/<resource>]
-    Starts a private conversation with the JID. If the user is online and 
-    the resource isn't specified, the conversation window will be on the
-    resource with the highest priority.
-    
-/MSG <jid>[/<resource>] <message>
-    Send a message to a jid.
-
-/AWAY [away|chat|dnd|xa] <reason>
-    This command marks you as being "away". If the away mode is'nt specified,
-    the "xmpp_default_away_mode" setting will be used. You can remove your away
-    status by using AWAY with no arguments.
-
-/ROSTER
-    Show your contacts in a list.
-
-/ROSTER ADD <jid>
-    Add a JID to your contact list.
-
-/ROSTER REMOVE <jid>
-    Remove a JID from your contact list. The subscriptions will be removed too.
-
-/ROSTER NAME <jid> <name>
-    Change the name (or nickname) of a JID.
-
-/ROSTER GROUP <jid> <group>
-    Change the group of a JID.
-
-/WHOIS <jid>
-    Request the vcard related to the JID.
-
-/VER <jid>/<resource>
-    Request the software version of the resource.
-
-/QUOTE <data>
-    Sends server raw data without parsing. You need to make sure the value is
-    valid XML yourself.
-
-/XMPPCONNECT
-/XMPPSERVER
-    See the "Connection" section of this file.
-
-Subscription commands:
-======================
-
-/ROSTER ACCEPT <jid>
-    Accept a subscription request, so the contact'll be able to see your
-    presence.
-
-/ROSTER DENY <jid>
-    Deny a subscription, so the contact won't see your presence anymore.
-
-/ROSTER SUBSCRIBE <jid>
-    Send a subscription request to a JID. If the contact accepts your request,
-    you'll be able to see his/her presence.
-
-/ROSTER UNSUBSCRIBE <jid>
-    Unsubscribe to the contact's presence, so you won't see his/her presence
-    anymore.
-    
-Settings:
-=========
-
-/SET xmpp_priority <number>
-    Set the priority of your connection. It's a number between -128 and 127.
-    You must reconnect for this change to take effect. (default: 0)
-
-/SET xmpp_send_version ON/OFF
-    Send informations of your client: name (irssi-xmpp), version and operating
-    system. (default: ON)
-
-/SET xmpp_default_away_mode {away|chat|dnd|xa}
-    Set the default away mode when you just type "/AWAY <message>".
-    (default: away)
-
-/SET roster_show_offline ON/OFF
-    Show offline contacts in the roster. (default: ON)
-
-/SET roster_show_offline_unsuscribed ON/OFF
-    Show unsuscribed contacts in the roster when they are offline. (default: ON)
-    
-/SET roster_default_group <group>
-    Set the default group where the contacts will be displayed if the group name
-    is unspecified. (default: General)
-
-/SET roster_add_send_subscribe ON/OFF
-    Send a subscribe request to the contact when adding his/her to the roster.
-    (default: ON)
-
-Composing in the statusbar:
-===========================
-
-/STATUSBAR WINDOW ADD -before barend -alignment right xmpp_composing
-
-Subscriptions status:
-=====================
-
-both: The contact and you can see each other's presence. (not displayed)
-from: The contact can see your presence.  
-to: You can see the contact's presence.
-none: The contact and you cannot see each other's presence.
-
-Away status:
-===========
-
-away: Away
-chat: Free for chat
-dnd: Do not disturb
-xa: Not available
+In the directory "docs/":
+    o STARTUP:
+    o GENERAL:
+    o MUC:
+    o FAQ:
+    o XEP:
 
 Bugs/Suggestions:
 =================
 
-Send me a mail or use jabber.
+Mailing-list:
+MUC room: irssi-xmpp@chat.jabberfr.org
+
+If irssi crashes, please build irssi with debug symbols and the module irssi-xmpp
+in debug mode (take a look at "config.mk" to activate it). Then you can run
+irssi in gdb and show the backtrace ("bt full") when irssi crashes.
+Paste the backtrace in your message would help to find this cricical bug.
 
 Author:
 =======
 
-Colin DIDIER (cdidier@cybione.org, xmpp:errtu@im.cybione.org)
+Colin DIDIER (cdidier@cybione.org, xmpp:cdidier@im.cybione.org)
 
-irssi-xmpp was inspired by irssi-jabber, another jabber module for irssi which
-was written by Chistian Häggström. (http://kalvdans.no-ip.org/trac/irssi-jabber)

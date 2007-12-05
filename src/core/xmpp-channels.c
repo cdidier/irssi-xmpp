@@ -108,7 +108,7 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	char *room, *recoded;
+	char *room, *recoded, *str;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(channel != NULL);
@@ -133,9 +133,11 @@ send_nick(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
 			g_free(recoded);
 		}
 
-		/* no history */
 		child = lm_message_node_add_child(child, "history", NULL);
-		lm_message_node_set_attribute(child, "maxchars", "0");
+		str = g_strdup_printf("%d",
+		    settings_get_int("xmpp_history_maxstanzas"));
+		lm_message_node_set_attribute(child, "maxstanzas", str);
+		g_free(str);
 
 		if (server->show != XMPP_PRESENCE_AVAILABLE) {
 			recoded = xmpp_recode_out(
@@ -738,6 +740,8 @@ xmpp_channels_init(void)
 	signal_add_last("event connected", (SIGNAL_FUNC)sig_event_connected);
 	signal_add_first("server connected",
 	    (SIGNAL_FUNC)sig_server_connected);
+
+	settings_add_int("xmpp_lookandfeel", "xmpp_history_maxstanzas", 30);
 }
 
 void

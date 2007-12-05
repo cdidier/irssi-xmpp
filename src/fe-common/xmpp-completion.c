@@ -189,12 +189,6 @@ sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
 	g_strfreev(tmp);
 }
 
-#define XMPP_CHANNEL_SETUP(chansetup) \
-	PROTO_CHECK_CAST(CHANNEL_SETUP(chansetup), CHANNEL_SETUP_REC, chat_type, "XMPP")
-
-#define IS_XMPP_CHANNEL_SETUP(chansetup) \
-	(XMPP_CHANNEL_SETUP(chansetup) ? TRUE : FALSE)
-
 static GList *
 get_channels(XMPP_SERVER_REC *server, const char *word)
 {

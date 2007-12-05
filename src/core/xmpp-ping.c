@@ -32,6 +32,7 @@
 
 /*
  * XEP-0199: XMPP Ping
+ * and lagmeter
  */
 
 static int timeout_tag;
