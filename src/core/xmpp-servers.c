@@ -34,7 +34,7 @@
 #include "xmpp-tools.h"
 
 static int
-isnickflag_func(char flag)
+isnickflag_func(SERVER_REC *server, char flag)
 {
 	return FALSE;
 }
@@ -45,8 +45,8 @@ ischannel_func(SERVER_REC *server, const char *data)
 	return FALSE;
 }
 
-static const char
-*get_nick_flags(void)
+static const char *
+get_nick_flags(SERVER_REC *server)
 {
 	return "";
 }
@@ -395,18 +395,16 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 }
 
 void
-xmpp_server_connect(SERVER_REC *server)
+xmpp_server_connect(XMPP_SERVER_REC *server)
 {
-	XMPP_SERVER_REC *xmppserver;
 	LmSSL *ssl;
 	GError *error = NULL;
 
-	xmppserver = XMPP_SERVER(server);
-	if (xmppserver == NULL)
+	if (!IS_XMPP_SERVER(server))
 		return;
 
 	/* SSL */
-	if (xmppserver->connrec->use_ssl) {
+	if (server->connrec->use_ssl) {
 		if (!lm_ssl_is_supported()) {
 			error = g_new(GError, 1);
 			error->message =
@@ -416,23 +414,23 @@ xmpp_server_connect(SERVER_REC *server)
 
 		ssl = lm_ssl_new(NULL, (LmSSLFunction)lm_ssl_cb,
 		    server, NULL);
-		lm_connection_set_ssl(xmppserver->lmconn, ssl);
+		lm_connection_set_ssl(server->lmconn, ssl);
 		lm_ssl_unref(ssl);
 	} 
 
 	/* Proxy */
 	if (settings_get_bool("xmpp_use_proxy"))
-		if (!set_proxy(xmppserver, &error))
+		if (!set_proxy(server, &error))
 			goto err;
 
-	lm_connection_set_disconnect_function(xmppserver->lmconn,
+	lm_connection_set_disconnect_function(server->lmconn,
 	    (LmDisconnectFunction)lm_close_cb, (gpointer)server,
 	    NULL);
 
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
 
-	if (!lm_connection_open(xmppserver->lmconn, 
+	if (!lm_connection_open(server->lmconn, 
 	    (LmResultFunction)lm_open_cb, (gpointer)server, NULL,
 	    &error))
 		goto err;
@@ -455,10 +453,11 @@ sig_connected(XMPP_SERVER_REC *server)
 	if (!IS_XMPP_SERVER(server))
 		return;
 
-	server->channels_join = (void *)xmpp_channels_join;
-	server->isnickflag = (void *)isnickflag_func;
+	server->channels_join = (void (*)(SERVER_REC *, const char *, int))
+	    xmpp_channels_join;
+	server->isnickflag = isnickflag_func;
 	server->ischannel = ischannel_func;
-	server->get_nick_flags = (void *)get_nick_flags;
+	server->get_nick_flags = get_nick_flags;
 	server->send_message = send_message;
 	
 	server->connected = TRUE;

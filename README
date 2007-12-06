@@ -43,7 +43,7 @@ MUC room: irssi-xmpp@chat.jabberfr.org
 If irssi crashes, please build irssi with debug symbols and the module irssi-xmpp
 in debug mode (take a look at "config.mk" to activate it). Then you can run
 irssi in gdb and show the backtrace ("bt full") when irssi crashes.
-Paste the backtrace in your message would help to find this cricical bug.
+Paste the backtrace in your message would help to find this critical bug.
 
 Author:
 =======

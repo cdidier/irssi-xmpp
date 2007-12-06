@@ -22,10 +22,10 @@
 #include "formats.h"
 
 FORMAT_REC fecommon_xmpp_formats[] = {
-	{ MODULE_NAME, "XMPP", 0, {} },
+	{ MODULE_NAME, "XMPP", 0, { 0 } },
 
 	/* ---- */
-	{ NULL, "Roster", 0, {} },
+	{ NULL, "Roster", 0, { 0 } },
 
 	{ "roster_group", "{hilight $0}:", 1, { 0 } },
 	{ "roster_jid", "  ({hilight $0}) {nick $1} $2 $3", 4, { 0, 0, 0, 0 } },
@@ -35,11 +35,11 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "roster_resource_status", ": $0", 1, { 0 } },
 	{ "roster_subscription", "(subscription: $0)", 1, { 0 } },
 	{ "begin_of_roster", "ROSTER: {nick $0} $1 $2\n", 3, { 0, 0, 0 } },
-	{ "end_of_roster", "End of ROSTER", 0, {} },
+	{ "end_of_roster", "End of ROSTER", 0, { 0 } },
 	{ "not_in_roster", "{nick $0}: not in the roster", 1, { 0 } },
 
 	/* ---- */
-	{ NULL, "Subscription", 0, {} },
+	{ NULL, "Subscription", 0, { 0 } },
 
 	{ "suscribe", "{nick $0} wants to subscribe to your presence {comment $1}", 2, { 0, 0 } },
 	{ "suscribed", "You can see {nick $0} presence now", 1, { 0 } },
@@ -47,33 +47,33 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "unsuscribed", "{nick $0} doesn't want you to see his/her presence anymore", 1 , { 0 } },
 
 	/* ---- */
-	{ NULL, "Message", 0, {} },
+	{ NULL, "Message", 0, { 0 } },
 
 	{ "message_event", "{nick $0}: $1", 2,  { 0, 0} },
 	{ "message_not_delivered", "{nick $0}: cannot deliver message {comment $1}", 2,  { 0, 0 } },
 
 	/* ---- */
-	{ NULL, "Queries", 0, {} },
+	{ NULL, "Queries", 0, { 0 } },
 
 	{ "query_aka", "{nick $0}: Also known as {nick $1}", 2, { 0, 0 } },
 
 	/* ---- */
-	{ NULL, "Channel", 0, {} },
+	{ NULL, "Channel", 0, { 0 } },
 
 	{ "joinerror", "Cannot join to room {channel $0} {comment $1}", 2, { 0, 0 } },
 
 	/* ---- */
-	{ NULL, "Presence", 0, {} },
+	{ NULL, "Presence", 0, { 0 } },
 
 	{ "presence_change", "{nick $0}: is now $1", 2, { 0, 0 } },
 	{ "presence_change_reason", "{nick $0}: is now $1 {comment $2}", 3, { 0, 0, 0 } },
 
 	/* ---- */
-	{ NULL, "Misc", 0, {} },
+	{ NULL, "Misc", 0, { 0 } },
 
 	{ "default_event", "$1 $2", 3, { 0, 0, 0 } },
 	{ "default_error", "ERROR $1 $2", 3, { 0, 0, 0 } },
 	{ "timestamp", "[{timestamp $0}] ", 1, { 0 } },
 
-	{ NULL, NULL, 0, {} }
+	{ NULL, NULL, 0, { 0 } }
 };

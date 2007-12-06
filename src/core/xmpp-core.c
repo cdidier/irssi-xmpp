@@ -97,7 +97,7 @@ xmpp_core_init(void)
 	rec->destroy_server_connect = destroy_server_connect;
 
 	rec->server_init_connect = xmpp_server_init_connect;
-	rec->server_connect = xmpp_server_connect;
+	rec->server_connect = (void (*)(SERVER_REC *))xmpp_server_connect;
 	rec->channel_create = (CHANNEL_REC *(*)(SERVER_REC *, const char *,
 	    const char *, int))xmpp_channel_create;
 	rec->query_create = xmpp_query_create;

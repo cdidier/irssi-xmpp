@@ -20,10 +20,17 @@ clean:
 
 install: all
 	@echo installing the module lib$(LIB).so to ${DESTDIR}${IRSSI_LIB}/modules
-#	@install -d ${DESTDIR}${IRSSI_LIB}/modules
-#	@install lib$(LIB).so ${DESTDIR}${IRSSI_LIB}/modules
+	@install -d ${DESTDIR}${IRSSI_LIB}/modules
+	@install -S lib$(LIB).so ${DESTDIR}${IRSSI_LIB}/modules
+
+uninstall:
+	@echo deinstalling the module lib$(LIB).so from ${DESTDIR}${IRSSI_LIB}/modules
+	@rm -f ${DESTDIR}${IRSSI_LIB}/modules/lib$(LIB).so
 
 user-install:
 	@env DESTDIR= IRSSI_LIB=~/.irssi ${MAKE} install
 
-.PHONY: clean user-install install
+user-uninstall:
+	@env DESTDIR= IRSSI_LIB=~/.irssi ${MAKE} uninstall
+
+.PHONY: clean install uninstall user-install user-uninstall
