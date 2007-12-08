@@ -1,66 +1,19 @@
-0.20 - ??/09/2007
+1.0 - ??/??/200?
 
-	- add MUC support
-	- add XMPP Ping support, the lagmeter is working now if it's supported
-	by the server
-	- add status window to show contact's presence in a window, setting
-	"xmpp_status_window" to enable it
-	- add raw window, setting "xmpp_raw_window" to enable it
-	- add command /ME
-	- add commands /XMPPCONNECT and /XMPPSERVER to connect to a jabber
-	server
-	- add command /VER request the software version
-	- add command /WHOIS to request the vCard
-	- send the specified message when disconnecting (/quit <message>)
-	- full completion support for user name (without space)
-	- complete group name in the command /ROSTER GROUP
-	- add statusbar "xmpp_composing" to show composing events
-	- send message composing events, set "xmpp_send_composing" to OFF
-	to disable it
-	- you don't need to reconnect anymore when you change the setting
-	"xmpp_priority", it take effect immediately
-	- set the JID as nick in irssi by default and add setting
-	"xmpp_set_nick_as_username" to use the left part of a JID as nick
-	- display disconnection error messages correctly
-	- don't create a new query window if there's already one
-	- lots of bug fixes and big code cleanup
-
-0.13 - 12/08/2007
-
-	- the roster can now manage contacts
-	- the roster can deal with contact subscriptions
-	- add setting "roster_add_send_subscribe" to send a subscribe request
-	when adding a contact to the roster
-	- add setting "xmpp_priority" to set the priority of your connection,
-	must reconnect to take effect
-	- bulletproof username, server, resource and jid, when using /server
-	or /connect (fit to the "Connection" part of the README)
-	- drop "lorder|tsort" in Makefiles, may compile on every linux
-	distributions
-
-0.12 - 09/08/2007
-
-	- add SSL support
-	- add new connection status messages
-	- full JIDs and resources completion
-	- open queries with the highest resource if not specified
-	- show unsuscribed users in the roster
-	- add setting "roster_show_offline_unsuscribed" to show/hide
-	unsuscribed users when they are offline if "roster_show_offline" is OFF
-	- add setting "roster_default_group" to set the name of the default
-	group
-	- don't show empty groups in the roster
-	- add setting "xmpp_default_away_mode" to set the away mode to use when
-	we simply type /away <reason>
-
-0.11 - 08/08/2007
-
-	- add autocompletion for JIDs (and partial for resources)
-	- add setting "roster_show_offline"
-	- add setting "xmpp_send_version"
-	- fix sorting users in the roster
-	- fix version informations
-
-0.10 - 07/08/2007
-
-	- first public release
+WIP	+ Intermediate support of XMPP
+	+ Better integration in irssi, many bug fixes and big code cleanup
+	+ Multi-User Chat (XEP-0045), Entity Use Cases and Occupant Use Cases
+WIP	+ Chat State Notifications (XEP-0085) showed in the statusbar
+	  (statusbar "xmpp_composing"), you can disable events sending
+	  (setting "xmpp_send_composing")
+WIP	+ XMPP Ping (XEP-0199) using /PING, it also allows the lagmeter to work
+WIP	+ Software Version (XEP-0092) using /VER, ... using /WHOIS
+	+ SSL and HTTP proxy support
+	- commands /XMPPCONNECT and /XMPPSERVER to connect easily to an account
+	- /ME command on queries and rooms
+	- tab completion of JIDs, resources, user names and groups
+	  even with spaces
+	- changing the priority (setting "xmpp_priority") take effect
+	  immediately
+	- basic status changes window (setting "xmpp_status_window") and raw
+	  window (setting "xmpp_raw_window")

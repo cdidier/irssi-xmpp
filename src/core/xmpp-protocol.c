@@ -766,6 +766,12 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 		    g_ascii_strcasecmp(xmlns, XMLNS_VERSION) == 0)
 			version_send(server, jid,
 			    lm_message_node_get_attribute(msg->node, "id"));
+
+		/* service-unavailable */
+		else {
+		/* <service-unavailable/> */
+		}
+
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_RESULT:

@@ -35,9 +35,21 @@
 #include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
 
+static char *
+quoted_if_space(const char *name, const char *res)
+{
+	if (res != NULL)
+		return g_utf8_strchr(res, -1, ' ') == NULL ?
+		    g_strconcat(name, "/", res, NULL) :
+		    g_strconcat("\"", name, "/", res, "\"", NULL);
+	else
+		return g_utf8_strchr(name, -1, ' ') == NULL ?
+		    g_strdup(name) : g_strconcat("\"", name, "\"", NULL);
+}
+
 static GList *
 get_resources(XMPP_SERVER_REC *server, const char *nick,
-    const char *resource_name)
+    const char *resource_name, gboolean quoted)
 {
 	GSList *rl;
 	GList *list;
@@ -58,18 +70,19 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 		return NULL;
 
 	for(rl = user->resources; rl != NULL; rl = rl->next) {
-		resource = (XMPP_ROSTER_RESOURCE_REC *)rl->data;
+		resource = rl->data;
 		if (resource_name == NULL
 		    || g_strncasecmp(resource->name, resource_name, len) == 0)
-			list = g_list_append(list, g_strconcat(nick, "/",
-			    resource->name, NULL));
+			list = g_list_append(list, quoted ?
+			    quoted_if_space(nick, resource->name) :
+			    g_strconcat(nick, "/", resource->name, NULL));
 	}
 
 	return list;
 }
 
 static GList *
-get_nicks(XMPP_SERVER_REC *server, const char *nick)
+get_nicks(XMPP_SERVER_REC *server, const char *nick, gboolean quoted)
 {
 	GSList *gl, *ul;
 	GList *list;
@@ -88,7 +101,7 @@ get_nicks(XMPP_SERVER_REC *server, const char *nick)
 	if (resource != NULL) {
 		jid = xmpp_strip_resource(nick);
 
-		list = get_resources(server, jid, resource);
+		list = get_resources(server, jid, resource, quoted);
 
 		g_free(resource);
 		g_free(jid);
@@ -113,13 +126,14 @@ again:
 			    	continue;
 
 			if (user->name != NULL
-			    && g_utf8_strchr(user->name, -1, ' ') == NULL
 			    && g_strncasecmp(user->name, nick, len) == 0)
-				list = g_list_prepend(list,
+				list = g_list_prepend(list, quoted ?
+				    quoted_if_space(user->name, NULL) :
 				    g_strdup(user->name));
 
 			if (g_strncasecmp(user->jid, nick, len) == 0)
-				list = g_list_append(list,
+				list = g_list_prepend(list, quoted ?
+				    quoted_if_space(user->jid, NULL) :
 				    g_strdup(user->jid));
 		}
 	}
@@ -144,9 +158,14 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 	if (server == NULL)
 		return;
 
-	if (!IS_XMPP_CHANNEL(window->active)
-	    || g_ascii_strcasecmp(linestart, settings_get_str("cmdchars")) == 0)
-	*list = g_list_concat(*list, get_nicks(server, word));
+	if (g_ascii_strncasecmp(linestart,
+	    settings_get_str("cmdchars"), 1) == 0) {
+		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
+		    word+1 : word , TRUE));
+
+	} else if (!IS_XMPP_CHANNEL(window->active))
+		*list = g_list_concat(*list, get_nicks(server, word, FALSE));
+
 }
 
 static void
@@ -217,10 +236,10 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
 		channel_setup = tmp->data;
 
-		if ((IS_XMPP_CHANNEL_SETUP(channel_setup) ||
-		    *channel_setup->name != '#') &&
-		    g_strncasecmp(channel_setup->name, word, len) == 0 &&
-		    glist_find_string(list, channel_setup->name) == NULL)
+		if ((IS_XMPP_CHANNEL_SETUP(channel_setup)
+		    || *channel_setup->name != '#')
+		    && g_strncasecmp(channel_setup->name, word, len) == 0
+		    && glist_find_string(list, channel_setup->name) == NULL)
 			list = g_list_append(list,
 			    g_strdup(channel_setup->name));
 	}
