@@ -21,7 +21,7 @@ clean:
 install: all
 	@echo installing the module lib$(LIB).so to ${DESTDIR}${IRSSI_LIB}/modules
 	@install -d ${DESTDIR}${IRSSI_LIB}/modules
-	@install -S lib$(LIB).so ${DESTDIR}${IRSSI_LIB}/modules
+	@install lib$(LIB).so ${DESTDIR}${IRSSI_LIB}/modules
 
 uninstall:
 	@echo deinstalling the module lib$(LIB).so from ${DESTDIR}${IRSSI_LIB}/modules
