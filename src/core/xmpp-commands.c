@@ -729,7 +729,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	target = window_item_get_target(item);
 	type = IS_CHANNEL(item) ? SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
 
-	signal_emit("message xmpp own_action", 3, server, data, target,
+	signal_emit("message xmpp own_action", 4, server, data, target,
 	    GINT_TO_POINTER(type));
 
 	text = g_strconcat(settings_get_str("cmdchars"), "me ", data, NULL);
