@@ -1,14 +1,14 @@
 1.0 - ??/??/200?
 
 WIP	+ Intermediate support of XMPP
-	+ Better integration in irssi, many bug fixes and big code cleanup
+	+ Better integration in irssi, many bug fixes and a big code cleanup
 	+ Multi-User Chat (XEP-0045), Entity Use Cases and Occupant Use Cases
 WIP	+ Chat State Notifications (XEP-0085) showed in the statusbar
 	  (statusbar "xmpp_composing"), you can disable events sending
 	  (setting "xmpp_send_composing")
 WIP	+ XMPP Ping (XEP-0199) using /PING, it also allows the lagmeter to work
 WIP	+ Software Version (XEP-0092) using /VER, ... using /WHOIS
-	+ SSL and HTTP proxy support
+	+ Better UTF-8 support and HTTP proxy support
 	- commands /XMPPCONNECT and /XMPPSERVER to connect easily to an account
 	- /ME command on queries and rooms
 	- tab completion of JIDs, resources, user names and groups
@@ -17,3 +17,4 @@ WIP	+ Software Version (XEP-0092) using /VER, ... using /WHOIS
 	  immediately
 	- basic status changes window (setting "xmpp_status_window") and raw
 	  window (setting "xmpp_raw_window")
+	- and many others minor changes
