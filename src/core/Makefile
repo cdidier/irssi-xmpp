@@ -17,4 +17,6 @@ SRCS=	loudmouth-tools.c \
 	xmpp-settings.c \
 	xmpp-tools.c
 
+LIB_LIBS = `pkg-config --libs loudmouth-1.0`
+
 include ../rules.mk

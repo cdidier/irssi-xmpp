@@ -14,4 +14,6 @@ SRCS=	fe-xmpp-channels.c \
 	module-formats.c \
 	xmpp-completion.c
 
+LIB_LIBS = `pkg-config --libs glib-2.0`
+
 include ../rules.mk
