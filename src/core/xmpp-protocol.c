@@ -90,8 +90,14 @@ send:
 	g_free(jid);
 }
 
-void
-own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
+static void
+send_service_unavailable(XMPP_SERVER_REC *server, const char *dest,
+    const char *id)
+{
+}
+
+static void
+sig_own_presence(XMPP_SERVER_REC *server, const int show, const char *status,
     const int priority)
 {
 	GSList *tmp;
@@ -309,6 +315,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 		break;
 
+	case LM_MESSAGE_SUB_TYPE_HEADLINE:
 	case LM_MESSAGE_SUB_TYPE_NORMAL:
 	case LM_MESSAGE_SUB_TYPE_CHAT:
 		/* XEP-0022: Message Events */
@@ -333,6 +340,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 		stamp = get_timestamp(msg->node);
 
+		/* <subject>text</subject> */
 		child = lm_message_node_get_child(msg->node, "subject");
 		if (child != NULL && child->value != NULL) {
 			text = xmpp_recode_in(child->value);
@@ -341,6 +349,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 			g_free(text);
 		}
 
+		/* <body>text</body> */
 		child = lm_message_node_get_child(msg->node, "body");
 		if (child != NULL && child->value != NULL) {
 			text = xmpp_recode_in(child->value);
@@ -360,6 +369,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_GROUPCHAT:
+		/* <subject>text</subject> */
 		child = lm_message_node_get_child(msg->node, "subject");
 		if (child != NULL) {
 			XMPP_CHANNEL_REC *channel;
@@ -384,6 +394,7 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 			g_free(nick);
 		}
 		
+		/* <body>text</body> */
 		child = lm_message_node_get_child(msg->node, "body");
 		if (child != NULL && child->value != NULL) {
 			XMPP_CHANNEL_REC *channel;
@@ -463,10 +474,10 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			const char *code;
 			char *nick;
 
+			/* <error code='code'/> */
 			child = lm_message_node_get_child(msg->node, "error");
 			if (child == NULL)
 				goto out;
-
 			code = lm_message_node_get_attribute(child, "code");
 			if (code == NULL)
 				goto out;
@@ -474,31 +485,40 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			nick = xmpp_extract_nick(jid);
 
 			if (!channel->joined) {
+				/* <error code='401'/> */
 				if (g_ascii_strcasecmp(code, "401") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_PASSWORD_INVALID_OR_MISSING);
+				/* <error code='403'/> */
 				else if (g_ascii_strcasecmp(code, "403") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_USER_BANNED);
+				/* <error code='404'/> */
 				else if (g_ascii_strcasecmp(code, "404") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_ROOM_NOT_FOUND);
+				/* <error code='405'/> */
 				else if (g_ascii_strcasecmp(code, "405") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_ROOM_CREATION_RESTRICTED);
+				/* <error code='406'/> */
 				else if (g_ascii_strcasecmp(code, "406") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_USE_RESERVED_ROOM_NICK);
+				/* <error code='407'/> */
 				else if (g_ascii_strcasecmp(code, "407") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NOT_ON_MEMBERS_LIST);
+				/* <error code='409'/> */
 				else if (g_ascii_strcasecmp(code, "409") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NICK_IN_USE);
+				/* <error code='503'/> */
 				else if (g_ascii_strcasecmp(code, "503") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED);
 			} else {
+				/* <error code='409'/> */
 				if (g_ascii_strcasecmp(code, "409") == 0)
 					signal_emit("message xmpp channel nick in use",
 					    2, channel, nick);
@@ -513,6 +533,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_SUBSCRIBE:
+		/* <status>text</status> */
 		child = lm_message_node_get_child(msg->node, "status");
 		text = (child != NULL) ? xmpp_recode_in(child->value) : NULL;
 		signal_emit("xmpp presence subscribe", 3, server, jid, text);
@@ -540,17 +561,23 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		if (channel != NULL) {
 			const char *item_affiliation, *item_role;
 			char *nick, *item_jid, *item_nick;
+			gboolean own, forced, created;
 
 			nick = xmpp_extract_nick(jid);
 			item_affiliation = item_role = NULL;
 			item_jid = item_nick = NULL;
+			own = forced = created = FALSE;
 
+			/* <x xmlns='http://jabber.org/protocol/muc#user'/> */
 			child = lm_tools_message_node_find(msg->node, "x",
 			    XMLNS, XMLNS_MUC_USER);
 			if (child != NULL) {
 
 				if ((subchild = lm_message_node_get_child(
 				    child, "item")) != NULL) {
+					/* <item affiliation='item_affiliation'
+					 *     role='item_role'
+					 *     nick='item_nick'/> */
 					item_affiliation =
 					    lm_message_node_get_attribute(
 					    subchild, "affiliation");
@@ -563,34 +590,64 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					item_nick = xmpp_recode_in(
 					    lm_message_node_get_attribute(
 					    subchild, "nick"));
+
+					/* <status code='110'/> */
+					own = lm_tools_message_node_find(
+					    child, "status", "code", "110")
+					    != NULL ? TRUE : FALSE;
+					/* <status code='210'/> */
+					forced = lm_tools_message_node_find(
+					    child, "status", "code", "210")
+					    != NULL ? TRUE : FALSE;
+					/* <status code='201'/> */
+					created = lm_tools_message_node_find(
+					    child, "status", "code", "201")
+					    != NULL ? TRUE : FALSE;
 				}
 			}
 
-			signal_emit("xmpp channel nick event", 6, channel,
-			    (item_nick != NULL) ? item_nick : nick,
-			    item_jid, item_affiliation, item_role);
+			if (item_nick != NULL) {
+				g_free(nick);
+				nick = item_nick;
+			}
 
-			show = lm_message_node_get_child(msg->node, "show");
+			if (created) {
+				/* TODO send disco
+				 * show event IRCTXT_CHANNEL_CREATED */
+			}
+
+			if (own || strcmp(nick, channel->nick) == 0)
+				signal_emit("xmpp channel nick own_event", 6,
+				    channel, nick, item_jid, item_affiliation,
+				    item_role, forced);
+			else
+				signal_emit("xmpp channel nick event", 5,
+				    channel, nick, item_jid, item_affiliation,
+				    item_role);
+
+			/* <status>text</status> */
 			child = lm_message_node_get_child(msg->node, "status");
-			text = (child != NULL) ?
+			text = child != NULL ?
 			    xmpp_recode_in(child->value) : NULL;
+			/* <show>show</show> */
+			 show = lm_message_node_get_child(msg->node, "show");
 
 			signal_emit("xmpp channel nick presence", 4, channel,
-			    (item_nick != NULL) ? item_nick : nick,
-			    (show != NULL) ? show->value : NULL, text);
+			    nick, (show != NULL) ? show->value : NULL, text);
 
 			g_free(item_jid);
-			g_free(item_nick);
 			g_free(text);
 			g_free(nick);
 
 		/* general */
 		} else {
+			/* <status>text</status> */
 			child = lm_message_node_get_child(msg->node, "status");
 			text = (child != NULL) ?
 			    xmpp_recode_in(child->value) : NULL;
-
+			/* <show>show</show> */
 			show = lm_message_node_get_child(msg->node, "show");
+			/* <priority>priority</priority> */
 			priority = lm_message_node_get_child(msg->node,
 			    "priority");
 
@@ -617,56 +674,64 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			status_code = NULL;
 			reason = actor = item_nick = NULL;
 
+			/* <x xmlns='http://jabber.org/protocol/muc#user'/> */
 			child = lm_tools_message_node_find(msg->node, "x",
 			    XMLNS, XMLNS_MUC_USER);
 			if (child != NULL) {
 
-				/* in <x> */
+				/* <status code='status_code'/> */
 				if ((subchild = lm_message_node_get_child(
 				    child, "status")) != NULL)
 					status_code =
 					    lm_message_node_get_attribute(
 					    subchild, "code");
 
-				/* in <x> */
-				if ((subchild = lm_message_node_get_child(
-				    child, "item")) != NULL)
+				/* <item nick='item_nick'/> */
+				if ((child = lm_message_node_get_child(
+				    child, "item")) != NULL) {
 					item_nick = xmpp_recode_in(
 					    lm_message_node_get_attribute(
-					    subchild, "nick"));
+					    child, "nick"));
 
-				/* in <item> */
-				if ((child = lm_message_node_get_child(
-				    subchild, "reason")) != NULL)
-					reason = xmpp_recode_in(child->value);
+					/* <reason>reason</reason>*/
+					if ((subchild =
+					    lm_message_node_get_child(child,
+					    "reason")) != NULL)
+						reason = xmpp_recode_in(
+						    subchild->value);
 
-				/* in <item */
-				if ((child = lm_message_node_get_child(
-				    subchild, "actor")) != NULL)
-					actor = xmpp_recode_in(
-					    lm_message_node_get_attribute(
-					    child, "jid"));
+					/* <actor jid='actor'/> */
+					if ((subchild =
+					    lm_message_node_get_child(child,
+					    "actor")) != NULL)
+						actor = xmpp_recode_in(
+					    	    lm_message_node_get_attribute(
+						    subchild, "jid"));
+				}
 			}
 			
 			if (status_code != NULL) {
 
+				/* <status code='303'/> */
 			 	if (g_ascii_strcasecmp(status_code,
 				    "303") == 0 && item_nick != NULL)
 					signal_emit("xmpp channel nick",
 					    5, channel, nick, item_nick);
 
+				/* <status code='307'/> */
 				else if (g_ascii_strcasecmp(status_code,
 				    "307") == 0)
 					signal_emit("xmpp channel nick kicked",
 					    4, channel, nick, actor, reason);
 					
-				/* ban */
+				/* ban: <status code='301'/> */
 				else if (g_ascii_strcasecmp(status_code,
 				    "301") == 0)
 					signal_emit("xmpp channel nick kicked",
 					    4, channel, nick, actor, reason);
 
 			} else {
+				/* <status>text</status> */
 				child = lm_message_node_get_child(msg->node,
 				    "status");
 				text = (child != NULL) ?
@@ -685,6 +750,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 
 		/* general */
 		} else {
+			/* <status>text</status> */
 			child = lm_message_node_get_child(msg->node, "status");
 			text = (child != NULL) ?
 			    xmpp_recode_in(child->value) : NULL;
@@ -896,7 +962,7 @@ xmpp_protocol_init(void)
 	    (SIGNAL_FUNC)register_handlers);
 	signal_add_first("server disconnected",
 	    (SIGNAL_FUNC)unregister_handlers);
-	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)own_presence);
+	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
 	signal_add_first("xmpp server disco",
 	    (SIGNAL_FUNC)disco_servers_services);
 	signal_add("xmpp composing start", (SIGNAL_FUNC)composing_start);
@@ -916,7 +982,7 @@ xmpp_protocol_deinit(void)
 	    (SIGNAL_FUNC)register_handlers);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)register_handlers);
-	signal_remove("xmpp own_presence", (SIGNAL_FUNC)own_presence);
+	signal_remove("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
 	signal_remove("xmpp server disco", (SIGNAL_FUNC)disco_servers_services);
 	signal_remove("xmpp composing start", (SIGNAL_FUNC)composing_start);
 	signal_remove("xmpp composing stop", (SIGNAL_FUNC)composing_stop);

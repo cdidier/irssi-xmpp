@@ -66,7 +66,7 @@ restore_channels(XMPP_SERVER_REC *server)
 
 	for (tmp = server->connrec->channels_list; tmp != NULL;
 	    tmp = tmp->next) {
-		xmpp_channels_join(server, tmp->data, FALSE);
+		xmpp_channels_join_automatic(server, tmp->data);
 		g_free(tmp->data);
 	}
 	g_slist_free(server->connrec->channels_list);
