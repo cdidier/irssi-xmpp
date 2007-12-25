@@ -568,7 +568,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			item_jid = item_nick = NULL;
 			own = forced = created = FALSE;
 
-			/* <x xmlns='http://jabber.org/protocol/muc#user'/> */
+			/* <x xmlns='http://jabber.org/protocol/muc#user'> */
 			child = lm_tools_message_node_find(msg->node, "x",
 			    XMLNS, XMLNS_MUC_USER);
 			if (child != NULL) {
@@ -674,7 +674,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			status_code = NULL;
 			reason = actor = item_nick = NULL;
 
-			/* <x xmlns='http://jabber.org/protocol/muc#user'/> */
+			/* <x xmlns='http://jabber.org/protocol/muc#user'> */
 			child = lm_tools_message_node_find(msg->node, "x",
 			    XMLNS, XMLNS_MUC_USER);
 			if (child != NULL) {
@@ -686,7 +686,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 					    lm_message_node_get_attribute(
 					    subchild, "code");
 
-				/* <item nick='item_nick'/> */
+				/* <item nick='item_nick'> */
 				if ((child = lm_message_node_get_child(
 				    child, "item")) != NULL) {
 					item_nick = xmpp_recode_in(
