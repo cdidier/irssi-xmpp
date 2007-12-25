@@ -8,6 +8,7 @@
 #define XMLNS "xmlns"
 #define XMLNS_ROSTER "jabber:iq:roster"
 #define XMLNS_VERSION "jabber:iq:version"
+#define XMLNS_DATA "jabber:x:data"
 #define XMLNS_VCARD "vcard-temp"
 #define XMLNS_EVENT "jabber:x:event"
 #define XMLNS_PING "urn:xmpp:ping"
