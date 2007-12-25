@@ -324,6 +324,10 @@ sig_topic(XMPP_CHANNEL_REC *channel, const char *topic, const char *nick_name)
 {
 	g_return_if_fail(channel != NULL);
 
+	if (channel->topic != NULL && topic != NULL
+	    && strcmp(channel->topic, topic) == 0)
+		return;
+
 	g_free(channel->topic);
 	channel->topic = (topic != NULL && *topic != '\0') ?
 	    g_strdup(topic) : NULL;
@@ -333,7 +337,7 @@ sig_topic(XMPP_CHANNEL_REC *channel, const char *topic, const char *nick_name)
 
 	signal_emit("channel topic changed", 1, channel);
 
-	if (channel->joined)
+	if (channel->joined && nick_name != NULL && *nick_name != '\0')
 		signal_emit("message topic", 5, channel->server, channel->name,
 		    (channel->topic != NULL) ? channel->topic : "",
 		    channel->topic_by, "");
@@ -408,11 +412,12 @@ sig_nick_own_join(XMPP_CHANNEL_REC *channel, const char *nick_name,
 
 	signal_emit("message join", 4, channel->server, channel->name,
 	    nick->nick, nick->host);
+	signal_emit("message xmpp channel mode", 4, channel,
+	    nick->nick, nick->affiliation, nick->role);
+
 	signal_emit("channel joined", 1, channel);
 	signal_emit("channel sync", 1, channel);
 	channel_send_autocommands(CHANNEL(channel));
-	signal_emit("message xmpp channel mode", 4, channel,
-	    nick->nick, nick->affiliation, nick->role);
 
 	if (forced)
 		signal_emit("xmpp channel nick", 3, channel, channel->nick,
