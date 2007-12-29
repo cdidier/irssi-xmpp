@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "module.h"
+#include "channels.h"
 #include "levels.h"
 #include "module-formats.h"
 #include "nicklist.h"
@@ -32,6 +33,7 @@
 #include "fe-messages.h"
 #include "fe-queries.h"
 #include "fe-common/core/module-formats.h"
+#include "fe-common/core/fe-messages.h"
 #include "fe-common/irc/module-formats.h"
 
 #include "xmpp-servers.h"
@@ -41,11 +43,128 @@
 #include "xmpp-tools.h"
 
 static void
+sig_archive(SERVER_REC *server, const char *msg, const char *nick,
+    const char *target, const char *stamp, gpointer gpointer_type)
+{
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(msg != NULL);
+	g_return_if_fail(nick != NULL);
+	g_return_if_fail(target != NULL);
+
+	/* MUC */
+	if (GPOINTER_TO_INT(gpointer_type) == SEND_TARGET_CHANNEL) {
+		CHANNEL_REC *chanrec;
+		int print_channel;
+		char *nickmode, *text, *freemsg = NULL;
+
+		chanrec = channel_find(server, target);
+		print_channel = chanrec == NULL ||
+		    !window_item_is_active((WI_ITEM_REC *)chanrec);
+		if (!print_channel
+		    && settings_get_bool("print_active_channel")
+		    && window_item_window((WI_ITEM_REC *)chanrec)->items->next
+		    != NULL)
+			print_channel = TRUE;
+
+		if (settings_get_bool("emphasis"))
+			msg = freemsg = expand_emphasis((WI_ITEM_REC *)chanrec,
+			    msg);
+
+		nickmode = channel_get_nickmode(chanrec, nick);
+
+		text = !print_channel ?
+		    format_get_text(CORE_MODULE_NAME, NULL, server,
+		        target, TXT_PUBMSG, nick, msg, nickmode) :
+		    format_get_text(CORE_MODULE_NAME, NULL, server,
+		        target, TXT_PUBMSG_CHANNEL, nick, target, msg,
+		        nickmode);
+
+		printformat_module(MODULE_NAME, server, target,
+		    MSGLEVEL_PUBLIC, XMPPTXT_MESSAGE_TIMESTAMP,
+		    stamp, text);
+
+		g_free_not_null(nickmode);
+		g_free_not_null(freemsg);
+		g_free(text);
+
+	/* General */
+	} else {
+		QUERY_REC *query;
+		char *text, *freemsg = NULL;
+
+		query = query_find(server, nick);
+
+		if (settings_get_bool("emphasis"))
+			msg = freemsg = expand_emphasis((WI_ITEM_REC *)query,
+			    msg);
+
+		text = format_get_text(CORE_MODULE_NAME, NULL, server,
+		    target, query == NULL ? TXT_MSG_PRIVATE :
+		    TXT_MSG_PRIVATE_QUERY, nick, nick, msg);
+
+		printformat_module(MODULE_NAME, server, target,
+		    MSGLEVEL_MSGS, XMPPTXT_MESSAGE_TIMESTAMP,
+		    stamp, text);
+		    
+		g_free_not_null(freemsg);
+		g_free(text);
+	}
+}
+
+static void
+sig_archive_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
+    const char *target, const char *stamp, gpointer gpointer_type)
+{
+	void *item;
+	char *text, *freemsg = NULL;
+	int level, type;
+
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(msg != NULL);
+	g_return_if_fail(nick != NULL);
+	g_return_if_fail(target != NULL);
+
+	type = GPOINTER_TO_INT(gpointer_type);
+
+	level = MSGLEVEL_ACTIONS | (type == SEND_TARGET_CHANNEL ?
+	    MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
+
+	if (type == SEND_TARGET_CHANNEL)
+		item = xmpp_channel_find(server, target);
+	else
+		item = privmsg_get_query(SERVER(server), nick, FALSE, level);
+
+	if (settings_get_bool("emphasis"))
+		msg = freemsg = expand_emphasis(item, msg);
+
+	/* MUC */
+	if (type == SEND_TARGET_CHANNEL) {
+		if (item && window_item_is_active(item))
+			text = format_get_text(CORE_MODULE_NAME, NULL, server,
+			    target, IRCTXT_ACTION_PUBLIC, nick, msg);
+		else
+			text = format_get_text(CORE_MODULE_NAME, NULL, server,
+			    target, IRCTXT_ACTION_PUBLIC_CHANNEL, nick,
+			    target, msg);
+
+	/* General */
+	} else
+		text = format_get_text(CORE_MODULE_NAME, NULL, server,
+		    nick, (item == NULL) ? IRCTXT_ACTION_PRIVATE : 
+		    IRCTXT_ACTION_PRIVATE_QUERY, nick, nick, msg);
+
+	printformat_module(MODULE_NAME, server, target, level,
+	    XMPPTXT_MESSAGE_TIMESTAMP, stamp, text);
+
+	g_free(freemsg);
+}
+
+static void
 sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
     const char *target, gpointer gpointer_type)
 {
 	void *item;
-	char *freemsg;
+	char *freemsg = NULL;
 	int level, type;
 
 	g_return_if_fail(server != NULL);
@@ -229,6 +348,7 @@ sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
 void
 fe_xmpp_messages_init(void)
 {
+	signal_add("message xmpp archive", (SIGNAL_FUNC)sig_archive);
 	signal_add("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_add("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_add("message xmpp error", (SIGNAL_FUNC)sig_error);
@@ -241,6 +361,7 @@ fe_xmpp_messages_init(void)
 void
 fe_xmpp_messages_deinit(void)
 {
+	signal_remove("message xmpp archive", (SIGNAL_FUNC)sig_archive);
 	signal_remove("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_remove("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_remove("message xmpp error", (SIGNAL_FUNC)sig_error);

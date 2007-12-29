@@ -51,6 +51,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 
 	{ "message_event", "{nick $0}: $1", 2,  { 0, 0} },
 	{ "message_not_delivered", "{nick $0}: cannot deliver message {comment $1}", 2,  { 0, 0 } },
+	{ "message_timestamp", "[{timestamp $0}] $1", 2, { 0, 0 } },
 
 	/* ---- */
 	{ NULL, "Queries", 0, { 0 } },
@@ -73,7 +74,6 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 
 	{ "default_event", "$1 $2", 3, { 0, 0, 0 } },
 	{ "default_error", "ERROR $1 $2", 3, { 0, 0, 0 } },
-	{ "timestamp", "[{timestamp $0}] ", 1, { 0 } },
 
 	{ NULL, NULL, 0, { 0 } }
 };

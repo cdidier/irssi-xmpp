@@ -211,43 +211,37 @@ get_timestamp(LmMessageNode *node)
 {
 	LmMessageNode *child;
 	const char *stamp;
+	char str[MAX_LEN_TIMESTAMP];
+	struct tm tm;
 
-	/* XEP-0203: Delayed Delivery */
-	child = lm_tools_message_node_find(node, "delay", XMLNS,
-	    XMLNS_DELAYED_DELIVERY);
-	if (child != NULL) {
-		struct tm tm;
+	/* XEP-0203: Delayed Delivery
+	 * <delay xmlns="urn:xmpp:delay" from="jid" stamp="stamp">jid</delay> */
+	if ((child = lm_tools_message_node_find(node, "x", XMLNS,
+	    XMLNS_DELAYED_DELIVERY)) != NULL) {
 
 		stamp = lm_message_node_get_attribute(child, "stamp");
 		if (stamp != NULL
 		    && strptime(stamp, "%Y-%m-%dT%T", &tm) == NULL)
-			return NULL;
-		
+			return g_strdup("");
 
-		return NULL;
-	}
-
-	/* XEP-0091: Delayed Delivery (Obsolete) */
-	child = lm_tools_message_node_find(node, "x", XMLNS,
-	    XMLNS_DELAYED_DELIVERY_OLD);
-	if (child != NULL) {
-		struct tm tm;
-		char str[MAX_LEN_TIMESTAMP];
+	/* XEP-0091: Delayed Delivery (Obsolete)
+	 * <x xmlns="jabber:x:delay" from="jid" stamp="stamp">jid</x> */
+	} else if ((child = lm_tools_message_node_find(node, "x", XMLNS,
+	    XMLNS_DELAYED_DELIVERY_OLD)) != NULL) {
 
 		stamp = lm_message_node_get_attribute(child, "stamp");
 		if (stamp != NULL
 		    && strptime(stamp, "%Y%m%dT%T", &tm) == NULL)
-			return NULL;
+			return g_strdup("");
 
-		if (strftime(str, MAX_LEN_TIMESTAMP,
-		    settings_get_str("xmpp_timestamp_format"), &tm) == 0)
-			return NULL;
-		str[MAX_LEN_TIMESTAMP-1] = '\0';
+	} else
+		return NULL;
 
-		return g_strdup(str);
-	}
-
-	return NULL;
+	if (strftime(str, MAX_LEN_TIMESTAMP,
+	    settings_get_str("xmpp_timestamp_format"), &tm) == 0)
+		return g_strdup("");
+	str[MAX_LEN_TIMESTAMP-1] = '\0';
+	return g_strdup(str);
 }
 
 
@@ -344,8 +338,15 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 		child = lm_message_node_get_child(msg->node, "subject");
 		if (child != NULL && child->value != NULL) {
 			text = xmpp_recode_in(child->value);
-			signal_emit("message private", 4, server, text,
-			    jid, jid);
+
+			if (stamp != NULL)
+				signal_emit("message xmpp archive", 6,
+				    server, text, jid, jid, stamp,
+				    GINT_TO_POINTER(SEND_TARGET_NICK));
+			else
+				signal_emit("message private", 4, server,
+				    text, jid, jid);
+
 			g_free(text);
 		}
 
@@ -354,13 +355,25 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 		if (child != NULL && child->value != NULL) {
 			text = xmpp_recode_in(child->value);
 
-			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
-				signal_emit("message xmpp action", 5, server,
-				    text+4, jid, jid,
-				    GINT_TO_POINTER(SEND_TARGET_NICK));
-			else
-				signal_emit("message private", 4, server,
-				    text, jid, jid);
+			if (stamp != NULL) {
+				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+					signal_emit(
+					    "message xmpp archive action", 6,
+					    server, text+4, jid, jid, stamp,
+					    GINT_TO_POINTER(SEND_TARGET_NICK));
+				else
+					signal_emit("message xmpp archive", 6,
+					    server, text, jid, jid, stamp,
+					    GINT_TO_POINTER(SEND_TARGET_NICK));
+			} else {
+				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+					signal_emit("message xmpp action", 5, server,
+					    text+4, jid, jid,
+					    GINT_TO_POINTER(SEND_TARGET_NICK));
+				else
+					signal_emit("message private", 4, server,
+					    text, jid, jid);
+			}
 
 			g_free(text);
 		}
@@ -416,13 +429,28 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 			text = xmpp_recode_in(child->value);
 
-			if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
-				signal_emit("message xmpp action", 5, server,
-				    text+4, nick, channel_name,
-				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else
-				signal_emit("message public", 5, server,
-				    text, nick, "", channel_name);
+			if (stamp != NULL) {
+				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+					signal_emit(
+					    "message xmpp archive action", 6,
+					    server, text+4, nick, channel_name,
+					    stamp,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else
+					signal_emit("message xmpp archive", 6,
+					    server, text, nick, channel_name,
+					    stamp,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+			} else {
+				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+					signal_emit("message xmpp action", 5,
+					    server, text+4, nick, channel_name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else
+					signal_emit("message public", 5,
+					    server, text, nick, "",
+					    channel_name);
+			}
 
 			g_free(text);
 			g_free(stamp);
