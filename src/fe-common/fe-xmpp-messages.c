@@ -35,6 +35,7 @@
 #include "fe-common/core/module-formats.h"
 #include "fe-common/core/fe-messages.h"
 #include "fe-common/irc/module-formats.h"
+#include "irssi-version.h"
 
 #include "xmpp-servers.h"
 #include "xmpp-channels.h"
@@ -79,7 +80,13 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 		    != NULL)
 			print_channel = TRUE;
 
+		/* in versions of irssi prior to 0.8.12 (20071006), channel_get_nickmode
+		 * doesn't return a dynamically allocated string */
+#if IRSSI_VERSION_DATE >= 20071006
 		nickmode = channel_get_nickmode(chanrec, nick);
+#else
+		nickmode = g_strdup(channel_get_nickmode(chanrec, nick));
+#endif
 
 		text = !print_channel ?
 		    format_get_text(CORE_MODULE_NAME, NULL, server,
@@ -237,8 +244,7 @@ sig_message_own_public(XMPP_SERVER_REC *server, char *msg, char *target)
 {
 	WINDOW_REC *window;
 	XMPP_CHANNEL_REC *channel;
-	const char *nickmode;
-	char *freemsg = NULL, *recoded;
+	char *nickmode, *freemsg = NULL, *recoded;
 	gboolean print_channel;
 
 	g_return_if_fail(server != NULL);
@@ -252,7 +258,11 @@ sig_message_own_public(XMPP_SERVER_REC *server, char *msg, char *target)
 	if (channel == NULL)
 		return;
 
+#if IRSSI_VERSION_DATE >= 20071006
 	nickmode = channel_get_nickmode(CHANNEL(channel), channel->nick);
+#else
+	nickmode = g_strdup(channel_get_nickmode(CHANNEL(channel), channel->nick));
+#endif
 
 	window = (channel == NULL) ?
 	    NULL : window_item_window((WI_ITEM_REC *)channel);
@@ -281,6 +291,7 @@ sig_message_own_public(XMPP_SERVER_REC *server, char *msg, char *target)
 		    nickmode);
 
 	g_free(recoded);
+	g_free(nickmode);
 	g_free_not_null(freemsg);
 
 	signal_stop();
