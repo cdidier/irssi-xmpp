@@ -224,6 +224,8 @@ get_timestamp(LmMessageNode *node)
 		    && strptime(stamp, "%Y-%m-%dT%T", &tm) == NULL)
 			return g_strdup("");
 
+		/* TODO handle timezone */
+
 	/* XEP-0091: Delayed Delivery (Obsolete)
 	 * <x xmlns="jabber:x:delay" from="jid" stamp="stamp">jid</x> */
 	} else if ((child = lm_tools_message_node_find(node, "x", XMLNS,
@@ -258,17 +260,10 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 	LmMessageNode *child, *subchild;
 	char *jid, *text, *stamp;
 
-	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
-
-	if (settings_get_bool("xmpp_raw_window")) {
-		text = xmpp_recode_in(lm_message_node_to_string(msg->node));
-		signal_emit("xmpp raw in", 2, server, text);
-		g_free(text);
-	}
 
 	switch (lm_message_get_sub_type(msg)) {
 	
@@ -478,17 +473,10 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 	LmMessageNode *child, *subchild, *show, *priority;
 	char *jid, *text;
 
-	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
-
-	if (settings_get_bool("xmpp_raw_window")) {
-		text = xmpp_recode_in(lm_message_node_to_string(msg->node));
-		signal_emit("xmpp raw in", 2, server, text);
-		g_free(text);
-	}
 
 	switch (lm_message_get_sub_type(msg)) {
 
@@ -802,7 +790,7 @@ out:
 
 static LmHandlerResult
 handle_iq(LmMessageHandler *handler, LmConnection *connection,
-	LmMessage *msg, gpointer user_data)
+    LmMessage *msg, gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
 	XMPP_CHANNEL_REC *channel;
@@ -810,17 +798,10 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	const char *xmlns;
 	char *jid, *text;
 
-	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
-
-	if (settings_get_bool("xmpp_raw_window")) {
-		text = xmpp_recode_in(lm_message_node_to_string(msg->node));
-		signal_emit("xmpp raw in", 2, server, text);
-		g_free(text);
-	}
 
 	child = lm_message_node_get_child(msg->node, "query");
 	if (child == NULL)
@@ -981,6 +962,52 @@ register_handlers(XMPP_SERVER_REC *server)
 	lm_connection_register_message_handler(server->lmconn,
 	    server->hiq, LM_MESSAGE_TYPE_IQ,
 	    LM_HANDLER_PRIORITY_NORMAL);
+
+	if (settings_get_bool("xmpp_raw_window"))
+		signal_emit("xmpp register raw handler", 1, server);
+}
+
+static LmHandlerResult
+handle_raw(LmMessageHandler *handler, LmConnection *connection,
+   LmMessage *msg, gpointer user_data)
+{
+	char *text = xmpp_recode_in(lm_message_node_to_string(msg->node));
+	signal_emit("xmpp raw in", 2, user_data, text);
+	g_free(text);
+	return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
+}
+
+static void
+unregister_raw_handler(XMPP_SERVER_REC *server)
+{
+	if (!IS_XMPP_SERVER(server) || server->hraw == NULL)
+		return;
+
+	if (lm_message_handler_is_valid(server->hraw))
+		lm_message_handler_invalidate(server->hraw);
+	lm_message_handler_unref(server->hraw);
+	server->hraw = NULL;
+}
+
+static void
+register_raw_handler(XMPP_SERVER_REC *server)
+{
+	if (!IS_XMPP_SERVER(server) || server->hraw != NULL)
+		return;
+
+	/* log raw */
+	server->hraw = lm_message_handler_new(
+	    (LmHandleMessageFunction)handle_raw, (gpointer)server,
+	    NULL);
+	lm_connection_register_message_handler(server->lmconn,
+	    server->hraw, LM_MESSAGE_TYPE_MESSAGE,
+	    LM_HANDLER_PRIORITY_FIRST);
+	lm_connection_register_message_handler(server->lmconn,
+	    server->hraw, LM_MESSAGE_TYPE_PRESENCE,
+	    LM_HANDLER_PRIORITY_FIRST);
+	lm_connection_register_message_handler(server->lmconn,
+	    server->hraw, LM_MESSAGE_TYPE_IQ,
+	    LM_HANDLER_PRIORITY_FIRST);
 }
 
 void
@@ -990,6 +1017,10 @@ xmpp_protocol_init(void)
 	    (SIGNAL_FUNC)register_handlers);
 	signal_add_first("server disconnected",
 	    (SIGNAL_FUNC)unregister_handlers);
+	signal_add("xmpp register raw handler",
+	    (SIGNAL_FUNC)register_raw_handler);
+	signal_add("xmpp unregister raw handler",
+	    (SIGNAL_FUNC)unregister_raw_handler);
 	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
 	signal_add_first("xmpp server disco",
 	    (SIGNAL_FUNC)disco_servers_services);
@@ -1010,6 +1041,10 @@ xmpp_protocol_deinit(void)
 	    (SIGNAL_FUNC)register_handlers);
 	signal_remove("server disconnected",
 	    (SIGNAL_FUNC)register_handlers);
+	signal_remove("xmpp register raw handler",
+	    (SIGNAL_FUNC)register_raw_handler);
+	signal_remove("xmpp unregister raw handler",
+	    (SIGNAL_FUNC)unregister_raw_handler);
 	signal_remove("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
 	signal_remove("xmpp server disco", (SIGNAL_FUNC)disco_servers_services);
 	signal_remove("xmpp composing start", (SIGNAL_FUNC)composing_start);

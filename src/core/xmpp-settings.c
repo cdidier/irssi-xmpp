@@ -64,6 +64,11 @@ read_settings(void)
 				server->nickname = g_strdup(server->jid);
 			}
 		}
+
+		if (settings_get_bool("xmpp_raw_window"))
+			signal_emit("xmpp register raw handler", 1, server);
+		else
+			signal_emit("xmpp unregister raw handler", 1, server);
 	}
 
 	/* check validity */
