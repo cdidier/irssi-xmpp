@@ -43,7 +43,7 @@
 #include "xmpp-tools.h"
 
 static void
-sig_archive(SERVER_REC *server, const char *msg, const char *nick,
+sig_history(SERVER_REC *server, const char *msg, const char *nick,
     const char *target, const char *stamp, gpointer gpointer_type)
 {
 	g_return_if_fail(server != NULL);
@@ -112,7 +112,7 @@ sig_archive(SERVER_REC *server, const char *msg, const char *nick,
 }
 
 static void
-sig_archive_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
+sig_history_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
     const char *target, const char *stamp, gpointer gpointer_type)
 {
 	void *item;
@@ -348,7 +348,9 @@ sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
 void
 fe_xmpp_messages_init(void)
 {
-	signal_add("message xmpp archive", (SIGNAL_FUNC)sig_archive);
+	signal_add("message xmpp history", (SIGNAL_FUNC)sig_history);
+	signal_add("message xmpp history action",
+	    (SIGNAL_FUNC)sig_history_action);
 	signal_add("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_add("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_add("message xmpp error", (SIGNAL_FUNC)sig_error);
@@ -361,7 +363,9 @@ fe_xmpp_messages_init(void)
 void
 fe_xmpp_messages_deinit(void)
 {
-	signal_remove("message xmpp archive", (SIGNAL_FUNC)sig_archive);
+	signal_remove("message xmpp history", (SIGNAL_FUNC)sig_history);
+	signal_remove("message xmpp history action",
+	     (SIGNAL_FUNC)sig_history_action);
 	signal_remove("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_remove("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_remove("message xmpp error", (SIGNAL_FUNC)sig_error);
