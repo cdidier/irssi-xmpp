@@ -757,7 +757,7 @@ sig_event_connected(SERVER_REC *server)
 	CHANNEL_SETUP_REC *channel_setup;
 
 	if (!IS_XMPP_SERVER(server)
-	    && !server->connrec->no_autojoin_channels)
+	    || server->connrec->no_autojoin_channels)
 		return;
 
 	/* autojoin channels */
