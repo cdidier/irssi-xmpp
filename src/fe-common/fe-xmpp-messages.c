@@ -46,18 +46,31 @@ static void
 sig_history(SERVER_REC *server, const char *msg, const char *nick,
     const char *target, const char *stamp, gpointer gpointer_type)
 {
+	void *item;
+	char *text, *freemsg = NULL;
+	int level, type;
+
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(msg != NULL);
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(target != NULL);
 
-	/* MUC */
-	if (GPOINTER_TO_INT(gpointer_type) == SEND_TARGET_CHANNEL) {
-		CHANNEL_REC *chanrec;
-		int print_channel;
-		char *nickmode, *text, *freemsg = NULL;
+	type = GPOINTER_TO_INT(gpointer_type);
+	level = MSGLEVEL_NO_ACT | MSGLEVEL_NOHILIGHT
+	    | (type == SEND_TARGET_CHANNEL ? MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
+	item = type == SEND_TARGET_CHANNEL ?
+	    (void *)xmpp_channel_find(server, target) :
+	    query_find(server, nick);
 
-		chanrec = channel_find(server, target);
+	if (settings_get_bool("emphasis"))
+		msg = freemsg = expand_emphasis(item, msg);
+
+	/* MUC */
+	if (type == SEND_TARGET_CHANNEL) {
+		CHANNEL_REC *chanrec = item;
+		int print_channel;
+		char *nickmode;
+
 		print_channel = chanrec == NULL ||
 		    !window_item_is_active((WI_ITEM_REC *)chanrec);
 		if (!print_channel
@@ -65,10 +78,6 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 		    && window_item_window((WI_ITEM_REC *)chanrec)->items->next
 		    != NULL)
 			print_channel = TRUE;
-
-		if (settings_get_bool("emphasis"))
-			msg = freemsg = expand_emphasis((WI_ITEM_REC *)chanrec,
-			    msg);
 
 		nickmode = channel_get_nickmode(chanrec, nick);
 
@@ -79,40 +88,24 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 		        target, TXT_PUBMSG_CHANNEL, nick, target, msg,
 		        nickmode);
 
-		printformat_module(MODULE_NAME, server, target,
-		    MSGLEVEL_PUBLIC, XMPPTXT_MESSAGE_TIMESTAMP,
-		    stamp, text);
-
-		g_free_not_null(nickmode);
-		g_free_not_null(freemsg);
-		g_free(text);
+		g_free(nickmode);
 
 	/* General */
-	} else {
-		QUERY_REC *query;
-		char *text, *freemsg = NULL;
-
-		query = query_find(server, nick);
-
-		if (settings_get_bool("emphasis"))
-			msg = freemsg = expand_emphasis((WI_ITEM_REC *)query,
-			    msg);
-
+	} else
 		text = format_get_text(CORE_MODULE_NAME, NULL, server,
-		    target, query == NULL ? TXT_MSG_PRIVATE :
+		    target, item == NULL ? TXT_MSG_PRIVATE :
 		    TXT_MSG_PRIVATE_QUERY, nick, nick, msg);
 
-		printformat_module(MODULE_NAME, server, target,
-		    MSGLEVEL_MSGS, XMPPTXT_MESSAGE_TIMESTAMP,
-		    stamp, text);
-		    
-		g_free_not_null(freemsg);
-		g_free(text);
-	}
+	printformat_module(MODULE_NAME, server, target,
+	    level, XMPPTXT_MESSAGE_TIMESTAMP,
+	    stamp, text);
+
+	g_free_not_null(freemsg);
+	g_free(text);
 }
 
 static void
-sig_history_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
+sig_history_action(SERVER_REC *server, const char *msg, const char *nick,
     const char *target, const char *stamp, gpointer gpointer_type)
 {
 	void *item;
@@ -125,14 +118,11 @@ sig_history_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 	g_return_if_fail(target != NULL);
 
 	type = GPOINTER_TO_INT(gpointer_type);
-
-	level = MSGLEVEL_ACTIONS | (type == SEND_TARGET_CHANNEL ?
-	    MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
-
-	if (type == SEND_TARGET_CHANNEL)
-		item = xmpp_channel_find(server, target);
-	else
-		item = privmsg_get_query(SERVER(server), nick, FALSE, level);
+	level = MSGLEVEL_ACTIONS | MSGLEVEL_NO_ACT | MSGLEVEL_NOHILIGHT
+	    | (type == SEND_TARGET_CHANNEL ? MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
+	item = type == SEND_TARGET_CHANNEL ?
+	    (void *)xmpp_channel_find(server, target) :
+	    query_find(server, nick);
 
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis(item, msg);
@@ -140,16 +130,16 @@ sig_history_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 	/* MUC */
 	if (type == SEND_TARGET_CHANNEL) {
 		if (item && window_item_is_active(item))
-			text = format_get_text(CORE_MODULE_NAME, NULL, server,
+			text = format_get_text(IRC_MODULE_NAME, NULL, server,
 			    target, IRCTXT_ACTION_PUBLIC, nick, msg);
 		else
-			text = format_get_text(CORE_MODULE_NAME, NULL, server,
+			text = format_get_text(IRC_MODULE_NAME, NULL, server,
 			    target, IRCTXT_ACTION_PUBLIC_CHANNEL, nick,
 			    target, msg);
 
 	/* General */
 	} else
-		text = format_get_text(CORE_MODULE_NAME, NULL, server,
+		text = format_get_text(IRC_MODULE_NAME, NULL, server,
 		    nick, (item == NULL) ? IRCTXT_ACTION_PRIVATE : 
 		    IRCTXT_ACTION_PRIVATE_QUERY, nick, nick, msg);
 
@@ -160,7 +150,7 @@ sig_history_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 }
 
 static void
-sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
+sig_action(SERVER_REC *server, const char *msg, const char *nick,
     const char *target, gpointer gpointer_type)
 {
 	void *item;
@@ -173,18 +163,16 @@ sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 	g_return_if_fail(target != NULL);
 
 	type = GPOINTER_TO_INT(gpointer_type);
-
 	level = MSGLEVEL_ACTIONS | (type == SEND_TARGET_CHANNEL ?
 	    MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
-
-	if (type == SEND_TARGET_CHANNEL)
-		item = xmpp_channel_find(server, target);
-	else
-		item = privmsg_get_query(SERVER(server), nick, FALSE, level);
+	item = type == SEND_TARGET_CHANNEL ?
+	    (void *)xmpp_channel_find(server, target) :
+	    privmsg_get_query(SERVER(server), nick, FALSE, level);
 
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis(item, msg);
 
+	/* MUC */
 	if (type == SEND_TARGET_CHANNEL) {
 		if (item && window_item_is_active(item))
 			printformat_module(IRC_MODULE_NAME, server, target,
@@ -193,6 +181,8 @@ sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 			printformat_module(IRC_MODULE_NAME, server, target,
 			    level, IRCTXT_ACTION_PUBLIC_CHANNEL, nick,
 			    target, msg);
+
+	/* General */
 	} else
 		printformat_module(IRC_MODULE_NAME, server, nick, level,
 		    (item == NULL) ?
@@ -203,7 +193,7 @@ sig_action(XMPP_SERVER_REC *server, const char *msg, const char *nick,
 }
 
 static void
-sig_own_action(XMPP_SERVER_REC *server, const char *msg, const char *target,
+sig_own_action(SERVER_REC *server, const char *msg, const char *target,
     gpointer gpointer_type)
 {
 	void *item;
@@ -215,11 +205,9 @@ sig_own_action(XMPP_SERVER_REC *server, const char *msg, const char *target,
 	g_return_if_fail(target != NULL);
 
 	type = GPOINTER_TO_INT(gpointer_type);
-
-	if (type == SEND_TARGET_CHANNEL)
-		item = xmpp_channel_find(server, target);
-	else
-		item = xmpp_query_find(server, target);
+	item = type == SEND_TARGET_CHANNEL ?
+	    (void *)xmpp_channel_find(server, target) :
+	    xmpp_query_find(server, target);
 
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis(item, msg);
