@@ -61,6 +61,7 @@ struct _XMPP_SERVER_REC {
 	LmMessageHandler *hmessage;
 	LmMessageHandler *hpresence;
 	LmMessageHandler *hiq;
+	LmMessageHandler *hraw;
 };
 
 __BEGIN_DECLS
