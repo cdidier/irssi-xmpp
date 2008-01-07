@@ -215,7 +215,6 @@ lm_close_cb(LmConnection *connection, LmDisconnectReason reason,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	const char *msg;
 
 	server = XMPP_SERVER(user_data);
 	if (server == NULL || !server->connected)

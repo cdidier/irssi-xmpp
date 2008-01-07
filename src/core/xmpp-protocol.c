@@ -34,8 +34,7 @@
 #include "xmpp-rosters.h"
 #include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
-
-#include "xmpp-xep.c"
+#include "xmpp-xep.h"
 
 void
 xmpp_send_message(XMPP_SERVER_REC *server, const char *dest,
@@ -94,6 +93,34 @@ static void
 send_service_unavailable(XMPP_SERVER_REC *server, const char *dest,
     const char *id)
 {
+	LmMessage *msg;
+	LmMessageNode *child;
+	char *recoded;
+
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	g_return_if_fail(dest != NULL);
+
+	recoded = xmpp_recode_out(dest);
+	msg = lm_message_new_with_sub_type(recoded,
+	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_ERROR);
+	g_free(recoded);
+
+	if (id != NULL)
+		lm_message_node_set_attribute(msg->node, "id", id);
+
+	/* <error code='503' type='cancel'> */
+	child = lm_message_node_add_child(msg->node, "error", NULL);
+	lm_message_node_set_attribute(child, "code", "503");
+	lm_message_node_set_attribute(child, "type", "cancel");
+
+	/* <service-unavailable
+	 *    xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/> */
+	child = lm_message_node_add_child(child,
+	    "service-unavailable", NULL);
+	lm_message_node_set_attribute(child, XMLNS, XMLNS_STANZAS);
+
+	lm_send(server, msg, NULL);
+	lm_message_unref(msg);
 }
 
 static void
@@ -266,7 +293,6 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
 	switch (lm_message_get_sub_type(msg)) {
-	
 	case LM_MESSAGE_SUB_TYPE_ERROR:
 
 		/* MUC */
@@ -479,7 +505,6 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
 
 	switch (lm_message_get_sub_type(msg)) {
-
 	case LM_MESSAGE_SUB_TYPE_ERROR:
 
 		/* MUC */
@@ -488,7 +513,7 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 		g_free(text);
 		if (channel != NULL) {
 			const char *code;
-			char *nick;
+			char *nick = xmpp_extract_nick(jid);
 
 			/* <error code='code'/> */
 			child = lm_message_node_get_child(msg->node, "error");
@@ -498,44 +523,42 @@ handle_presence(LmMessageHandler *handler, LmConnection *connection,
 			if (code == NULL)
 				goto out;
 
-			nick = xmpp_extract_nick(jid);
-
 			if (!channel->joined) {
 				/* <error code='401'/> */
-				if (g_ascii_strcasecmp(code, "401") == 0)
+				if (strcmp(code, "401") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_PASSWORD_INVALID_OR_MISSING);
 				/* <error code='403'/> */
-				else if (g_ascii_strcasecmp(code, "403") == 0)
+				else if (strcmp(code, "403") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_USER_BANNED);
 				/* <error code='404'/> */
-				else if (g_ascii_strcasecmp(code, "404") == 0)
+				else if (strcmp(code, "404") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_ROOM_NOT_FOUND);
 				/* <error code='405'/> */
-				else if (g_ascii_strcasecmp(code, "405") == 0)
+				else if (strcmp(code, "405") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_ROOM_CREATION_RESTRICTED);
 				/* <error code='406'/> */
-				else if (g_ascii_strcasecmp(code, "406") == 0)
+				else if (strcmp(code, "406") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_USE_RESERVED_ROOM_NICK);
 				/* <error code='407'/> */
-				else if (g_ascii_strcasecmp(code, "407") == 0)
+				else if (strcmp(code, "407") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NOT_ON_MEMBERS_LIST);
 				/* <error code='409'/> */
-				else if (g_ascii_strcasecmp(code, "409") == 0)
+				else if (strcmp(code, "409") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_NICK_IN_USE);
 				/* <error code='503'/> */
-				else if (g_ascii_strcasecmp(code, "503") == 0)
+				else if (strcmp(code, "503") == 0)
 					signal_emit("xmpp channel joinerror", 2,
 					    channel, XMPP_CHANNELS_ERROR_MAXIMUM_USERS_REACHED);
 			} else {
 				/* <error code='409'/> */
-				if (g_ascii_strcasecmp(code, "409") == 0)
+				if (strcmp(code, "409") == 0)
 					signal_emit("message xmpp channel nick in use",
 					    2, channel, nick);
 			}
@@ -795,41 +818,36 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 	XMPP_SERVER_REC *server;
 	XMPP_CHANNEL_REC *channel;
 	LmMessageNode *child;
-	const char *xmlns;
+	const char *id;
 	char *jid, *text;
 
 	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 
 	jid = xmpp_recode_in(lm_message_node_get_attribute(msg->node, "from"));
-
-	child = lm_message_node_get_child(msg->node, "query");
-	if (child == NULL)
-		child = lm_message_node_get_child(msg->node, "vCard");
-
-	xmlns = (child != NULL) ?
-	    lm_message_node_get_attribute(child, XMLNS) : NULL;
+	id = lm_message_node_get_attribute(msg->node, "id");
 
 	switch (lm_message_get_sub_type(msg)) {
-
 	case LM_MESSAGE_SUB_TYPE_ERROR:
-
-		/* MUC */
-		text = xmpp_extract_channel(jid);
-		channel = xmpp_channel_find(server, text);
-		g_free(text);
-		if (channel != NULL) {
+		if ((child = lm_message_node_get_child(msg->node,
+		    "error")) != NULL) {
 			const char *code;
 
-			child = lm_message_node_get_child(msg->node, "error");
-			if (child == NULL)
+			if ((code = lm_message_node_get_attribute(child,
+			    "code")) == NULL)
 				goto out;
+			
+			/* from MUC */
+			text = xmpp_extract_channel(jid);
+			channel = xmpp_channel_find(server, text);
+			g_free(text);
+			if (channel != NULL) {
+				/* TODO */
 
-			code = lm_message_node_get_attribute(child, "code");
-			if (code == NULL)
-				goto out;
-
-
+			/* from others */
+			} else {
+				/* TODO */
+			}
 
 		} 
 
@@ -837,36 +855,36 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 
 	case LM_MESSAGE_SUB_TYPE_GET:
 		/* XEP-0092: Software Version */
-		if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_VERSION) == 0)
-			version_send(server, jid,
-			    lm_message_node_get_attribute(msg->node, "id"));
+		if (lm_tools_message_node_find(msg->node,
+		    "query", XMLNS, XMLNS_VERSION) != NULL)
+			xep_version_send(server, jid, id);
 
-		/* service-unavailable */
-		else {
-		/* <service-unavailable/> */
-		}
+		else
+			/* <service-unavailable/> */
+			send_service_unavailable(server, jid, id);
 
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_RESULT:
-		if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_ROSTER) == 0)
+		if ((child = lm_tools_message_node_find(msg->node,
+		    "query", XMLNS, XMLNS_ROSTER)) != NULL)
 			signal_emit("xmpp roster update", 2, server, child);
 
-		else if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_VERSION) == 0)
-			version_handle(server, jid, child);
+		/* XEP-0092: Software Version */
+		else if ((child = lm_tools_message_node_find(msg->node,
+		    "query", XMLNS, XMLNS_VERSION)) != NULL)
+			xep_version_handle(server, jid, child);
 
-		else if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_VCARD) == 0)
-			vcard_handle(server, jid, child);
+		/* XEP-0054: vcard-temp */
+		else if ((child = lm_tools_message_node_find(msg->node,
+		    "vCard", XMLNS, XMLNS_VCARD)) != NULL)
+			xep_vcard_handle(server, jid, child);
 
-		else if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_DISCO_INFO) == 0) {
-			XMPP_CHANNEL_REC *channel;
+		/* XEP-0030: Service Discovery */
+		else if ((child = lm_tools_message_node_find(msg->node,
+		    "query", XMLNS, XMLNS_DISCO_INFO)) != NULL) {
 
-			/* MUC */
+			/* from MUC */
 			text = xmpp_extract_channel(jid);
 			channel = xmpp_channel_find(server, text);
 			g_free(text);
@@ -874,21 +892,28 @@ handle_iq(LmMessageHandler *handler, LmConnection *connection,
 				signal_emit("xmpp channel disco", 2, channel,
 				    child);
 			
-			/* server */
+			/* from server */
 			else if (strcmp(jid, server->host) == 0)
 				signal_emit("xmpp server disco", 2, server,
 				    child);
+			
+			/* from other */
+			else {
+				/* TODO */
+			}
 
 		} else
+			/* XEP-0199: XMPP Ping */
 			signal_emit("xmpp ping handle", 3, server, jid,
 			    lm_message_node_get_attribute(msg->node, "id"));
 		
 		break;
 
 	case LM_MESSAGE_SUB_TYPE_SET :
-		if (xmlns != NULL &&
-		    g_ascii_strcasecmp(xmlns, XMLNS_ROSTER) == 0)
+		if ((child = lm_tools_message_node_find(msg->node,
+		    "query", XMLNS, XMLNS_ROSTER)) != NULL)
 			signal_emit("xmpp roster update", 2, server, child);
+
 		break;
 	
 	default:
@@ -1023,9 +1048,9 @@ xmpp_protocol_init(void)
 	    (SIGNAL_FUNC)unregister_raw_handler);
 	signal_add_first("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
 	signal_add_first("xmpp server disco",
-	    (SIGNAL_FUNC)disco_servers_services);
-	signal_add("xmpp composing start", (SIGNAL_FUNC)composing_start);
-	signal_add("xmpp composing stop", (SIGNAL_FUNC)composing_stop);
+	    (SIGNAL_FUNC)xep_disco_server);
+	signal_add("xmpp composing start", (SIGNAL_FUNC)xep_composing_start);
+	signal_add("xmpp composing stop", (SIGNAL_FUNC)xep_composing_stop);
 
 	settings_add_int("xmpp", "xmpp_priority", 0);
 	settings_add_bool("xmpp", "xmpp_send_version", TRUE);
@@ -1046,7 +1071,7 @@ xmpp_protocol_deinit(void)
 	signal_remove("xmpp unregister raw handler",
 	    (SIGNAL_FUNC)unregister_raw_handler);
 	signal_remove("xmpp own_presence", (SIGNAL_FUNC)sig_own_presence);
-	signal_remove("xmpp server disco", (SIGNAL_FUNC)disco_servers_services);
-	signal_remove("xmpp composing start", (SIGNAL_FUNC)composing_start);
-	signal_remove("xmpp composing stop", (SIGNAL_FUNC)composing_stop);
+	signal_remove("xmpp server disco", (SIGNAL_FUNC)xep_disco_server);
+	signal_remove("xmpp composing start", (SIGNAL_FUNC)xep_composing_start);
+	signal_remove("xmpp composing stop", (SIGNAL_FUNC)xep_composing_stop);
 }

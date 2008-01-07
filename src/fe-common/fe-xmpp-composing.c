@@ -120,7 +120,6 @@ out:
 static void
 sig_window_changed(WINDOW_REC *new_window, WINDOW_REC *old_window)
 {
-	GSList *list;
 	XMPP_SERVER_REC *server;
 	XMPP_QUERY_REC *query;
 

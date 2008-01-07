@@ -45,6 +45,7 @@ send_ping(XMPP_SERVER_REC *server, const char *dest)
 	char *dest_recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
+	g_return_if_fail(dest != NULL);
 
 	dest_recoded = xmpp_recode_in(dest);
 	msg = lm_message_new_with_sub_type(dest_recoded,
@@ -65,6 +66,13 @@ send_ping(XMPP_SERVER_REC *server, const char *dest)
 
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
+}
+
+void
+xmpp_ping_send(XMPP_SERVER_REC *server, const char *dest)
+{
+	/* TODO save current time */
+	send_ping(server, dest);
 }
 
 static void

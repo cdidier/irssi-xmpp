@@ -12,6 +12,7 @@
 #define XMLNS_VCARD "vcard-temp"
 #define XMLNS_EVENT "jabber:x:event"
 #define XMLNS_PING "urn:xmpp:ping"
+#define XMLNS_STANZAS "urn:ietf:params:xml:ns:xmpp-stanzas"
 #define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
 #define XMLNS_MUC "http://jabber.org/protocol/muc"
 #define XMLNS_MUC_USER "http://jabber.org/protocol/muc#user"

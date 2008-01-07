@@ -476,7 +476,6 @@ static void
 sig_presence_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
     const char *status)
 {
-	GSList *list;
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *jid, *res;

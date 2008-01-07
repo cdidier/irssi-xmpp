@@ -15,7 +15,8 @@ SRCS=	loudmouth-tools.c \
 	xmpp-servers-reconnect.c \
 	xmpp-session.c \
 	xmpp-settings.c \
-	xmpp-tools.c
+	xmpp-tools.c \
+	xmpp-xep.c
 
 LIB_LIBS = `pkg-config --libs loudmouth-1.0`
 

@@ -64,6 +64,8 @@ CHANNEL_REC	*xmpp_channel_create(XMPP_SERVER_REC *, const char *,
 		     const char *, int, const char *);
 void		 xmpp_channels_join(XMPP_SERVER_REC *, const char *, int);
 void		 xmpp_channels_join_automatic(XMPP_SERVER_REC *, const char *);
+void		 xmpp_channels_invite(XMPP_SERVER_REC *, const char *,
+		     const char *);
 void		 xmpp_channel_send_message(XMPP_SERVER_REC *, const char *,
 		     const char *);
 

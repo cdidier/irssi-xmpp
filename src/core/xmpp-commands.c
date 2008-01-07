@@ -30,6 +30,7 @@
 #include "xmpp-channels.h"
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"
+#include "xmpp-ping.h"
 #include "xmpp-rosters.h"
 #include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
@@ -141,7 +142,7 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 static void
 cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
-	/* TODO !!! */
+	/* TODO */
 }
 
 /* SYNTAX: XMPPUNREGISTER [-ssl] [-host <server>] [-port <port>]
@@ -149,7 +150,7 @@ cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 static void
 cmd_xmppunregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
-	/* TODO !!! */
+	/* TODO */
 }
 
 static void
@@ -679,7 +680,7 @@ out:
 static void
 cmd_ping(const char *data, XMPP_SERVER_REC *server)
 {
-	char *dest;
+	char *dest, *jid;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
@@ -687,25 +688,40 @@ cmd_ping(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &dest))
 		return;
 
+	if (*dest == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
+	if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
+		 dest = jid;
 
+	xmpp_ping_send(server, dest);
+
+	g_free(jid);
 	cmd_params_free(free_arg);
 }
 
 /* SYNTAX: INVITE [[<jid>[/<resource>]]|[<name]] */
 static void
-cmd_invite(const char *data, XMPP_SERVER_REC *server)
+cmd_invite(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
-	char *dest;
+	char *channame, *dest, *jid;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
 
-	if (!cmd_get_params(data, &free_arg, 1, &dest))
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST |
+	    PARAM_FLAG_OPTCHAN, item, &channame, &dest))
 		return;
 
+	if (*channame == '\0' || *dest == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
+	if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
+		dest = jid;
 
+	xmpp_channels_invite(server, channame, dest);
+
+	g_free(jid);
 	cmd_params_free(free_arg);
 }
 

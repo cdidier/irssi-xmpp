@@ -244,6 +244,12 @@ xmpp_channels_join_automatic(XMPP_SERVER_REC *server, const char *data)
 	channel_join(server, data, TRUE);
 }
 
+void
+xmpp_channels_invite(XMPP_SERVER_REC *server, const char *channame,
+    const char *dest)
+{
+}
+
 static void
 send_part(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,
     const char *reason)

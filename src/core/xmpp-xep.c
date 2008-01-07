@@ -39,8 +39,8 @@
  * XEP-0022: Message Events
  */
 
-static void
-composing_start(XMPP_SERVER_REC *server, const char *full_jid)
+void
+xep_composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
@@ -88,8 +88,8 @@ out:
 	g_free(res);
 }
 
-static void
-composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
+void
+xep_composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
@@ -150,8 +150,8 @@ disco_parse_features(const char *var, XMPP_SERVERS_FEATURES features)
 		return 0;
 }
 
-static void
-disco_servers_services(XMPP_SERVER_REC *server, LmMessageNode *query)
+void
+xep_disco_server(XMPP_SERVER_REC *server, LmMessageNode *query)
 {
 	LmMessageNode *item;
 	const char *var;
@@ -181,8 +181,8 @@ next:
  * XEP-0092: Software Version
  */
 
-static void
-version_send(XMPP_SERVER_REC *server, const char *to_jid,
+void
+xep_version_send(XMPP_SERVER_REC *server, const char *to_jid,
     const char *id)
 {
 	LmMessage *msg;
@@ -215,8 +215,8 @@ version_send(XMPP_SERVER_REC *server, const char *to_jid,
 	lm_message_unref(msg);
 }
 
-static void
-version_handle(XMPP_SERVER_REC *server, const char *jid,
+void
+xep_version_handle(XMPP_SERVER_REC *server, const char *jid,
     LmMessageNode *node)
 {
 	LmMessageNode *child;
@@ -253,8 +253,8 @@ version_handle(XMPP_SERVER_REC *server, const char *jid,
  * XEP-0054: vcard-temp
  */
 
-static void
-vcard_handle(XMPP_SERVER_REC *server, const char *jid,
+void
+xep_vcard_handle(XMPP_SERVER_REC *server, const char *jid,
     LmMessageNode *node)
 {
 	LmMessageNode *child, *subchild;
