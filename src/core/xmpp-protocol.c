@@ -433,25 +433,22 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 		if (child != NULL && child->value != NULL) {
 			XMPP_CHANNEL_REC *channel;
 			char *channel_name, *nick;
+			gboolean own, action;
 
 			channel_name = xmpp_extract_channel(jid);
 			nick =  xmpp_extract_resource(jid);
 			stamp = get_timestamp(msg->node);
 
-			/* it's my own message, so ignore it */
 			channel = xmpp_channel_find(server, channel_name);
-			if (stamp == NULL && (channel == NULL
-			    || nick == NULL || (channel != NULL
-			    && strcmp(nick, channel->nick) == 0))) {
-				g_free(channel_name);
-				g_free(nick);
-				goto out;
-			}
-
 			text = xmpp_recode_in(child->value);
 
+			own = channel != NULL
+			    && strcmp(nick, channel->nick) == 0 ? TRUE : FALSE;
+			action = g_ascii_strncasecmp(text, "/me ", 4) == 0 ?
+			    TRUE : FALSE;
+
 			if (stamp != NULL) {
-				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+				if (action)
 					signal_emit(
 					    "message xmpp history action", 6,
 					    server, text+4, nick, channel_name,
@@ -462,8 +459,16 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 					    server, text, nick, channel_name,
 					    stamp,
 					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+			} else if (own) {
+				if (action)
+					signal_emit("message xmpp own_action", 4,
+					    server, text+4, channel_name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else
+					signal_emit("message xmpp own_public", 3,
+					    server, text, channel_name);
 			} else {
-				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
+				if (action)
 					signal_emit("message xmpp action", 5,
 					    server, text+4, nick, channel_name,
 					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));

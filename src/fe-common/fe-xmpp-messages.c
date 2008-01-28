@@ -344,6 +344,12 @@ sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
 	signal_stop();
 }
 
+static void
+sig_message_ignore(void)
+{
+	signal_stop();
+}
+
 void
 fe_xmpp_messages_init(void)
 {
@@ -353,8 +359,10 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_add("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_add("message xmpp error", (SIGNAL_FUNC)sig_error);
-	signal_add_first("message own_public",
+	signal_add_first("message xmpp own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
+	signal_add_first("message own_public",
+	    (SIGNAL_FUNC)sig_message_ignore);
 	signal_add_first("message own_private",
 	    (SIGNAL_FUNC)sig_message_own_private);
 }
@@ -368,8 +376,10 @@ fe_xmpp_messages_deinit(void)
 	signal_remove("message xmpp action", (SIGNAL_FUNC)sig_action);
 	signal_remove("message xmpp own_action", (SIGNAL_FUNC)sig_own_action);
 	signal_remove("message xmpp error", (SIGNAL_FUNC)sig_error);
-	signal_remove("message own_public",
+	signal_remove("message xmpp own_public",
 	    (SIGNAL_FUNC)sig_message_own_public);
+	signal_remove("message own_public",
+	    (SIGNAL_FUNC)sig_message_ignore);
 	signal_remove("message own_private",
 	    (SIGNAL_FUNC)sig_message_own_private);
 }
