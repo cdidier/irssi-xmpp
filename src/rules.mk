@@ -10,7 +10,7 @@ all: ${LIB}
 	@echo ${CC} -c $<
 	@${CC} -c $< ${CFLAGS}
 
-${LIB}: $(OBJS)
+${LIB}: ${OBJS}
 	@echo ${CC} -o lib$@.so
 	@${CC} -o lib$@.so ${OBJS} ${LDFLAGS}
 

@@ -437,15 +437,18 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 			channel_name = xmpp_extract_channel(jid);
 			nick =  xmpp_extract_resource(jid);
-			stamp = get_timestamp(msg->node);
+			if (nick == NULL) {
+				g_free(channel_name);
+				goto out;
+			}
 
 			channel = xmpp_channel_find(server, channel_name);
-			text = xmpp_recode_in(child->value);
-
 			own = channel != NULL
 			    && strcmp(nick, channel->nick) == 0 ? TRUE : FALSE;
 			action = g_ascii_strncasecmp(text, "/me ", 4) == 0 ?
 			    TRUE : FALSE;
+			stamp = get_timestamp(msg->node);
+			text = xmpp_recode_in(child->value);
 
 			if (stamp != NULL) {
 				if (action)
