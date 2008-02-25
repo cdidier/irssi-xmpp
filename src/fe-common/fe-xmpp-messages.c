@@ -80,8 +80,9 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 		    != NULL)
 			print_channel = TRUE;
 
-		/* in versions of irssi prior to 0.8.12 (20071006), channel_get_nickmode
-		 * doesn't return a dynamically allocated string */
+		/* in versions of irssi prior to 0.8.12 (20071006),
+		 * channel_get_nickmode() doesn't return a dynamically
+		 * allocated string */
 #if IRSSI_VERSION_DATE >= 20071006
 		nickmode = channel_get_nickmode(chanrec, nick);
 #else

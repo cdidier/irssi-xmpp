@@ -388,8 +388,8 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 					    GINT_TO_POINTER(SEND_TARGET_NICK));
 			} else {
 				if (g_ascii_strncasecmp(text, "/me ", 4) == 0)
-					signal_emit("message xmpp action", 5, server,
-					    text+4, jid, jid,
+					signal_emit("message xmpp action", 5,
+					    server, text+4, jid, jid,
 					    GINT_TO_POINTER(SEND_TARGET_NICK));
 				else
 					signal_emit("message private", 4, server,
