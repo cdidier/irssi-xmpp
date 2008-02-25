@@ -346,9 +346,10 @@ sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
 }
 
 static void
-sig_message_ignore(void)
+sig_message_ignore(XMPP_SERVER_REC *server)
 {
-	signal_stop();
+	if (IS_XMPP_SERVER(server))
+		signal_stop();
 }
 
 void
