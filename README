@@ -1,5 +1,7 @@
-irssi-xmpp
-http://cybione.org/src/irssi-xmpp/
+irssi-xmpp:
+===========
+
+homepage: http://cybione.org/~irssi-xmpp/
 
 About:
 ======
@@ -28,26 +30,28 @@ Documentation:
 ==============
 
 In the directory "docs/":
-    o STARTUP:
-    o GENERAL:
-    o MUC:
-    o FAQ:
-    o XEP:
-In the directory "help/" ...
+    o STARTUP: Getting started
+    o GENERAL: How to use irssi-xmpp and related commands
+    o MUC: How to use Multi-User Chat and related commands
+    o FAQ: Frequently Asked Questions and Troubleshooting
+    o XEP: XMPP Extensions supported
+
+In the directory "help/" you can find the help files of each irssi-xmpp
+specific commands, which can be viewed in irssi with the command /HELP.
 
 Bugs/Suggestions:
 =================
 
-Mailing-list:
+Mailing-list: irssi-xmpp-dev@gna.org
 MUC room: irssi-xmpp@chat.jabberfr.org
+Bug tracker: https://gna.org/bugs/?group=irssi-xmpp
 
 If irssi crashes, please build irssi with debug symbols and the module irssi-xmpp
 in debug mode (take a look at "config.mk" to activate it). Then you can run
 irssi in gdb and show the backtrace ("bt full") when irssi crashes.
-Paste the backtrace in your message would help to find this critical bug.
+Paste the backtrace in your message would help to fix this critical bug.
 
 Author:
 =======
 
-Colin DIDIER (cdidier@cybione.org, xmpp:cdidier@im.cybione.org)
-
+Colin Didier (cdidier@cybione.org, xmpp:cdidier@im.cybione.org)

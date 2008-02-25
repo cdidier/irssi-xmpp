@@ -1,0 +1,23 @@
+1. Connection:
+==============
+
+1.1 How can I automatically connect to my account at irssi startup ?
+
+2. General:
+===========
+
+2.1 lagmeter ?
+
+3. Scripting:
+=============
+
+3.1 How can I use or write scripts with irssi-xmpp ?
+
+3.2 My script seems to be incompatible with irssi-xmpp and throws warnings 
+such as: Can't locate object method "xxx" via package "Irssi::Xmpp::Server".
+How can I get rid of that ?
+
+4. Themes:
+==========
+
+4.1 

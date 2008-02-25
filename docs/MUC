@@ -1,0 +1,28 @@
+MUC commands:
+=============
+
+/JOIN <room@server>[/<nick>]
+    Join a room. If your nick is not specified, the value of the setting "nick"
+    will be used as your nick in this room.
+    Unlike irssi default behaviour (that you can pass a list of channels
+    separated with a comma), only one room can be passed to this command !
+
+/PART [<room@server>] [<reason>]
+    Leaves a room.
+
+/QUERY <nick>
+    Opens a query window with the nick in the room.
+
+/NICK <nick>
+    Changes your nick in a specific room.
+
+/TOPIC <topic>
+    Changes the topic of the room, if you have the right to do it.
+
+/NAME
+    Lists the nicks in the room.
+
+Administration commands:
+========================
+
+Currently, you cannot manage a room with irssi-xmpp.

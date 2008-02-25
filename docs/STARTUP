@@ -7,7 +7,7 @@ Usage:
 Simply load the module in irssi. Currently you cannot load it automatically,
 unless using a script or something like that.
 
-The module must be placed in "~/.irssi/modules/", or you should load it with
+The module should be placed in "~/.irssi/modules/", or you should load it with
 the full path.
 
 You can unload it using:
@@ -22,6 +22,12 @@ Usage:
 
 The "jid" is your Jabber ID (something like "username@server"). You can add
 "/<resource>" at the end of the "jid" to set your own resource.
+
+Please note that irssi-xmpp doesn't support SRV record (yet), so you must
+specify the host with the parameter "-host".
+
+You can also use /XMPPSERVER to replace the current connection. See the FAQ
+if you want to automatically connect to the server at startup
 
 Register:
 =========

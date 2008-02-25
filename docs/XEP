@@ -1,12 +1,18 @@
 XEPs (XMPP Extension Protocol) support:
 
-XEP-0012: Last Activity (planned)
+Fully supported:
 XEP-0022: Message Events (must be changed to XEP-0085: Chat State Notifications)
-XEP-0030: Service Discovery (wip)
-XEP-0045: Multi-User Chat (wip)
-XEP-0082: XMPP Date and Time Profiles (wip)
-XEP-0085: Chat State Notifications (wip)
 XEP-0091: Delayed Delivery (Superseded by XEP-0203, stay available for historical reasons)
 XEP-0092: Software Version
-XEP-0199: XMPP Ping (wip)
-XEP-0203: Delayed Delivery (wip)
+
+Work in progress:
+XEP-0030: Service Discovery
+XEP-0045: Multi-User Chat
+XEP-0082: XMPP Date and Time Profiles
+XEP-0085: Chat State Notifications
+XEP-0199: XMPP Ping
+XEP-0203: Delayed Delivery
+
+Planned:
+XEP-0012: Last Activity
+
