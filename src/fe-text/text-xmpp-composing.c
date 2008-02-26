@@ -36,12 +36,10 @@ item_xmpp_composing(SBAR_ITEM_REC *item, int get_size_only)
 {
 	XMPP_SERVER_REC *server;
 	XMPP_QUERY_REC *query;
-	char *str;
-
-	str = NULL;
+	char *str = NULL;
 
 	server = XMPP_SERVER(active_win->active_server);
-	if (server == NULL)
+	if (server == NULL || !IS_XMPP_SERVER(server))
 		goto out;
 
 	query = XMPP_QUERY(active_win->active);

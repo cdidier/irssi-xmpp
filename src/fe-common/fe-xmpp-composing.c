@@ -53,7 +53,7 @@ stop_composing(gpointer *user_data)
 	XMPP_QUERY_REC *query = XMPP_QUERY(user_data);
 
 	if (query == NULL || query->composing_time == 0
-	    || IS_ALIVE_SERVER(query->server))
+	    || !IS_ALIVE_SERVER(query->server))
 		return FALSE;
 
 	/* still composing */
@@ -77,7 +77,7 @@ sig_gui_key_pressed(int key)
 		return;
 
 	query = XMPP_QUERY(active_win->active);
-	if (query == NULL)
+	if (query == NULL || !IS_XMPP_SERVER(query->server))
 		return;
 
 	/* ignore command or empty line */
@@ -172,7 +172,6 @@ sig_server_disconnected(XMPP_SERVER_REC *server)
 		return;
 
 	for (tmp = queries; tmp != NULL; tmp = tmp->next) {
-
 		query = XMPP_QUERY(tmp->data);
 		if (query == NULL)
 			continue;
