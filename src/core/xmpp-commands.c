@@ -651,13 +651,14 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 
-	if (*jid == '\0')
-		jid = g_strconcat(server->jid, "/", server->resource, NULL);
-	else
-		jid = xmpp_rosters_resolve_name(server, data);
+	jid = *jid == '\0' ?
+	    g_strconcat(server->jid, "/", server->resource, NULL) :
+	    xmpp_rosters_resolve_name(server, data);
 
-	if (!xmpp_have_resource(jid))
-		goto out;
+	if (!xmpp_have_resource(jid)) {
+		g_free(jid);
+		cmd_params_free(free_arg);	
+	}
 	
 	jid_recoded = xmpp_recode_out((jid != NULL) ? jid : data);
 	msg = lm_message_new_with_sub_type(jid_recoded,
@@ -670,10 +671,6 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server)
 
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
-
-out:
-	cmd_params_free(free_arg);
-	g_free(jid);
 }
 
 /* SYNTAX: PING [[<jid>[/<resource>]]|[<name]] */
@@ -739,7 +736,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 
 	g_strstrip((char *)data);
 	if (*data == '\0')
-		return;
+		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	target = window_item_get_target(item);
 	type = IS_CHANNEL(item) ? SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
@@ -772,10 +769,8 @@ cmd_part(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	if (*channame == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-	/*
-	 * cmd_param_error(CMDERR_NOT_JOINED)
-	 *
-	 */
+	if (xmpp_channel_find(server, channame) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
 
 	g_strstrip(msg);
 	if (*msg == '\0')
@@ -824,10 +819,8 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	    &channame, &topic))
 		return;
 
-	/*
-	 * cmd_param_error(CMDERR_NOT_JOINED)
-	 *
-	 * */
+	if (xmpp_channel_find(server, channame) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
 
 	g_strstrip(topic);
 	if (*topic != '\0' || g_hash_table_lookup(optlist, "delete") != NULL) {
