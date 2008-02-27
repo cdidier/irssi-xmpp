@@ -330,6 +330,42 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 
 		break;
 
+	case LM_MESSAGE_SUB_TYPE_NOT_SET:
+		if ((child = lm_tools_message_node_find(msg->node,
+		    "x", XMLNS, XMLNS_MUC)) != NULL) {
+
+			/* invite */
+			if ((child = lm_message_node_get_child(child,
+			    "invite")) != NULL) {
+				char *room, *by, *password, *reason;
+				const char *to;
+
+				room = by = NULL;
+
+				subchild = lm_message_node_get_child(
+				    child->parent, "password");
+				password = subchild == NULL ? NULL :
+				    xmpp_recode_in(subchild->value);
+
+				subchild = lm_message_node_get_child(
+				    child, "reason");
+				reason = subchild == NULL ? NULL :
+				    xmpp_recode_in(subchild->value);
+
+				to = lm_message_node_get_attribute(child,
+				     "to");
+				if (to != NULL) {
+					room = xmpp_recode_in(to);
+					signal_emit("xmpp invite", 5, server,
+					    room, jid, password, reason);
+					g_free(room);
+				}
+
+				g_free(reason);	
+				g_free(password);
+			}
+		}
+
 	case LM_MESSAGE_SUB_TYPE_HEADLINE:
 	case LM_MESSAGE_SUB_TYPE_NORMAL:
 	case LM_MESSAGE_SUB_TYPE_CHAT:

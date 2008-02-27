@@ -697,26 +697,30 @@ cmd_ping(const char *data, XMPP_SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: INVITE [[<jid>[/<resource>]]|[<name]] */
+/* SYNTAX: INVITE <jid>[/<resource>]|<name> [<room>] */
 static void
 cmd_invite(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
-	char *channame, *dest, *jid;
+	char *room, *dest, *jid;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
 
-	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST |
-	    PARAM_FLAG_OPTCHAN, item, &channame, &dest))
+	if (!cmd_get_params(data, &free_arg, 2, &dest, &room))
 		return;
 
-	if (*channame == '\0' || *dest == '\0')
+	if (*dest == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if (*room == '\0' || g_strcasecmp(room, "*") == 0) {
+		if (!IS_XMPP_CHANNEL(item))
+			cmd_param_error(CMDERR_NOT_JOINED);
+		room = XMPP_CHANNEL(item)->name;
+	}
 
 	if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
 		dest = jid;
 
-	xmpp_channels_invite(server, channame, dest);
+	xmpp_channels_invite(server, room, dest);
 
 	g_free(jid);
 	cmd_params_free(free_arg);
