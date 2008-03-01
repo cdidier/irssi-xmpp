@@ -82,7 +82,8 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 }
 
 static GList *
-get_nicks(XMPP_SERVER_REC *server, const char *nick, gboolean quoted)
+get_nicks(XMPP_SERVER_REC *server, const char *nick, gboolean quoted,
+    gboolean complete_names)
 {
 	GSList *gl, *ul;
 	GList *list;
@@ -125,7 +126,7 @@ again:
 			    || (pass2 && user->resources != NULL))
 			    	continue;
 
-			if (user->name != NULL
+			if (complete_names && user->name != NULL
 			    && g_strncasecmp(user->name, nick, len) == 0)
 				list = g_list_prepend(list, quoted ?
 				    quoted_if_space(user->name, NULL) :
@@ -161,11 +162,11 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 	if (g_ascii_strncasecmp(linestart,
 	    settings_get_str("cmdchars"), 1) == 0) {
 		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
-		    word+1 : word , TRUE));
+		    word+1 : word , TRUE, TRUE));
 
 	} else if (!IS_XMPP_CHANNEL(window->active))
-		*list = g_list_concat(*list, get_nicks(server, word, FALSE));
-
+		*list = g_list_concat(*list, get_nicks(server, word, FALSE,
+		    TRUE));
 }
 
 static void
@@ -184,28 +185,66 @@ sig_complete_command_roster_group(GList **list, WINDOW_REC *window,
 	g_return_if_fail(args != NULL);
 
 	server = XMPP_SERVER(window->active_server);
-	if (server == NULL || *args == '\0')
+	if (server == NULL)
 		return;
 
-	g_list_free(*list);
-	*list = NULL;
 	len = strlen(word);
 	tmp = g_strsplit(args, " ", 2);
 
-	/* complete groups */
-	if (tmp[0] != NULL && tmp[1] == NULL) {
+	/* complete nicks */
+	if (tmp[0] == NULL)
+		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
+		    word+1 : word , TRUE, FALSE));
 
+	/* complete groups */
+	else if (tmp[0] != NULL && tmp[1] == NULL) {
 		for (gl = server->roster; gl != NULL; gl = gl->next) {
 			group = (XMPP_ROSTER_GROUP_REC *)gl->data;
 			
-			if (group->name == NULL ||
+			if (group->name != NULL &&
 			    g_ascii_strncasecmp(word, group->name, len) == 0)
 				*list = g_list_append(*list,
 				    g_strdup(group->name));
 		}
-
 	}
+
 	g_strfreev(tmp);
+
+	if (*list != NULL)
+		signal_stop();
+}
+
+static void
+sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
+    const char *word, const char *args, int *want_space)
+{
+	GSList *gl;
+	XMPP_SERVER_REC *server;
+	XMPP_ROSTER_GROUP_REC *group;
+	int len;
+	char **tmp;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(window != NULL);
+	g_return_if_fail(word != NULL);
+	g_return_if_fail(args != NULL);
+
+	server = XMPP_SERVER(window->active_server);
+	if (server == NULL)
+		return;
+
+	len = strlen(word);
+	tmp = g_strsplit(args, " ", 2);
+
+	/* complete nicks */
+	if (tmp[0] == NULL)
+		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
+		    word+1 : word , TRUE, FALSE));
+
+	g_strfreev(tmp);
+
+	if (*list != NULL)
+		signal_stop();
 }
 
 static GList *
@@ -268,6 +307,31 @@ sig_complete_command_channels(GList **list, WINDOW_REC *window,
 }
 
 static void
+sig_complete_command_invite(GList **list, WINDOW_REC *window,
+    const char *word, const char *args, int *want_space)
+{
+	XMPP_SERVER_REC *server;
+	char **tmp;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(window != NULL);
+	g_return_if_fail(word != NULL);
+
+	server = XMPP_SERVER(window->active_server);
+	if (server == NULL)
+		return;
+
+	/* complete channels */
+	tmp = g_strsplit(args, " ", 2);
+	if (tmp[0] != NULL && tmp[1] == NULL)
+		*list = get_channels(server, word);
+	g_strfreev(tmp);
+
+	if (*list != NULL)
+		signal_stop();
+}
+
+static void
 sig_complete_command_away(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
@@ -317,10 +381,26 @@ xmpp_completion_init(void)
 	signal_add("complete word", (SIGNAL_FUNC)sig_complete_word);
 	signal_add("complete command roster group",
 	    (SIGNAL_FUNC)sig_complete_command_roster_group);
+	signal_add("complete command roster add",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster remove",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster name",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster accept",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster deny",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster subscribe",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_add("complete command roster unsubscribe",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
 	signal_add("complete command join",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
 	signal_add("complete command part",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_add("complete command invite",
+	    (SIGNAL_FUNC)sig_complete_command_invite);
 	signal_add("complete command away",
 	    (SIGNAL_FUNC)sig_complete_command_away);
 }
@@ -331,10 +411,26 @@ xmpp_completion_deinit(void)
 	signal_remove("complete word", (SIGNAL_FUNC)sig_complete_word);
 	signal_remove("complete command roster group",
 	    (SIGNAL_FUNC) sig_complete_command_roster_group);
+	signal_remove("complete command roster add",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster remove",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster name",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster accept",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster deny",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster subscribe",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
+	signal_remove("complete command roster unsubscribe",
+	    (SIGNAL_FUNC)sig_complete_command_roster_others);
 	signal_remove("complete command join",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
 	signal_remove("complete command part",
 	    (SIGNAL_FUNC)sig_complete_command_channels);
+	signal_remove("complete command invite",
+	    (SIGNAL_FUNC)sig_complete_command_invite);
 	signal_remove("complete command away",
 	    (SIGNAL_FUNC)sig_complete_command_away);
 }
