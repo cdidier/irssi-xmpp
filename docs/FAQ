@@ -25,9 +25,12 @@ Then you can add this at the end of the servers section:
 Or in irssi, you can type this:
     /SERVER ADD -xmppnet <network> <address> <port> <password> <jid>
 
+If 0 is specified as port, the default port will be used (5222 for a regular
+connection or 5223 for SSL).
+
 Now you can connect to your jabber account by typing:
     /CONNECT <network>
-Or just restart irrsi if you have set autoconnect to yes.
+Or just restart irssi if you have set autoconnect to yes.
 
 2. General:
 ===========
