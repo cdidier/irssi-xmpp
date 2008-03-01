@@ -13,14 +13,18 @@ MUC commands:
 /QUERY <nick>
     Opens a query window with the nick in the room.
 
-/NICK <nick>
+/NICK [<room@server>] <nick>
     Changes your nick in a specific room.
 
-/TOPIC <topic>
+/TOPIC [<room@server>] <topic>
     Changes the topic of the room, if you have the right to do it.
 
 /NAME
     Lists the nicks in the room.
+
+/INVITE <jid>[/<resource>] [<room@server>]
+/INVITE <name> [<room@server>]
+     Invites the specified contact to the current or specified room.
 
 Administration commands:
 ========================

@@ -1,18 +1,17 @@
 XEPs (XMPP Extension Protocol) support:
 
 Fully supported:
-XEP-0022: Message Events (must be changed to XEP-0085: Chat State Notifications)
-XEP-0091: Delayed Delivery (Superseded by XEP-0203, stay available for historical reasons)
+XEP-0022: Message Events (Superseded by XEP-0085)
+XEP-0091: Delayed Delivery (Superseded by XEP-0203)
 XEP-0092: Software Version
-
-Work in progress:
-XEP-0030: Service Discovery
-XEP-0045: Multi-User Chat
-XEP-0082: XMPP Date and Time Profiles
-XEP-0085: Chat State Notifications
 XEP-0199: XMPP Ping
+
+Partially supported:
+XEP-0030: Service Discovery
+XEP-0045: Multi-User Chat (Entity Use Cases and Occupant Use Cases)
+XEP-0054: vcard-temp
+XEP-0082: XMPP Date and Time Profiles
 XEP-0203: Delayed Delivery
 
 Planned:
-XEP-0012: Last Activity
-
+XEP-0085: Chat State Notifications
