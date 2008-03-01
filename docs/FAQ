@@ -3,10 +3,36 @@
 
 1.1 How can I automatically connect to my account at irssi startup ?
 
+You can put these things in your config file (The config file can be found
+here : "~/.irssi/config"):
+
+To create a XMPP network, add to chatnets section:
+  <network> = {
+    type = "XMPP";
+    nick = "<jid>";
+  };
+
+Then you can add this at the end of the servers section:
+  {
+    address = "<address>";
+    port="<port>";
+    use_ssl = "{yes|no}";
+    chatnet = "<network>";
+    password = "<password>";
+    autoconnect = "{yes|no}";
+  };
+
+Or in irssi, you can type this:
+    /SERVER ADD -xmppnet <network> <address> <port> <password> <jid>
+
+Now you can connect to your jabber account by typing:
+    /CONNECT <network>
+Or just restart irrsi if you have set autoconnect to yes.
+
 2. General:
 ===========
 
-2.1 lagmeter ?
+2.1 Why the lagmeter is not working ?
 
 3. Scripting:
 =============
@@ -20,4 +46,4 @@ How can I get rid of that ?
 4. Themes:
 ==========
 
-4.1 
+4.1 How can I change the theme of the messages of irssi-xmpp ?
