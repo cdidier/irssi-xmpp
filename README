@@ -8,6 +8,18 @@ About:
 
 irssi-xmpp is an irssi plugin to connect to the Jabber network.
 
+Its main features are:
+    o Sending and receiving messages in irssi's query windows
+    o A roster with contact & resource tracking (contact list)
+    o Contact management (add, remove, manage subscriptions)
+    o MUC (Multi-User Chat)
+    o Tab completion of commands, JIDs and resources
+    o Message Events ("composing")
+    o Support for multiple accounts
+    o Unicode support (UTF-8)
+    o SSL and HTTP proxy support
+    o ...
+
 Installation:
 =============
 
