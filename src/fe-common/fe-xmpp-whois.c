@@ -23,10 +23,40 @@
 #include "printtext.h"
 #include "signals.h"
 
+#include "xmpp-servers.h"
+#include "xmpp-rosters-tools.h"
+
 static void
 sig_version(XMPP_SERVER_REC *server, const char *jid, const char *name,
     const char *version, const char *os)
 {
+	XMPP_ROSTER_USER_REC *user;
+	char *str1, *str2 = NULL;
+
+	g_return_if_fail(jid != NULL);
+
+	if (name == NULL && version == NULL && os == NULL)
+		return;
+
+	str1 = g_strconcat("is running ",
+	    name != NULL ? name : "",
+	    name != NULL && version != NULL ? " " : "",
+	    version != NULL ? version : "",
+	    (name != NULL || version != NULL) && os != NULL ? " - " : "",
+	    os != NULL ? "on " : "",
+	    os != NULL ? os : "", NULL);
+
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	if (user != NULL && user->name != NULL) {
+		str2 = g_strconcat(" (", jid, ")", NULL);
+		jid = user->name;
+	}
+
+	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+	    XMPPTXT_MESSAGE_EVENT, jid, str1, str2);
+
+	g_free(str1);
+	g_free(str2);
 }
 
 static void
