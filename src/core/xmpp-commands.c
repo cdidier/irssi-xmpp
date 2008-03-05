@@ -240,6 +240,8 @@ cmd_quote(const char *data, XMPP_SERVER_REC *server)
 
 	CMD_XMPP_SERVER(server);
 
+	if (*data == '\0')
+		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 	g_strstrip((char *)data);
 	if (*data == '\0')
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
