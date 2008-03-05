@@ -737,9 +737,11 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	if (!IS_XMPP_ITEM(item))
 		return;
 
+	if (*data == '\0')
+		return;
 	g_strstrip((char *)data);
 	if (*data == '\0')
-		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+		return;
 
 	target = window_item_get_target(item);
 	type = IS_CHANNEL(item) ? SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
