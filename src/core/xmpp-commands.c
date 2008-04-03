@@ -615,7 +615,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 
 	CMD_XMPP_SERVER(server);
 
-	if (!cmd_get_params(data, &free_arg, 1, &jid))
+	if (!cmd_get_params(data, &free_arg, 1, &dest))
 		return;
 
 	if (*dest == '\0')
