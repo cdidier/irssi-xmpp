@@ -32,6 +32,7 @@ sig_version(XMPP_SERVER_REC *server, const char *jid, const char *name,
 {
 	XMPP_ROSTER_USER_REC *user;
 	char *str1, *str2 = NULL;
+	const char *username;
 
 	g_return_if_fail(jid != NULL);
 
@@ -49,11 +50,12 @@ sig_version(XMPP_SERVER_REC *server, const char *jid, const char *name,
 	user = xmpp_rosters_find_user(server->roster, jid, NULL);
 	if (user != NULL && user->name != NULL) {
 		str2 = g_strconcat(" (", jid, ")", NULL);
-		jid = user->name;
-	}
+		username = user->name;
+	} else
+		username = jid;
 
-	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    XMPPTXT_MESSAGE_EVENT, jid, str1, str2);
+	printformat_module(MODULE_NAME, server, jid, MSGLEVEL_CRAP,
+	    XMPPTXT_MESSAGE_EVENT, username, str1, str2);
 
 	g_free(str1);
 	g_free(str2);
