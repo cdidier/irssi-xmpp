@@ -605,11 +605,12 @@ cmd_roster_unsubscribe(const char *data, XMPP_SERVER_REC *server)
 
 /* SYNTAX: WHOIS [<jid>|<name>] */
 static void
-cmd_whois(const char *data, XMPP_SERVER_REC *server)
+cmd_whois(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
+	NICK_REC *nick;
 	LmMessage *msg;
 	LmMessageNode *node;
-	char *jid, *jid_recoded;
+	char *dest, *jid = NULL, *jid_recoded;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
@@ -617,14 +618,17 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 
-	if (*jid == '\0')
-		jid_recoded = xmpp_recode_out(server->jid);
-	else {
-		jid = xmpp_rosters_resolve_name(server, data);
-		jid_recoded = xmpp_recode_out(jid);
-		g_free(jid);
-	}
+	if (*dest == '\0')
+		dest = IS_XMPP_QUERY(item) ? QUERY(item)->name :
+		    (jid = g_strconcat(server->jid, "/", server->resource,
+		    NULL));
+	else if (IS_XMPP_CHANNEL(item)
+	    && (nick = nicklist_find(CHANNEL(item), dest)) != NULL)
+		dest = nick->host;
+	else if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
+		dest = jid;
 
+	jid_recoded = xmpp_recode_out(dest);
 	msg = lm_message_new_with_sub_type(jid_recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
 	g_free(jid_recoded);
@@ -636,6 +640,7 @@ cmd_whois(const char *data, XMPP_SERVER_REC *server)
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
+	g_free(jid);
 	cmd_params_free(free_arg);
 }
 
@@ -655,11 +660,12 @@ cmd_ver(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		return;
 
 	if (*dest == '\0')
-		dest = jid = g_strconcat(server->jid, "/", server->resource,
-		    NULL);
+		dest = IS_XMPP_QUERY(item) ? QUERY(item)->name :
+		    (jid = g_strconcat(server->jid, "/", server->resource,
+		    NULL));
 	else if (IS_XMPP_CHANNEL(item)
 	    && (nick = nicklist_find(CHANNEL(item), dest)) != NULL)
-		dest = jid = g_strdup(nick->host);
+		dest = nick->host;
 	else if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
 		dest = jid;
 
@@ -692,9 +698,12 @@ cmd_ping(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	if (!cmd_get_params(data, &free_arg, 2, &dest))
 		return;
 
-	if (*dest == '\0')
-		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	if (IS_XMPP_CHANNEL(item)
+	if (*dest == '\0') {
+		if (IS_XMPP_QUERY(item))
+			dest = QUERY(item)->name;
+		else
+			cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	} else if (IS_XMPP_CHANNEL(item)
 	    && (nick = nicklist_find(CHANNEL(item), dest)) != NULL)
 		dest = jid = g_strdup(nick->host);
 	else if ((jid = xmpp_rosters_resolve_name(server, dest)) != NULL)
