@@ -29,6 +29,7 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-rosters.h"
+#include "xmpp-rosters-tools.h"
 
 const char *fe_xmpp_presence_show[] = {
 	"error",
@@ -93,8 +94,10 @@ static void
 sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
    int show, const char *status)
 {
+	XMPP_ROSTER_USER_REC *user;
 	WINDOW_REC *window;
-	const char *msg;
+	const char *msg, *name;
+	char *jid = NULL;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
@@ -104,12 +107,21 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 
 	msg = fe_xmpp_presence_show[show];
 
+	user = xmpp_rosters_find_user(server->roster, full_jid, NULL);
+	if (user != NULL) {
+		name = user->name;
+		jid = g_strconcat(" (", full_jid, ")", NULL);
+	} else
+		name = full_jid;
+
 	if (status != NULL)
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_PRESENCE_CHANGE_REASON, full_jid, msg, status);
+		    XMPPTXT_PRESENCE_CHANGE_REASON, name, jid, msg, status);
 	else
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_PRESENCE_CHANGE, full_jid, msg);
+		    XMPPTXT_PRESENCE_CHANGE, name, jid, msg);
+	
+	g_free(jid);
 }
 
 static void

@@ -65,8 +65,8 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Presence", 0, { 0 } },
 
-	{ "presence_change", "{nick $0}: is now $1", 2, { 0, 0 } },
-	{ "presence_change_reason", "{nick $0}: is now $1 {comment $2}", 3, { 0, 0, 0 } },
+	{ "presence_change", "{nick $0}$1: is now $2", 3, { 0, 0, 0 } },
+	{ "presence_change_reason", "{nick $0}$1: is now $2 {comment $3}", 4, { 0, 0, 0, 0 } },
 
 	/* ---- */
 	{ NULL, "Misc", 0, { 0 } },
