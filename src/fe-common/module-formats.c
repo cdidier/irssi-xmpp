@@ -24,15 +24,20 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ MODULE_NAME, "XMPP", 0, { 0 } },
 
 	/* ---- */
+	{ NULL, "Format", 0, { 0 } },
+
+	{ "format_name", "{nick $0} {nickhost $1}", 2, { 0, 0 } },
+	{ "format_jid", "{nick $0}", 1, { 0, 0 } },
+	{ "format_resource", "{comment $0{hilight $1}($2)$3}", 4, { 0, 0, 0, 0 } },
+	{ "format_resource_show", "($0)", 1, { 0 } },
+	{ "format_resource_status", ": $0", 1, { 0 } },
+	{ "format_subscription", "(subscription: $0)", 1, { 0 } },
+
+	/* ---- */
 	{ NULL, "Roster", 0, { 0 } },
 
 	{ "roster_group", "{hilight $0}:", 1, { 0 } },
-	{ "roster_jid", "  ({hilight $0}) {nick $1} $2 $3", 4, { 0, 0, 0, 0 } },
-	{ "roster_name", "  ({hilight $0}) {nick $1} ($2) $3 $4", 5, { 0, 0, 0, 0, 0 } },
-	{ "roster_resource", "[$0{nick $1}($2)$3]", 4, { 0, 0, 0, 0 } },
-	{ "roster_resource_show", "($0)", 1, { 0 } },
-	{ "roster_resource_status", ": $0", 1, { 0 } },
-	{ "roster_subscription", "(subscription: $0)", 1, { 0 } },
+	{ "roster_contact", "  ({hilight $0}) $1 $2 $3", 4, { 0, 0, 0, 0 } },
 	{ "begin_of_roster", "ROSTER: {nick $0} $1 $2\n", 3, { 0, 0, 0 } },
 	{ "end_of_roster", "End of ROSTER", 0, { 0 } },
 	{ "not_in_roster", "{nick $0}: not in the roster", 1, { 0 } },
@@ -40,16 +45,16 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Subscription", 0, { 0 } },
 
-	{ "suscribe", "{nick $0} wants to subscribe to your presence {comment $1}", 2, { 0, 0 } },
-	{ "suscribed", "You can see {nick $0} presence now", 1, { 0 } },
-	{ "unsuscribe", "{nick $0} doesn't want to see your presence anymore", 1 , { 0 } },
-	{ "unsuscribed", "{nick $0} doesn't want you to see his/her presence anymore", 1 , { 0 } },
+	{ "suscribe", "$0: wants to subscribe to your presence {comment $1}", 2, { 0, 0 } },
+	{ "suscribed", "$0: wants you to see his/her presence", 1, { 0 } },
+	{ "unsuscribe", "$0: doesn't want to see your presence anymore", 1 , { 0 } },
+	{ "unsuscribed", "$0: doesn't want you to see his/her presence anymore", 1 , { 0 } },
 
 	/* ---- */
 	{ NULL, "Message", 0, { 0 } },
 
-	{ "message_event", "{nick $0}$2: $1", 3,  { 0, 0, 0 } },
-	{ "message_not_delivered", "{nick $0}: cannot deliver message {comment $1}", 2,  { 0, 0 } },
+	{ "message_event", "$0: $1", 2,  { 0, 0 } },
+	{ "message_not_delivered", "$0: cannot deliver message {comment $1}", 2,  { 0, 0 } },
 	{ "message_timestamp", "[{timestamp $0}] $1", 2, { 0, 0 } },
 
 	/* ---- */
@@ -65,8 +70,16 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Presence", 0, { 0 } },
 
-	{ "presence_change", "{nick $0}$1: is now $2", 3, { 0, 0, 0 } },
-	{ "presence_change_reason", "{nick $0}$1: is now $2 {comment $3}", 4, { 0, 0, 0, 0 } },
+	{ "presence_change", "$0: is now $1", 3, { 0, 0 } },
+	{ "presence_change_reason", "$0: is now $1 {comment $2}", 4, { 0, 0, 0 } },
+
+	/* ---- */
+	{ NULL, "VCard", 0, { 0 } },
+
+	{ "vcard", "{nick $0} {nickhost $1}", 2, { 0, 0 } },
+	{ "vcard_value", "  $0: $1", 2, { 0, 0 } },
+	{ "vcard_subvalue", "    $0: $1", 2, { 0, 0 } },
+	{ "end_of_vcard", "End of VCARD", 0, { 0 } },
 
 	/* ---- */
 	{ NULL, "Misc", 0, { 0 } },

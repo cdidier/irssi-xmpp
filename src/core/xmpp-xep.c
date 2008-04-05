@@ -257,13 +257,15 @@ xep_vcard_handle(XMPP_SERVER_REC *server, const char *jid,
     LmMessageNode *node)
 {
 	LmMessageNode *child, *subchild;
+	GHashTable *ht;
 	const char *adressing;
 	char *value;
 
-	signal_emit("xmpp begin of vcard", 2, server, jid);
+	ht = g_hash_table_new_full(g_str_hash, g_str_equal,
+	    NULL, g_free);
 
 	child = node->children;
-	while(child != NULL) {
+	while (child != NULL) {
 
 		/* ignore avatar */
 		if (g_ascii_strcasecmp(child->name, "PHOTO") == 0)
@@ -272,18 +274,15 @@ xep_vcard_handle(XMPP_SERVER_REC *server, const char *jid,
 		if (child->value != NULL) {
 			value = xmpp_recode_in(child->value);
 			g_strstrip(value);
+			g_hash_table_insert(ht, child->name, value);
 
-			signal_emit("xmpp vcard value", 4, server, jid,
-			     child->name, value);
-
-			g_free(value);
 			goto next;
 		}
 
 		/* find the adressing type indicator */
 		subchild = child->children;
 		adressing = NULL;
-		while(subchild != NULL && adressing == NULL) {
+		while (subchild != NULL && adressing == NULL) {
 			if (subchild->value == NULL && (
 			    g_ascii_strcasecmp(subchild->name , "HOME") == 0 ||
 			    g_ascii_strcasecmp(subchild->name , "WORK") == 0))
@@ -293,15 +292,12 @@ xep_vcard_handle(XMPP_SERVER_REC *server, const char *jid,
 		}
 
 		subchild = child->children;
-		while(subchild != NULL) {
+		while (subchild != NULL) {
 			
 			if (subchild->value != NULL) {
 				value = xmpp_recode_in(subchild->value);
-				g_strstrip(value);
 
-				signal_emit("xmpp vcard subvalue", 6, server,
-				    jid, child->name, adressing,
-				    subchild->name, value);
+				/* TODO sub... */
 
 				g_free(value);
 			}
@@ -313,5 +309,7 @@ next:
 		child = child->next;
 	}
 
-	signal_emit("xmpp end of vcard", 2, server, jid);
+	signal_emit("xmpp vcard", 3, server, jid, ht);
+	
+	g_hash_table_destroy(ht);
 }

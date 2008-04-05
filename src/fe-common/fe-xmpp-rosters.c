@@ -70,17 +70,17 @@ get_resources(XMPP_SERVER_REC *server, GSList *list)
 
 		show = (resource->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
-		    XMPPTXT_ROSTER_RESOURCE_SHOW,
-		    xmpp_presence_show[resource->show]);
+		        XMPPTXT_FORMAT_RESOURCE_SHOW,
+		        xmpp_presence_show[resource->show]);
 
 		status = (resource->status == NULL) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
-		    XMPPTXT_ROSTER_RESOURCE_STATUS, resource->status);
+		        XMPPTXT_FORMAT_RESOURCE_STATUS, resource->status);
 
 		priority = g_strdup_printf("%d", resource->priority);
 
 		text = format_get_text(MODULE_NAME, NULL, server, NULL,
-		    XMPPTXT_ROSTER_RESOURCE, show, resource->name, priority,
+		    XMPPTXT_FORMAT_RESOURCE, show, resource->name, priority,
 		    status);
 
 		g_free(show);
@@ -102,7 +102,7 @@ static void
 show_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 {
 	const char *first_show;
-	char *resources, *subscription;
+	char *name, *resources, *subscription;
 
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(user != NULL);
@@ -114,22 +114,24 @@ show_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 	else
 		first_show = get_first_show(user->resources);
 
+	name = user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, user->jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, user->jid);
+
 	resources = get_resources(server, user->resources);
 
-	subscription = (user->subscription == XMPP_SUBSCRIPTION_BOTH) ? NULL :
+	subscription = user->subscription == XMPP_SUBSCRIPTION_BOTH ? NULL :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-	    XMPPTXT_ROSTER_SUBSCRIPTION,
-	    xmpp_subscription[user->subscription]);
+	        XMPPTXT_FORMAT_SUBSCRIPTION,
+	        xmpp_subscription[user->subscription]);
 
-	if (user->name != NULL)	
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    	    XMPPTXT_ROSTER_NAME, first_show, user->name, user->jid,
-		    resources, subscription);
-	else
-		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-	    	    XMPPTXT_ROSTER_JID, first_show, user->jid,
-		    resources, subscription);
-	
+	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
+    	    XMPPTXT_ROSTER_CONTACT, first_show, name, resources,
+	    subscription);
+
+	g_free(name);
 	g_free(resources);
 	g_free(subscription);
 }
@@ -143,18 +145,18 @@ show_begin_of_roster(XMPP_SERVER_REC *server)
 
 	show = (server->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-	    XMPPTXT_ROSTER_RESOURCE_SHOW,
+	        XMPPTXT_FORMAT_RESOURCE_SHOW,
 	    xmpp_presence_show[server->show]);
 
 	status = (server->away_reason == NULL
 	    || strcmp(server->away_reason, " ") == 0) ? NULL :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-	    XMPPTXT_ROSTER_RESOURCE_STATUS, server->away_reason);
+	        XMPPTXT_FORMAT_RESOURCE_STATUS, server->away_reason);
 
 	priority = g_strdup_printf("%d", server->priority);
 
 	text = format_get_text(MODULE_NAME, NULL, server, NULL,
-	    XMPPTXT_ROSTER_RESOURCE, show,  server->resource, priority,
+	    XMPPTXT_FORMAT_RESOURCE, show,  server->resource, priority,
 	    status);
 
 	g_free(show);
@@ -225,61 +227,109 @@ sig_not_in_roster(XMPP_SERVER_REC *server, const char *jid)
 static void
 sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 {
+	XMPP_ROSTER_USER_REC *user;
+	char *name;
+
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
+
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, jid);
 
 	if (settings_get_bool("xmpp_status_window"))
 		printformat_module_window(MODULE_NAME,
 		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBE, jid, status);
+		    XMPPTXT_SUBSCRIBE, name, status);
 	else
 		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBE, jid, status);
+		    XMPPTXT_SUBSCRIBE, name, status);
+
+	g_free(name);
 }
 
 static void
 sig_subscribed(XMPP_SERVER_REC *server, const char *jid)
 {
+	XMPP_ROSTER_USER_REC *user;
+	char *name;
+
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
+
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, jid);
 
 	if (settings_get_bool("xmpp_status_window"))
 		printformat_module_window(MODULE_NAME,
 		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBED, jid);
+		    XMPPTXT_SUBSCRIBED, name);
 	else
 		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBED, jid);
+		    XMPPTXT_SUBSCRIBED, name);
+
+	g_free(name);
 }
 
 static void
 sig_unsubscribe(XMPP_SERVER_REC *server, const char *jid)
 {
+	XMPP_ROSTER_USER_REC *user;
+	char *name;
+
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
+
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, jid);
 
 	if (settings_get_bool("xmpp_status_window"))
 		printformat_module_window(MODULE_NAME,
 		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
-		    XMPPTXT_UNSUBSCRIBE, jid);
+		    XMPPTXT_UNSUBSCRIBE, name);
 	else
 		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_UNSUBSCRIBE, jid);
+		    XMPPTXT_UNSUBSCRIBE, name);
+
+	g_free(name);
 }
 
 static void
 sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 {
+	XMPP_ROSTER_USER_REC *user;
+	char *name;
+
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
+
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, jid);
 
 	if (settings_get_bool("xmpp_status_window"))
 		printformat_module_window(MODULE_NAME,
 		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
-		    XMPPTXT_UNSUBSCRIBED, jid);
+		    XMPPTXT_UNSUBSCRIBED, name);
 	else
 		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_UNSUBSCRIBED, jid);
+		    XMPPTXT_UNSUBSCRIBED, name);
+
+	g_free(name);
 }
 
 void

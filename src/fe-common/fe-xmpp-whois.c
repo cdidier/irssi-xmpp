@@ -25,86 +25,95 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-rosters-tools.h"
+#include "xmpp-tools.h"
 
 static void
-sig_version(XMPP_SERVER_REC *server, const char *jid, const char *name,
+sig_version(XMPP_SERVER_REC *server, const char *jid, const char *client,
     const char *version, const char *os)
 {
 	XMPP_ROSTER_USER_REC *user;
-	char *str1, *str2 = NULL;
-	const char *username;
+	char *name, *str;
 
 	g_return_if_fail(jid != NULL);
 
 	if (name == NULL && version == NULL && os == NULL)
 		return;
 
-	str1 = g_strconcat("is running ",
-	    name != NULL ? name : "",
-	    name != NULL && version != NULL ? " " : "",
+	str = g_strconcat("is running ",
+	    client != NULL ? client : "",
+	    client != NULL && version != NULL ? " " : "",
 	    version != NULL ? version : "",
-	    (name != NULL || version != NULL) && os != NULL ? " - " : "",
+	    (client != NULL || version != NULL) && os != NULL ? " - " : "",
 	    os != NULL ? "on " : "",
 	    os != NULL ? os : "", NULL);
 
 	user = xmpp_rosters_find_user(server->roster, jid, NULL);
-	if (user != NULL && user->name != NULL) {
-		str2 = g_strconcat(" (", jid, ")", NULL);
-		username = user->name;
-	} else
-		username = jid;
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_NAME, user->name, jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+	        XMPPTXT_FORMAT_JID, jid);
 
 	printformat_module(MODULE_NAME, server, jid, MSGLEVEL_CRAP,
-	    XMPPTXT_MESSAGE_EVENT, username, str1, str2);
+	    XMPPTXT_MESSAGE_EVENT, name, str);
 
-	g_free(str1);
-	g_free(str2);
+	g_free(name);
+	g_free(str);
+}
+
+struct vcard_user_data {
+	XMPP_SERVER_REC *server;
+	const char *jid;
+};
+
+static void
+func_vcard_value(const char *key, const char *value, struct vcard_user_data *ud)
+{
+	printformat_module(MODULE_NAME, ud->server, ud->jid, MSGLEVEL_CRAP,
+	    XMPPTXT_VCARD_VALUE, key, value);
 }
 
 static void
-event_begin_of_vcard(XMPP_SERVER_REC *server, const char *jid)
+func_vcard_subvalue(const char *key, const char *value,
+    struct vcard_user_data *ud)
 {
-	g_debug("VCARD: %s", jid);
+	printformat_module(MODULE_NAME, ud->server, ud->jid, MSGLEVEL_CRAP,
+	    XMPPTXT_VCARD_SUBVALUE, key, value);
 }
 
 static void
-event_vcard_value(XMPP_SERVER_REC *server, const char *jid, const char *name,
-    const char *value)
+sig_vcard(XMPP_SERVER_REC *server, const char *jid, GHashTable *ht)
 {
-	g_debug("    %s: %s", name, value);
-}
+	XMPP_ROSTER_USER_REC *user;
+	struct vcard_user_data ud;
+	char *name;
 
-static void
-event_vcard_subvalue(XMPP_SERVER_REC *server, const char *jid,
-    const char *name, const char *adressing, const char *subname,
-    const char *subvalue)
-{
-}   
+	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	name = user != NULL && user->name != NULL ?
+	    g_strdup(user->name) : xmpp_strip_resource(jid);
+	printformat_module(MODULE_NAME, server, jid, MSGLEVEL_CRAP,
+	    XMPPTXT_VCARD, name, jid);
+	g_free(name);
 
-static void
-event_end_of_vcard(XMPP_SERVER_REC *server, const char *jid)
-{
-	g_debug("End of VCARD");
+	ud.server = server;
+	ud.jid = jid;
+	g_hash_table_foreach(ht,
+	    (void (*)(gpointer, gpointer, gpointer))func_vcard_value, &ud);
+
+	printformat_module(MODULE_NAME, server, jid, MSGLEVEL_CRAP,
+	    XMPPTXT_END_OF_VCARD);
 }
 
 void
 fe_xmpp_whois_init(void)
 {
 	signal_add("xmpp version", (SIGNAL_FUNC)sig_version);
-	signal_add("xmpp begin of vcard", (SIGNAL_FUNC)event_begin_of_vcard);
-	signal_add("xmpp vcard value", (SIGNAL_FUNC)event_vcard_value);
-	signal_add("xmpp vcard subvalue", (SIGNAL_FUNC)event_vcard_subvalue);
-	signal_add("xmpp end of vcard", (SIGNAL_FUNC)event_end_of_vcard);
+	signal_add("xmpp vcard", (SIGNAL_FUNC)sig_vcard);
 }
 
 void
 fe_xmpp_whois_deinit(void)
 {   
 	signal_remove("xmpp version", (SIGNAL_FUNC)sig_version);
-	signal_remove("xmpp begin of vcard",
-	    (SIGNAL_FUNC)event_begin_of_vcard);
-	signal_remove("xmpp vcard value", (SIGNAL_FUNC)event_vcard_value);
-	signal_remove("xmpp vcard subvalue",
-	    (SIGNAL_FUNC)event_vcard_subvalue);
-	signal_remove("xmpp end of vcard", (SIGNAL_FUNC)event_end_of_vcard);
+	signal_remove("xmpp vcard", (SIGNAL_FUNC)sig_vcard);
 }
