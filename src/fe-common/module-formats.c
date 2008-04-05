@@ -27,7 +27,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ NULL, "Format", 0, { 0 } },
 
 	{ "format_name", "{nick $0} {nickhost $1}", 2, { 0, 0 } },
-	{ "format_jid", "{nick $0}", 1, { 0, 0 } },
+	{ "format_jid", "{nick $0}", 1, { 0 } },
 	{ "format_resource", "{comment $0{hilight $1}($2)$3}", 4, { 0, 0, 0, 0 } },
 	{ "format_resource_show", "($0)", 1, { 0 } },
 	{ "format_resource_status", ": $0", 1, { 0 } },
@@ -70,8 +70,8 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Presence", 0, { 0 } },
 
-	{ "presence_change", "$0: is now $1", 3, { 0, 0 } },
-	{ "presence_change_reason", "$0: is now $1 {comment $2}", 4, { 0, 0, 0 } },
+	{ "presence_change", "$0: is now {hilight $1}", 2, { 0, 0 } },
+	{ "presence_change_reason", "$0: is now {hilight $1} {comment $2}", 3, { 0, 0, 0 } },
 
 	/* ---- */
 	{ NULL, "VCard", 0, { 0 } },

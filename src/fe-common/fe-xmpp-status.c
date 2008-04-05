@@ -96,8 +96,8 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 {
 	XMPP_ROSTER_USER_REC *user;
 	WINDOW_REC *window;
-	const char *msg, *name;
-	char *jid = NULL;
+	const char *msg;
+	char *name;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
@@ -108,20 +108,20 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 	msg = fe_xmpp_presence_show[show];
 
 	user = xmpp_rosters_find_user(server->roster, full_jid, NULL);
-	if (user != NULL) {
-		name = user->name;
-		jid = g_strconcat(" (", full_jid, ")", NULL);
-	} else
-		name = full_jid;
+	name = user != NULL && user->name != NULL ?
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+		XMPPTXT_FORMAT_NAME, user->name, full_jid) :
+	    format_get_text(MODULE_NAME, NULL, server, NULL,
+		XMPPTXT_FORMAT_JID, full_jid);
 
 	if (status != NULL)
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_PRESENCE_CHANGE_REASON, name, jid, msg, status);
+		    XMPPTXT_PRESENCE_CHANGE_REASON, name, msg, status);
 	else
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
-		    XMPPTXT_PRESENCE_CHANGE, name, jid, msg);
+		    XMPPTXT_PRESENCE_CHANGE, name, msg);
 	
-	g_free(jid);
+	g_free(name);
 }
 
 static void
