@@ -107,7 +107,7 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 
 	msg = fe_xmpp_presence_show[show];
 
-	user = xmpp_rosters_find_user(server->roster, full_jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, full_jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 		XMPPTXT_FORMAT_NAME, user->name, full_jid) :

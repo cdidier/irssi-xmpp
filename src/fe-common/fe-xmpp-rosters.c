@@ -233,7 +233,7 @@ sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -260,7 +260,7 @@ sig_subscribed(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -287,7 +287,7 @@ sig_unsubscribe(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -314,7 +314,7 @@ sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :

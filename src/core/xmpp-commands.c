@@ -350,7 +350,7 @@ cmd_roster_remove(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;
@@ -396,7 +396,7 @@ cmd_roster_name(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
-	user = xmpp_rosters_find_user(server->roster, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;
@@ -452,7 +452,7 @@ cmd_roster_group(const char *data, XMPP_SERVER_REC *server)
 	if (*jid == '\0' || !xmpp_have_host(jid))
 		goto out;
 
-	user = xmpp_rosters_find_user(server->roster, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
 	if (user == NULL) {
 		signal_emit("xmpp not in roster", 2, server, jid);
 		goto out;

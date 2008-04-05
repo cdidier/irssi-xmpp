@@ -25,6 +25,7 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-rosters.h"
+#include "xmpp-rosters-tools.h"
 #include "xmpp-tools.h"
 
 static int
@@ -120,34 +121,37 @@ find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 }
 
 XMPP_ROSTER_USER_REC *
-xmpp_rosters_find_user(GSList *groups, const char *full_jid,
-    XMPP_ROSTER_GROUP_REC **group)
+xmpp_rosters_find_user(GSList *groups, const char *jid,
+    XMPP_ROSTER_GROUP_REC **group, XMPP_ROSTER_RESOURCE_REC **resource)
 {
-	GSList *group_list, *group_tmp, *user_list;
-	char *jid;
+	GSList *g, *gl, *ul, *rl;
+	char *pos;
 
-	jid = xmpp_strip_resource(full_jid);
+	if ((pos = xmpp_find_resource_sep(jid)) != NULL)
+		*pos = '\0';
 
-	group_list = groups;
-	group_tmp = NULL;
-	user_list = NULL;
-
-	while (user_list == NULL && group_list != NULL) {
-		user_list = g_slist_find_custom(
-		    ((XMPP_ROSTER_GROUP_REC *)group_list->data)->users, jid,
+	ul = NULL;
+	for (gl = groups; ul == NULL && gl != NULL; gl = gl->next) {
+		ul = g_slist_find_custom(
+		    ((XMPP_ROSTER_GROUP_REC *)gl->data)->users, jid,
 		    (GCompareFunc)find_user_func);
-
-		group_tmp = group_list;
-		group_list = group_list->next;
+		g = gl;
 	}
 
-	g_free(jid);
-
 	if (&*group != NULL)
-		*group = (user_list != NULL) ?
-		    (XMPP_ROSTER_GROUP_REC *)group_tmp->data : NULL;
-	return (user_list != NULL) ?
-	    (XMPP_ROSTER_USER_REC *)user_list->data : NULL;
+		*group = ul != NULL ?
+		    (XMPP_ROSTER_GROUP_REC *)g->data : NULL;
+
+	if (&*resource != NULL)
+		*resource = ul != NULL && pos != NULL ?
+			xmpp_rosters_find_resource(
+			    (XMPP_ROSTER_USER_REC *)ul->data, pos+1) : NULL;
+
+	if (pos != NULL)
+		*pos = '/';
+
+	return ul != NULL ?
+	    (XMPP_ROSTER_USER_REC *)ul->data : NULL;
 }
 
 XMPP_ROSTER_USER_REC *
@@ -216,7 +220,8 @@ xmpp_rosters_resolve_name(XMPP_SERVER_REC *server, const char *name)
 
 	user = find_username(server->roster, name, NULL);
 	if (user == NULL)
-		user = xmpp_rosters_find_user(server->roster, name, NULL);
+		user = xmpp_rosters_find_user(server->roster, name, NULL,
+		    NULL);
 
 	if (user != NULL) {
 		if (!xmpp_have_resource(name)) {

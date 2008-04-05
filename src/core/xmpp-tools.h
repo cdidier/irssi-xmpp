@@ -13,6 +13,7 @@ __BEGIN_DECLS
 char	*xmpp_recode_out(const char *);
 char	*xmpp_recode_in(const char *);
 
+char	*xmpp_find_resource_sep(const char *);
 char	*xmpp_extract_resource(const char *);
 char	*xmpp_strip_resource(const char *);
 char	*xmpp_extract_user(const char *);

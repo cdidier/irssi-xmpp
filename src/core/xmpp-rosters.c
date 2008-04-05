@@ -302,7 +302,7 @@ update_user(XMPP_SERVER_REC *server, const char *jid, const char *subscription,
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, &group);
+	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
 	if (user == NULL)
 		user = add_user(server, jid, name, group_name, &group);
 	else {
@@ -391,7 +391,7 @@ sig_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
 	
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	if (user != NULL)
 		user->error = FALSE;
 	else if (strcmp(jid, server->jid) == 0)
@@ -461,14 +461,13 @@ sig_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 
 	jid = xmpp_strip_resource(full_jid);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
-	if (user == NULL)
-		goto out;
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
+	if (user == NULL) {
+		g_free(jid);
+		return;
+	}
 
 	user->error = TRUE;
-
-out:
-	g_free(jid);
 }
 
 static void
@@ -487,7 +486,7 @@ sig_presence_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	if (user == NULL) {
 		if (strcmp(jid, server->jid) == 0)
 			own = TRUE;

@@ -43,9 +43,8 @@ xep_composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	char *dest_recoded, *jid, *res;
+	char *dest_recoded;
 	const char *id;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
@@ -61,17 +60,7 @@ xep_composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 
 	lm_message_node_add_child(child, "composing", NULL);
 
-	jid = xmpp_strip_resource(full_jid);
-	res = xmpp_extract_resource(full_jid);
-
-	if (jid == NULL || res == NULL)
-		goto out;
-	
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
-	if (user == NULL)
-		goto out;
-
-	resource = xmpp_rosters_find_resource(user, res);
+	xmpp_rosters_find_user(server->roster, full_jid, NULL, &resource);
 	if (resource != NULL) {
 		id = lm_message_node_get_attribute(msg->node, "id");
 		lm_message_node_add_child(child, "id", id);
@@ -79,12 +68,8 @@ xep_composing_start(XMPP_SERVER_REC *server, const char *full_jid)
 		resource->composing_id = g_strdup(id);
 	}
 
-out:
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
-
-	g_free(jid);
-	g_free(res);
 }
 
 void
@@ -92,9 +77,8 @@ xep_composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	char *full_jid_recoded, *jid, *res;
+	char *full_jid_recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
@@ -108,28 +92,14 @@ xep_composing_stop(XMPP_SERVER_REC *server, const char *full_jid)
 	child = lm_message_node_add_child(msg->node, "x", NULL);
 	lm_message_node_set_attribute(child, XMLNS, XMLNS_EVENT);
 
-	jid = xmpp_strip_resource(full_jid);
-	res = xmpp_extract_resource(full_jid);
-
-	if (jid == NULL || res == NULL)
-		goto out;
-	
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
-	if (user == NULL)
-		goto out;
-
-	resource = xmpp_rosters_find_resource(user, res);
+	xmpp_rosters_find_user(server->roster, full_jid, NULL, &resource);
 	if (resource != NULL && resource->composing_id != NULL) {
 		lm_message_node_add_child(child, "id", resource->composing_id);
 		g_free_and_null(resource->composing_id);
 	}
 
-out:
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
-
-	g_free(jid);
-	g_free(res);
 }
 
 

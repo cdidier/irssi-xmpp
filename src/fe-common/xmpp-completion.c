@@ -64,7 +64,7 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 
 	list = NULL;
 
-	user = xmpp_rosters_find_user(server->roster, nick, NULL);
+	user = xmpp_rosters_find_user(server->roster, nick, NULL, NULL);
 	if (user == NULL)
 		return NULL;
 

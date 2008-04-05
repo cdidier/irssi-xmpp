@@ -47,7 +47,7 @@ sig_version(XMPP_SERVER_REC *server, const char *jid, const char *client,
 	    os != NULL ? "on " : "",
 	    os != NULL ? os : "", NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -88,7 +88,7 @@ sig_vcard(XMPP_SERVER_REC *server, const char *jid, GHashTable *ht)
 	struct vcard_user_data ud;
 	char *name;
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
+	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    g_strdup(user->name) : xmpp_strip_resource(jid);
 	printformat_module(MODULE_NAME, server, jid, MSGLEVEL_CRAP,

@@ -41,9 +41,8 @@ xmpp_send_message(XMPP_SERVER_REC *server, const char *dest,
 {
 	LmMessage *msg;
 	LmMessageNode *child;
-	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	char *jid, *res, *jid_recoded, *message_recoded;
+	char *jid, *jid_recoded, *message_recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(dest != NULL);
@@ -60,28 +59,14 @@ xmpp_send_message(XMPP_SERVER_REC *server, const char *dest,
 	lm_message_node_add_child(msg->node, "body", message_recoded);
 	g_free(message_recoded);
 
-	if (jid == NULL || !xmpp_have_resource(jid))
-		goto send;
-
-	user = xmpp_rosters_find_user(server->roster, jid, NULL);
-	if (user == NULL)
-		goto send;
-
-	res = xmpp_extract_resource(jid);
-	resource = xmpp_rosters_find_resource(user, res);
-	if (resource == NULL)
-		goto send;
-	g_free(res);
-
-	/* stop composing */
-	if (resource->composing_id != NULL) {
+	xmpp_rosters_find_user(server->roster, jid, NULL, &resource);
+	if (resource != NULL && resource->composing_id != NULL) {
 		child = lm_message_node_add_child(msg->node, "x", NULL);
 		lm_message_node_set_attribute(child, XMLNS, XMLNS_EVENT);
 		lm_message_node_add_child(child, "id", resource->composing_id);
 		g_free_and_null(resource->composing_id);
 	}
 
-send:
 	lm_send(server, msg, NULL);
 	lm_message_unref(msg);
 
