@@ -81,7 +81,7 @@ xmpp_recode_in(const char *str)
 
 char *
 xmpp_find_resource_sep(const char *jid) {
-	return g_utf8_strchr(jid, -1, '/');
+	return jid == NULL ? NULL : g_utf8_strchr(jid, -1, '/');
 }
 
 char *
