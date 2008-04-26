@@ -353,6 +353,13 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 	case LM_MESSAGE_SUB_TYPE_HEADLINE:
 	case LM_MESSAGE_SUB_TYPE_NORMAL:
 	case LM_MESSAGE_SUB_TYPE_CHAT:
+	/* rfc3921.txt states in 2.1.1. Types of Message:
+	 *   if an application receives a message with no 'type' attribute or the
+	 *   application does not understand the value of the 'type' attribute
+	 *   provided, it MUST consider the message to be of type "normal"
+	 * Thus default belongs here, whre LM_MESSAGE_SUB_TYPE_NORMAL is
+	 */
+	default:
 		/* XEP-0022: Message Events */
 		child = lm_message_node_get_child(msg->node, "x");
 		if (child != NULL) {
@@ -508,9 +515,6 @@ handle_message(LmMessageHandler *handler, LmConnection *connection,
 			g_free(nick);
 		}
 
-		break;
-
-	default:
 		break;
 	}
 
