@@ -301,7 +301,7 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		goto out;
 
 	msg = lm_message_new_with_sub_type(NULL , LM_MESSAGE_TYPE_IQ,
@@ -347,7 +347,7 @@ cmd_roster_remove(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
@@ -393,7 +393,7 @@ cmd_roster_name(const char *data, XMPP_SERVER_REC *server)
 	    &name))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
@@ -449,7 +449,7 @@ cmd_roster_group(const char *data, XMPP_SERVER_REC *server)
 	    &group_name))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		goto out;
 
 	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
@@ -501,7 +501,7 @@ cmd_roster_accept(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -528,7 +528,7 @@ cmd_roster_deny(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -556,7 +556,7 @@ cmd_roster_subscribe(const char *data, XMPP_SERVER_REC *server)
 	    &reason))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	jid_recoded = xmpp_recode_out(jid);
@@ -589,7 +589,7 @@ cmd_roster_unsubscribe(const char *data, XMPP_SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 1, &jid))
 		return;
 	
-	if (*jid == '\0' || !xmpp_have_host(jid))
+	if (*jid == '\0')
 		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	jid_recoded = xmpp_recode_out(jid);
