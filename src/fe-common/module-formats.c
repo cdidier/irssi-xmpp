@@ -84,6 +84,9 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Misc", 0, { 0 } },
 
+	{ "raw_in_header", "RECV[$0]:", 1, { 0 } },
+	{ "raw_out_header", "SEND[$0]:", 1, { 0 } },
+	{ "raw_message", "$0", 1, { 0 } },
 	{ "default_event", "$1 $2", 3, { 0, 0, 0 } },
 	{ "default_error", "ERROR $1 $2", 3, { 0, 0, 0 } },
 

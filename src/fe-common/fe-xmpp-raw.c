@@ -61,8 +61,12 @@ sig_raw_in(XMPP_SERVER_REC *server, const char *msg)
 
 	window = get_raw_window(server);
 	if (window != NULL) {
-		printtext_window(window, MSGLEVEL_CRAP, "RECV[%d]:", strlen(msg));
-		printtext_window(window, MSGLEVEL_CRAP, msg);
+		char *len = g_strdup_printf("%d", strlen(msg));
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_RAW_IN_HEADER, len);
+		g_free(len);
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_RAW_MESSAGE, msg);
 	}
 }
 
@@ -76,8 +80,12 @@ sig_raw_out(XMPP_SERVER_REC *server, const char *msg)
 
 	window = get_raw_window(server);
 	if (window != NULL) {
-		printtext_window(window, MSGLEVEL_CRAP, "SEND[%d]:", strlen(msg));
-		printtext_window(window, MSGLEVEL_CRAP, msg);
+		char *len = g_strdup_printf("%d", strlen(msg));
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_RAW_OUT_HEADER, len);
+		g_free(len);
+		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
+		    XMPPTXT_RAW_MESSAGE, msg);
 	}
 }
 
