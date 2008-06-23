@@ -1,11 +1,11 @@
 # paths
 PREFIX ?= /usr/local
 
-# where are the sources of irssi ?
+# where are the sources of irssi?
 IRSSI_INCLUDE ?= ${PREFIX}/include/irssi
-# where should be installed the module ?
+# where should be installed the module?
 IRSSI_LIB ?= ${PREFIX}/lib/irssi
-# where should be installed the documentation ?
+# where should be installed the documentation?
 IRSSI_DOC ?= ${PREFIX}/share/doc/irssi
 # where should be installed the help for commands ?
 IRSSI_HELP ?= ${PREFIX}/share/irssi/help
