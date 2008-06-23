@@ -24,7 +24,7 @@ doc-uninstall:
 help-install:
 	@echo installing command help files to ${DESTDIR}${IRSSI_HELP}
 	@install -d ${DESTDIR}${IRSSI_HELP}
-	@cd help/ && install roster xmppconnect xmppserver ${DESTDIR}${IRSSI_HELP}
+	@cd help/ && install -m 644 roster xmppconnect xmppserver ${DESTDIR}${IRSSI_HELP}
 
 help-uninstall:
 	@echo uninstalling command help files from ${DESTDIR}${IRSSI_HELP}
