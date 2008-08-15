@@ -23,45 +23,43 @@
 #include "levels.h"
 #include "module-formats.h"
 #include "printtext.h"
+#include "settings.h"
 #include "signals.h"
 #include "window-items.h"
 
 #include "xmpp-servers.h"
 
 static WINDOW_REC *
-get_raw_window(XMPP_SERVER_REC *server)
+get_console(XMPP_SERVER_REC *server)
 {
 	WINDOW_REC *window;
 	char *name;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
-
 	name = g_strconcat("(raw:", (server->connrec->chatnet == NULL ||
 	    *server->connrec->chatnet == '\0') ? server->jid :
 	    server->connrec->chatnet, ")", NULL);
-
-	window = window_find_name(name);
-	if (window == NULL) {
+	if ((window = window_find_name(name)) == NULL) {
 		window = window_create(NULL, TRUE);
 		window_set_name(window, name);
 		window_change_server(window, server);
 	}
 	g_free(name);
-
 	return window;
 }
 
 static void
-sig_raw_in(XMPP_SERVER_REC *server, const char *msg)
+sig_xml_in(XMPP_SERVER_REC *server, const char *msg)
 {
 	WINDOW_REC *window;
+	char *len;
 
+	if (!settings_get_bool("xmpp_xml_console"))
+		return;
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(msg != NULL);
-
-	window = get_raw_window(server);
-	if (window != NULL) {
-		char *len = g_strdup_printf("%d", strlen(msg));
+	if ((window = get_console(server)) != NULL) {
+		len = g_strdup_printf("%lu", strlen(msg));
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
 		    XMPPTXT_RAW_IN_HEADER, len);
 		g_free(len);
@@ -71,16 +69,17 @@ sig_raw_in(XMPP_SERVER_REC *server, const char *msg)
 }
 
 static void
-sig_raw_out(XMPP_SERVER_REC *server, const char *msg)
+sig_xml_out(XMPP_SERVER_REC *server, const char *msg)
 {
 	WINDOW_REC *window;
+	char *len;
 
+	if (!settings_get_bool("xmpp_xml_console"))
+		return;
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(msg != NULL);
-
-	window = get_raw_window(server);
-	if (window != NULL) {
-		char *len = g_strdup_printf("%d", strlen(msg));
+	if ((window = get_console(server)) != NULL) {
+		len = g_strdup_printf("%lu", strlen(msg));
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
 		    XMPPTXT_RAW_OUT_HEADER, len);
 		g_free(len);
@@ -90,15 +89,17 @@ sig_raw_out(XMPP_SERVER_REC *server, const char *msg)
 }
 
 void
-fe_xmpp_raw_init(void)
+fe_stanzas_init(void)
 {
-	signal_add("xmpp raw in", (SIGNAL_FUNC)sig_raw_in);
-	signal_add("xmpp raw out", (SIGNAL_FUNC)sig_raw_out);
+	signal_add("xmpp xml in", (SIGNAL_FUNC)sig_xml_in);
+	signal_add("xmpp xml out", (SIGNAL_FUNC)sig_xml_out);
+
+	settings_add_bool("xmpp_lookandfeel", "xmpp_xml_console", FALSE);
 }
 
 void
-fe_xmpp_raw_deinit(void)
+fe_stanzas_deinit(void)
 {
-	signal_remove("xmpp raw in", (SIGNAL_FUNC)sig_raw_in);
-	signal_remove("xmpp raw out", (SIGNAL_FUNC)sig_raw_out);
+	signal_remove("xmpp xml in", (SIGNAL_FUNC)sig_xml_in);
+	signal_remove("xmpp xml out", (SIGNAL_FUNC)sig_xml_out);
 }

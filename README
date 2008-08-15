@@ -25,18 +25,20 @@ Installation:
 
 Requirement:
     o Loudmouth 1.2.x (http://www.loudmouth-project.org/)
-    o Irssi and its sources unpacked and configured (http://irssi.org/)
+    o Irssi (>= 0.8.12) and its sources unpacked and configured
+      (http://irssi.org/)
 
 Procedure:
     o edit the file "config.mk" if needed and export this (and maybe others)
       environment variable:
-        $ export IRSSI_INCLUDE=/path/to/irssi/sources
+            $ export IRSSI_INCLUDE=/path/to/irssi/sources
     o build the sources:
-    	$ make
-    o install the module in your home directory:
-        $ make user-install
-    o or install it in the base system:
-        # make install
+            $ make
+    o install the module:
+        - in your home directory:
+            $ make user-install
+        - in the base system:
+            # make install
 
 Documentation:
 ==============
@@ -47,6 +49,7 @@ In the directory "docs/":
     o MUC: How to use Multi-User Chat and related commands
     o FAQ: Frequently Asked Questions and Troubleshooting
     o XEP: XMPP Extensions supported
+    o INTERNAL: How irssi-xmpp works
 
 In the directory "help/" you can find the help files of each irssi-xmpp
 specific commands, which can be viewed in irssi with the command /HELP.
@@ -60,8 +63,8 @@ Bug tracker: https://gna.org/bugs/?group=irssi-xmpp
 
 If irssi crashes, please build irssi with debug symbols and the module irssi-xmpp
 in debug mode (take a look at "config.mk" to activate it). Then you can run
-irssi in gdb and show the backtrace ("bt full") when irssi crashes.
-Paste the backtrace in your message would help to fix this critical bug.
+irssi in gdb and print the backtrace ("bt full") when irssi crashes.
+Paste the backtrace in your message would help to fix this bug.
 
 Author:
 =======

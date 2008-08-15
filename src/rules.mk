@@ -8,7 +8,7 @@ all: ${LIB}
 
 .c.o:
 	@echo ${CC} -c $<
-	@${CC} -c $< ${CFLAGS}
+	@${CC} -c $< -o $@ ${CFLAGS}
 
 ${LIB}: ${OBJS}
 	@echo ${CC} -o lib$@.so

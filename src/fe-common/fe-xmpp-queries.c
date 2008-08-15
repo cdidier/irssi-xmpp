@@ -25,8 +25,7 @@
 #include "window-items.h"
 
 #include "xmpp-queries.h"
-#include "xmpp-rosters.h"
-#include "xmpp-rosters-tools.h"
+#include "rosters-tools.h"
 #include "fe-xmpp-status.h"
 
 static void
@@ -48,7 +47,7 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 
 	msg = fe_xmpp_presence_show[show];
 
-	user = xmpp_rosters_find_user(server->roster, full_jid, NULL, NULL);
+	user = rosters_find_user(server->roster, full_jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 		XMPPTXT_FORMAT_NAME, user->name, full_jid) :
@@ -86,7 +85,7 @@ sig_query_created(XMPP_QUERY_REC *query, int automatic)
 	if (!IS_XMPP_QUERY(query))
 		return;
 
-	user = xmpp_rosters_find_user(query->server->roster, query->name, NULL,
+	user = rosters_find_user(query->server->roster, query->name, NULL,
 	    NULL);
 	if (user == NULL || user->name == NULL)
 		return;

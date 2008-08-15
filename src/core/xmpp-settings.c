@@ -24,8 +24,7 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-rosters.h"
-#include "xmpp-protocol.h"
+#include "rosters.h"
 
 void
 read_settings(void)
@@ -35,18 +34,13 @@ read_settings(void)
 	const char *str;
 	
 	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
-
-		server = XMPP_SERVER(tmp->data);
-		if (server == NULL)
+		if ((server = XMPP_SERVER(tmp->data)) == NULL)
 			continue;
-
 		/* update priority */
-		if (server->priority != settings_get_int("xmpp_priority")) {
-			signal_emit("xmpp own_presence", 4, server,
+		if (server->priority != settings_get_int("xmpp_priority"))
+			signal_emit("xmpp set presence", 4, server,
 			    server->show, server->away_reason,
 			    settings_get_int("xmpp_priority"));
-		}
-
 		/* update nick */
 		if (settings_get_bool("xmpp_set_nick_as_username")) {
 			if (strcmp(server->nickname, server->user) != 0) {
@@ -63,27 +57,19 @@ read_settings(void)
 				server->nickname = g_strdup(server->jid);
 			}
 		}
-
-		if (settings_get_bool("xmpp_raw_window"))
-			signal_emit("xmpp register raw handler", 1, server);
-		else
-			signal_emit("xmpp unregister raw handler", 1, server);
 	}
-
 	/* check validity */
-
 	str = settings_get_str("xmpp_proxy_type");
 	if (settings_get_bool("xmpp_use_proxy")
 	    && (str == NULL || g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) != 0))
 		;
-
 	str = settings_get_str("xmpp_default_away_mode");
 	if (str == NULL
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_AWAY]) != 0
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_CHAT]) != 0
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_DND]) != 0
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_XA]) != 0
-	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_ONLINE_STR]) != 0)
+	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_ONLINE]) != 0)
 		;
 }
 

@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#ifndef __XMPP_TOOLS_H
-#define __XMPP_TOOLS_H
+#ifndef __TOOLS_H
+#define __TOOLS_H
 
 #define xmpp_extract_nick(jid)						\
 	xmpp_extract_resource(jid)

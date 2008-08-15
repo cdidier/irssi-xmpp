@@ -28,9 +28,19 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-rosters.h"
-#include "xmpp-rosters-tools.h"
+#include "rosters-tools.h"
 #include "fe-xmpp-status.h"
+
+static gboolean
+user_is_shown(XMPP_ROSTER_USER_REC *user)
+{
+	g_return_val_if_fail(user != NULL, FALSE);
+	return (user->resources != NULL
+	    && user->subscription == XMPP_SUBSCRIPTION_BOTH)
+	    || (user->subscription != XMPP_SUBSCRIPTION_BOTH
+	    && settings_get_bool("roster_show_offline_unsuscribed"))
+	    || settings_get_bool("roster_show_offline");
+}
 
 static void
 show_group(XMPP_SERVER_REC *server, XMPP_ROSTER_GROUP_REC *group)
@@ -163,7 +173,7 @@ show_begin_of_roster(XMPP_SERVER_REC *server)
 	g_free(status);
 	g_free(priority);
 
-	resources = get_resources(server, server->resources);
+	resources = get_resources(server, server->my_resources);
 
 	printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
 	    XMPPTXT_BEGIN_OF_ROSTER, server->jid, text, resources);
@@ -197,7 +207,7 @@ sig_roster_show(XMPP_SERVER_REC *server)
 
 		/* don't show groups with only offline users */
 		for (ul = group->users; ul != NULL
-		    && !xmpp_rosters_show_user(ul->data); ul = ul->next);
+		    && !user_is_shown(ul->data); ul = ul->next);
 		if (ul == NULL)
 			continue;
 
@@ -206,7 +216,7 @@ sig_roster_show(XMPP_SERVER_REC *server)
 		 for (ul = group->users; ul != NULL; ul = ul->next) {
 			 user = ul->data;
 
-			 if (xmpp_rosters_show_user(user))
+			 if (user_is_shown(user))
 				 show_user(server, user);
 		}
 	}
@@ -233,7 +243,7 @@ sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -260,7 +270,7 @@ sig_subscribed(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -287,7 +297,7 @@ sig_unsubscribe(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -314,7 +324,7 @@ sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(jid != NULL);
 
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, jid) :
@@ -333,7 +343,7 @@ sig_unsubscribed(XMPP_SERVER_REC *server, const char *jid)
 }
 
 void
-fe_xmpp_rosters_init(void)
+fe_rosters_init(void)
 {
 	signal_add("xmpp roster show", (SIGNAL_FUNC)sig_roster_show);
 	signal_add("xmpp not in roster", (SIGNAL_FUNC)sig_not_in_roster);
@@ -342,10 +352,15 @@ fe_xmpp_rosters_init(void)
 	signal_add("xmpp presence unsubscribe", (SIGNAL_FUNC)sig_unsubscribe);
 	signal_add("xmpp presence unsubscribed",
 	    (SIGNAL_FUNC)sig_unsubscribed);
+
+	settings_add_str("xmpp_roster", "roster_default_group", "General");
+	settings_add_bool("xmpp_roster", "roster_show_offline", TRUE);
+	settings_add_bool("xmpp_roster", "roster_show_offline_unsuscribed",
+	    TRUE);
 }
 
 void
-fe_xmpp_rosters_deinit(void)
+fe_rosters_deinit(void)
 {
 	signal_remove("xmpp roster show", (SIGNAL_FUNC)sig_roster_show);
 	signal_remove("xmpp not in roster", (SIGNAL_FUNC) sig_not_in_roster);

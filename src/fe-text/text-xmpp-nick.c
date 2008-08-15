@@ -25,7 +25,7 @@
 #include "statusbar.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-channels.h"
+/*#include "xmpp-channels.h"*/
 
 static void
 update_nick_statusbar(XMPP_SERVER_REC *server, XMPP_CHANNEL_REC *channel,

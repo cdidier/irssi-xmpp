@@ -27,15 +27,10 @@
 #include "signals.h"
 #include "themes.h"
 
-#include "fe-xmpp-channels.h"
-#include "fe-xmpp-composing.h"
-#include "fe-xmpp-messages.h"
 #include "fe-xmpp-queries.h"
-#include "fe-xmpp-raw.h"
-#include "fe-xmpp-rosters.h"
 #include "fe-xmpp-status.h"
-#include "fe-xmpp-whois.h"
-#include "fe-xmpp-windows.h"
+#include "fe-rosters.h"
+#include "fe-stanzas.h"
 #include "xmpp-completion.h"
 
 static void
@@ -66,26 +61,21 @@ fe_xmpp_init(void)
 	signal_add("xmpp server status", (SIGNAL_FUNC)sig_server_status);
 	signal_add("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
 
-	fe_xmpp_channels_init();
-	fe_xmpp_composing_init();
-	fe_xmpp_messages_init();
 	fe_xmpp_queries_init();
-	fe_xmpp_raw_init();
-	fe_xmpp_rosters_init();
 	fe_xmpp_status_init();
-	fe_xmpp_whois_init();
-	fe_xmpp_windows_init();
+	fe_rosters_init();
+	fe_stanzas_init();
 	xmpp_completion_init();
 
 	module_register("xmpp", "fe");
 
 	/* load irssi-xmpp's fe-text submodule */
-	if (irssi_gui == IRSSI_GUI_TEXT) {
+/*	if (irssi_gui == IRSSI_GUI_TEXT) {
 		char *cmd_line = g_strconcat(settings_get_str("cmdchars"),
 		    "load xmpp text", NULL);
 		signal_emit("send command", 1, cmd_line);
 		g_free(cmd_line);
-	}
+	}*/
 }
 
 void
@@ -94,15 +84,10 @@ fe_xmpp_deinit(void)
 	signal_remove("xmpp server status", (SIGNAL_FUNC)sig_server_status);
 	signal_remove("server add fill", (SIGNAL_FUNC)sig_server_add_fill);
 
-	fe_xmpp_channels_deinit();
-	fe_xmpp_composing_deinit();
-	fe_xmpp_messages_deinit();
 	fe_xmpp_queries_deinit();
-	fe_xmpp_raw_deinit();
-	fe_xmpp_rosters_deinit();
 	fe_xmpp_status_deinit();
-	fe_xmpp_whois_deinit();
-	fe_xmpp_windows_deinit();
+	fe_rosters_deinit();
+	fe_stanzas_deinit();
 	xmpp_completion_deinit();
 
 	theme_unregister();

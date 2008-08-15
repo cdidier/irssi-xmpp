@@ -25,9 +25,10 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-rosters.h"
-#include "xmpp-rosters-tools.h"
-#include "xmpp-tools.h"
+#include "rosters-tools.h"
+#include "tools.h"
+
+#define XMLNS_ROSTER "jabber:iq:roster"
 
 const char *xmpp_presence_show[] = {
 	"X",
@@ -53,8 +54,9 @@ const char *xmpp_subscription[] = {
 static int
 func_find_group(gconstpointer group, gconstpointer name)
 {
-	char *group_name = ((XMPP_ROSTER_GROUP_REC *)group)->name;
+	char *group_name;
 
+	group_name = ((XMPP_ROSTER_GROUP_REC *)group)->name;
 	if (group_name == name)
 		return 0;
 	if (group_name == NULL || name == NULL)
@@ -93,13 +95,11 @@ create_resource(const char *name)
 	XMPP_ROSTER_RESOURCE_REC *resource;
 
 	resource = g_new(XMPP_ROSTER_RESOURCE_REC, 1);
-
 	resource->name = g_strdup(name);
 	resource->priority = 0;
 	resource->show= XMPP_PRESENCE_UNAVAILABLE;
 	resource->status = NULL;
 	resource->composing_id = NULL;
-
 	return resource;
 }
 
@@ -111,7 +111,6 @@ cleanup_resource(gpointer data, gpointer user_data)
 	if (data == NULL)
 		return;
 	resource = (XMPP_ROSTER_RESOURCE_REC *)data;
-
 	g_free(resource->name);
 	g_free(resource->status);
 	g_free(resource->composing_id);
@@ -124,15 +123,12 @@ create_user(const char *jid, const char *name)
 	XMPP_ROSTER_USER_REC *user;
 
 	g_return_val_if_fail(jid != NULL, NULL);
-
 	user = g_new(XMPP_ROSTER_USER_REC, 1);
-
 	user->jid = g_strdup(jid);
 	user->name = g_strdup(name);
 	user->subscription = XMPP_SUBSCRIPTION_NONE;
 	user->error = FALSE;
 	user->resources = NULL;
-
 	return user;
 }
 
@@ -144,10 +140,8 @@ cleanup_user(gpointer data, gpointer user_data)
 	if (data == NULL)
 		return;
 	user = (XMPP_ROSTER_USER_REC *)data;
-
-	g_slist_foreach(user->resources, (GFunc)cleanup_resource, NULL);
+	g_slist_foreach(user->resources, cleanup_resource, NULL);
 	g_slist_free(user->resources);
-
 	g_free(user->name);
 	g_free(user->jid);
 	g_free(user);
@@ -156,11 +150,11 @@ cleanup_user(gpointer data, gpointer user_data)
 static XMPP_ROSTER_GROUP_REC *
 create_group(const char *name)
 {
-	XMPP_ROSTER_GROUP_REC *group = g_new(XMPP_ROSTER_GROUP_REC, 1);
+	XMPP_ROSTER_GROUP_REC *group;
 
+	group = g_new(XMPP_ROSTER_GROUP_REC, 1);
 	group->name = g_strdup(name);
 	group->users = NULL;
-
 	return group;
 }
 
@@ -172,30 +166,23 @@ cleanup_group(gpointer data, gpointer user_data)
 	if (data == NULL)
 		return;
 	group = (XMPP_ROSTER_GROUP_REC *)data;
-
-	g_slist_foreach(group->users, (GFunc)cleanup_user, group);
+	g_slist_foreach(group->users, cleanup_user, group);
 	g_slist_free(group->users);
-
 	g_free(group->name);
 	g_free(group);
 }
 
 static void
-sig_cleanup(XMPP_SERVER_REC *server)
+roster_cleanup(XMPP_SERVER_REC *server)
 {
-	if (!IS_XMPP_SERVER(server))
+	if (!IS_XMPP_SERVER(server) || server->roster == NULL)
 		return;
-
-	if (server->roster == NULL)
-		return;
-
-	g_slist_foreach(server->roster, (GFunc)cleanup_group, server);
+	g_slist_foreach(server->roster, cleanup_group, server);
 	g_slist_free(server->roster);
 	server->roster = NULL;
-
-	g_slist_foreach(server->resources, (GFunc)cleanup_resource, NULL);
-	g_slist_free(server->resources);
-	server->resources  = NULL;
+	g_slist_foreach(server->my_resources, cleanup_resource, NULL);
+	g_slist_free(server->my_resources);
+	server->my_resources = NULL;
 }
 
 static XMPP_ROSTER_GROUP_REC *
@@ -205,35 +192,31 @@ find_or_add_group(XMPP_SERVER_REC *server, const char *group_name)
 	XMPP_ROSTER_GROUP_REC *group;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
-
 	group_list = g_slist_find_custom(server->roster, group_name,
-	    (GCompareFunc)func_find_group);
-
-	/* group doesn't exist */
+	    func_find_group);
 	if (group_list == NULL) {
 		group = create_group(group_name);
 		server->roster = g_slist_insert_sorted(server->roster, group,
-		    (GCompareFunc)func_sort_group);
+		    func_sort_group);
 	} else 
 		group = group_list->data;
-
 	return group;
 }
 
 static XMPP_ROSTER_USER_REC *
 add_user(XMPP_SERVER_REC *server, const char *jid, const char *name,
-    const char *group_name, XMPP_ROSTER_GROUP_REC **group)
+    const char *group_name, XMPP_ROSTER_GROUP_REC **return_group)
 {
+	XMPP_ROSTER_GROUP_REC *group;
 	XMPP_ROSTER_USER_REC *user;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(jid != NULL, NULL);
-
-	*group = find_or_add_group(server, group_name);
-	
+	group = find_or_add_group(server, group_name);
 	user = create_user(jid, name);
-	(*group)->users = g_slist_append((*group)->users, user);
-
+	group->users = g_slist_append(group->users, user);
+	if (return_group != NULL)
+		*return_group = group;
 	return user;
 }
 
@@ -245,12 +228,9 @@ move_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user,
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), group);
         g_return_val_if_fail(user != NULL, group);
-
 	new_group = find_or_add_group(server, group_name);
-
 	group->users = g_slist_remove(group->users, user);
 	new_group->users = g_slist_append(new_group->users, user);
-
 	return new_group;
 }
 
@@ -262,28 +242,22 @@ update_subscription(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user,
 	g_return_if_fail(user != NULL);
 	g_return_if_fail(group != NULL);
 	g_return_if_fail(subscription != NULL);
-
 	if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_NONE]) == 0)
 		user->subscription = XMPP_SUBSCRIPTION_NONE;
-
 	else if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_FROM]) == 0)
 		user->subscription = XMPP_SUBSCRIPTION_FROM;
-
 	else if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_TO]) == 0)
 		user->subscription = XMPP_SUBSCRIPTION_TO;
-
 	else if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_BOTH]) == 0)
 		user->subscription = XMPP_SUBSCRIPTION_BOTH;
-
 	else if (g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_REMOVE]) == 0) {
 		group->users = g_slist_remove(group->users, user);
 		cleanup_user(user, server);
-
 		/* remove empty group */
 		if (group->users == NULL) {
 			server->roster = g_slist_remove(server->roster, group);
@@ -301,19 +275,16 @@ update_user(XMPP_SERVER_REC *server, const char *jid, const char *subscription,
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(jid != NULL);
-
-	user = xmpp_rosters_find_user(server->roster, jid, &group, NULL);
+	user = rosters_find_user(server->roster, jid, &group, NULL);
 	if (user == NULL)
 		user = add_user(server, jid, name, group_name, &group);
 	else {
-
 		/* move to another group */
 		if ((group->name == NULL && group_name != NULL)
 		    || (group->name != NULL && group_name == NULL)
 		    || (group->name != NULL && group_name != NULL
 		    && strcmp(group->name, group_name) != 0))
 			group = move_user(server, user, group, group_name);
-
 		/* change name */
 		if ((user->name == NULL && name != NULL)
 		    || (user->name != NULL && name == NULL)
@@ -323,59 +294,11 @@ update_user(XMPP_SERVER_REC *server, const char *jid, const char *subscription,
 			user->name = g_strdup(name);
 		}
 	}
-
 	update_subscription(server, user, group, subscription);
 }
 
 static void
-sig_update(XMPP_SERVER_REC *server, LmMessageNode *query)
-{
-	LmMessageNode *item, *group_node;
-	const char *subscription, *jid, *name;
-	char *jid_recoded, *name_recoded, *group_recoded;
-
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(query != NULL);
-
-	name_recoded = NULL;
-	group_recoded = NULL;
-
-	item = query->children;
-	while(item != NULL) {
-
-		if (g_ascii_strcasecmp(item->name, "item") != 0)
-			goto next;
-		
-		jid = lm_message_node_get_attribute(item, "jid");
-		if (jid == NULL)
-			goto next;
-		jid_recoded = xmpp_recode_in(jid);
-
-		subscription = lm_message_node_get_attribute(item,
-		    "subscription");
-
-		name = lm_message_node_get_attribute(item, "name");
-		if (name != NULL)
-			name_recoded = xmpp_recode_in(name);
-
-		group_node = lm_message_node_get_child(item, "group");
-		if (group_node != NULL)
-			group_recoded = xmpp_recode_in(group_node->value);
-
-		update_user(server, jid_recoded, subscription, name_recoded,
-		    group_recoded);
-
-		g_free_and_null(jid_recoded);
-		g_free_and_null(name_recoded);
-		g_free_and_null(group_recoded);
-	
-next:
-		item = item->next;
-	}
-}
-
-static void
-sig_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
+update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
     const char *show_str, const char *status, const char *priority_str)
 {
 	XMPP_ROSTER_USER_REC *user;
@@ -386,22 +309,18 @@ sig_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
-
 	new = own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
-	
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user != NULL)
-		user->error = FALSE;
-	else if (strcmp(jid, server->jid) == 0)
-		own = TRUE;
-	else
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
+	if (user == NULL && !(own = strcmp(jid, server->jid) == 0
+	     && strcmp(res, server->resource) != 0))
 		goto out;
-
+	else
+		user->error = FALSE;
 	/* find resource or create it if it doesn't exist */	
-	resource = !own ? xmpp_rosters_find_resource(user, res) :
-	    xmpp_rosters_find_own_resource(server, res);
+	resource = !own ? rosters_find_resource(user, res) :
+	    rosters_find_own_resource(server, res);
 	if (resource == NULL) {
 		resource = create_resource(res);
 		new = TRUE;
@@ -409,40 +328,29 @@ sig_presence_update(XMPP_SERVER_REC *server, const char *full_jid,
 			user->resources =
 			    g_slist_prepend(user->resources, resource);
 		else
-			server->resources =
-			    g_slist_prepend(server->resources, resource);
+			server->my_resources =
+			    g_slist_prepend(server->my_resources, resource);
+		signal_emit("xmpp presence online", 3, server, jid, res);
 	}
-
-	show = xmpp_presence_get_show(show_str);
-
+	show = xmpp_get_show(show_str);
 	priority = (priority_str != NULL) ?
 	    atoi(priority_str) : resource->priority;
-
 	if (new || xmpp_presence_changed(show, resource->show, status,
 	    resource->status, priority, resource->priority)) {
-
 		resource->show = show;
-
-		g_free_and_null(resource->status);
-		if (status != NULL)
-			resource->status = g_strdup(status);
-
+		resource->status = g_strdup(status);
 		if (resource->priority != priority) {
 			resource->priority = priority;
-
 			/* the resource has changed, sort the resources */
 			if (!own)
 				user->resources = g_slist_sort(
-				    user->resources,
-				    (GCompareFunc)func_sort_resource);
+				    user->resources, func_sort_resource);
 			else
-				server->resources = g_slist_sort(
-				    server->resources,
-				    (GCompareFunc)func_sort_resource);
+				server->my_resources = g_slist_sort(
+				    server->my_resources, func_sort_resource);
 		}
-
-		signal_emit("xmpp presence changed", 5, server, full_jid,
-		    resource->show, resource->status, resource->priority);
+		signal_emit("xmpp presence changed", 4, server, full_jid,
+		    resource->show, resource->status);
 	}
 
 out:
@@ -451,27 +359,7 @@ out:
 }
 
 static void
-sig_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
-{
-	XMPP_ROSTER_USER_REC *user;
-	char *jid;
-
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(full_jid != NULL);
-
-	jid = xmpp_strip_resource(full_jid);
-
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user == NULL) {
-		g_free(jid);
-		return;
-	}
-
-	user->error = TRUE;
-}
-
-static void
-sig_presence_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
+user_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
     const char *status)
 {
 	XMPP_ROSTER_USER_REC *user;
@@ -481,33 +369,24 @@ sig_presence_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
-
 	own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
-
-	user = xmpp_rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user == NULL) {
-		if (strcmp(jid, server->jid) == 0)
-			own = TRUE;
-		else
-			goto out;
-	}
-
-	resource = !own ? xmpp_rosters_find_resource(user, res) :
-	    xmpp_rosters_find_own_resource(server, res);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
+	if (user == NULL && !(own = strcmp(jid, server->jid) == 0))
+		goto out;
+	resource = !own ? rosters_find_resource(user, res) :
+	    rosters_find_own_resource(server, res);
 	if (resource == NULL)
 		goto out;
-
+	signal_emit("xmpp presence offline", 3, server, jid, res);
 	signal_emit("xmpp presence changed", 4, server, full_jid,
 	    XMPP_PRESENCE_UNAVAILABLE, status);
-
 	if (!own)
 		user->resources = g_slist_remove(user->resources, resource);
 	else
-		server->resources = g_slist_remove(server->resources,
+		server->my_resources = g_slist_remove(server->my_resources,
 		    resource);
-
 	cleanup_resource(resource, NULL);
 
 out:
@@ -515,31 +394,115 @@ out:
 	g_free(res);
 }
 
-void
-xmpp_rosters_init(void)
+static void
+user_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 {
-	signal_add_last("server disconnected", (SIGNAL_FUNC)sig_cleanup);
-	signal_add_first("xmpp roster update", (SIGNAL_FUNC)sig_update);
-	signal_add_first("xmpp presence update",
-	    (SIGNAL_FUNC)sig_presence_update);
-	signal_add_first("xmpp presence error",
-	    (SIGNAL_FUNC)sig_presence_error);
-	signal_add_first("xmpp presence unavailable",
-	    (SIGNAL_FUNC)sig_presence_unavailable);
+	XMPP_ROSTER_USER_REC *user;
+	char *jid;
 
-	settings_add_str("xmpp_roster", "roster_default_group", "General");
-	settings_add_str("xmpp_roster", "roster_service_name", "Agents/Transports");
-	settings_add_bool("xmpp_roster", "roster_show_offline", TRUE);
-	settings_add_bool("xmpp_roster", "roster_show_offline_unsuscribed", TRUE);
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	g_return_if_fail(full_jid != NULL);
+	jid = xmpp_strip_resource(full_jid);
+	user = rosters_find_user(server->roster, jid, NULL, NULL);
+	if (user != NULL) {
+		user->error = TRUE;
+		signal_emit("xmpp presence changed", 4, server, full_jid,
+		    XMPP_PRESENCE_ERROR, NULL);
+	}
+	g_free(jid);
+}
+
+
+static void
+sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	LmMessageNode *node, *node_show, *node_priority;
+	char *status;
+
+	switch(type) {
+	case LM_MESSAGE_SUB_TYPE_AVAILABLE:
+		node_show = lm_message_node_get_child(lmsg->node, "show");
+		node = lm_message_node_get_child(lmsg->node, "status");
+		status = node != NULL ? xmpp_recode_in(node->value) : NULL;
+		node_priority = lm_message_node_get_child(lmsg->node, "priority");
+		update_user_presence(server, from,
+		    node_show != NULL ? node_show->value : NULL, status,
+		    node_priority != NULL ? node_priority->value : NULL);
+		g_free(status);
+		break;
+	case LM_MESSAGE_SUB_TYPE_UNAVAILABLE:
+		node = lm_message_node_get_child(lmsg->node, "status");
+		status = node != NULL ? xmpp_recode_in(node->value) : NULL;
+		user_unavailable(server, from, status);
+		g_free(status);
+		break;
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		user_presence_error(server, from);
+		break;
+	}
+}
+
+static void
+sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	LmMessageNode *node, *item, *group_node;
+	char *jid, *name, *group;
+	const char *subscription;
+
+	if (type != LM_MESSAGE_SUB_TYPE_RESULT
+	    && type != LM_MESSAGE_SUB_TYPE_SET)
+		return;
+	node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_ROSTER);
+	if (node == NULL)
+		return;
+	for (item = node->children; item != NULL; item = item->next) {
+		if (strcmp(item->name, "item") != 0)
+			continue;
+		jid = xmpp_recode_in(lm_message_node_get_attribute(item, "jid"));
+		name = xmpp_recode_in(lm_message_node_get_attribute(item, "name"));
+		group_node = lm_message_node_get_child(item, "group");
+		group = group_node != NULL ?
+		    xmpp_recode_in(group_node->value) : NULL;
+		subscription = lm_message_node_get_attribute(item,
+		    "subscription");
+		update_user(server, jid, subscription, name, group);
+		g_free(jid);
+		g_free(name);
+		g_free(group);
+	}
+}
+
+static void
+sig_connected(XMPP_SERVER_REC *server)
+{
+	LmMessage *lmsg;
+	LmMessageNode *node;
+
+	signal_emit("xmpp server status", 2, server, "Requesting the roster.");
+	lmsg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_GET);
+	node = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(node, "xmlns", "jabber:iq:roster");
+	signal_emit("xmpp send iq", 2, server, lmsg);
+	lm_message_unref(lmsg);
 }
 
 void
-xmpp_rosters_deinit(void)
+rosters_init(void)
 {
-	signal_remove("server disconnected", (SIGNAL_FUNC)sig_cleanup);
-	signal_remove("xmpp roster update", (SIGNAL_FUNC)sig_update);
-	signal_remove("xmpp presence update", (SIGNAL_FUNC)sig_presence_update);
-	signal_remove("xmpp presence error", (SIGNAL_FUNC)sig_presence_error);
-	signal_remove("xmpp presence unavailable",
-	    (SIGNAL_FUNC)sig_presence_unavailable);
+	signal_add("server connected", sig_connected);
+	signal_add_first("server disconnected", roster_cleanup);
+	signal_add("xmpp recv presence", sig_recv_presence);
+	signal_add("xmpp recv iq", sig_recv_iq);
+}
+
+void
+rosters_deinit(void)
+{
+	signal_remove("server connected", sig_connected);
+	signal_remove("server disconnected", roster_cleanup);
+	signal_remove("xmpp recv presence", sig_recv_presence);
+	signal_remove("xmpp recv iq", sig_recv_iq);
 }

@@ -6,40 +6,29 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *	  
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *			  
+ *
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */		 
+ */
 
 #include "module.h"
-#include "signals.h"
-#include "window-items.h"
 
-#include "xmpp-channels.h"
+#include "features.h"
 
-static void
-sig_get_active_channel(const char **name)
+void
+xep_init(void)
 {
-	*name = IS_XMPP_CHANNEL(active_win->active) ?
-	    ((CHANNEL_REC *)active_win->active)->name : NULL;
+	features_init();
 }
 
 void
-fe_xmpp_windows_init(void)
+xep_deinit(void)
 {
-	signal_add("xmpp windows get active channel",
-	    (SIGNAL_FUNC)sig_get_active_channel);
-}
-
-void
-fe_xmpp_windows_deinit(void)
-{
-	signal_remove("xmpp windows get active channel",
-	    (SIGNAL_FUNC)sig_get_active_channel);
+	features_deinit();
 }

@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#ifndef __XMPP_ROSTER_H
-#define __XMPP_ROSTER_H
+#ifndef __ROSTER_H
+#define __ROSTER_H
 
 enum {
 	XMPP_PRESENCE_ERROR,
@@ -11,7 +11,7 @@ enum {
 	XMPP_PRESENCE_AWAY,
 	XMPP_PRESENCE_AVAILABLE,
 	XMPP_PRESENCE_CHAT,
-	XMPP_PRESENCE_ONLINE_STR,
+	XMPP_PRESENCE_ONLINE,
 	XMPP_PRESENCE_SHOW_LEN
 };
 extern const char *xmpp_presence_show[];
@@ -39,13 +39,11 @@ typedef struct _XMPP_ROSTER_USER_REC {
 	char	*name;
 	int	 subscription;
 	gboolean error;
-
 	GSList	*resources;
 } XMPP_ROSTER_USER_REC;
 
 typedef struct _XMPP_ROSTER_GROUP_REC {
 	char	*name;
-
 	GSList	*users;
 } XMPP_ROSTER_GROUP_REC;
 

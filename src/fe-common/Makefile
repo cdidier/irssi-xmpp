@@ -1,16 +1,11 @@
 # $Id$
 
 LIB= fe_xmpp
-SRCS=	fe-xmpp-channels.c \
-	fe-xmpp-composing.c \
-	fe-xmpp-messages.c \
-	fe-xmpp-queries.c \
-	fe-xmpp-raw.c \
-	fe-xmpp-rosters.c \
+SRCS=	fe-xmpp-queries.c \
 	fe-xmpp-status.c \
-	fe-xmpp-whois.c \
-	fe-xmpp-windows.c \
-	fe-xmpp.c \
+	fe-rosters.c \
+	fe-stanzas.c \
+	fe-xmpp-core.c \
 	module-formats.c \
 	xmpp-completion.c
 

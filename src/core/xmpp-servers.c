@@ -27,10 +27,14 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-channels.h"
-#include "xmpp-protocol.h"
-#include "xmpp-rosters.h"
-#include "xmpp-tools.h"
+#include "protocol.h"
+#include "rosters.h" /* for XMPP_PRESENCE_AVAILABLE */
+#include "tools.h"
+
+static void
+channels_join(SERVER_REC *server, const char *data, int automatic)
+{
+}
 
 static int
 isnickflag_func(SERVER_REC *server, char flag)
@@ -54,30 +58,28 @@ static void
 send_message(SERVER_REC *server, const char *target, const char *msg,
     int target_type)
 {
-	char *recoded;
-
-	g_return_if_fail(server != NULL);
-	g_return_if_fail(target != NULL);
-	g_return_if_fail(msg != NULL);
+	char *str;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
+	g_return_if_fail(server != NULL);
+	g_return_if_fail(target != NULL);
+	g_return_if_fail(msg != NULL);
 	
 	/* ugly from irssi: recode the sent message back */
-	recoded = recode_in(server, msg, target);
-
+	str = recode_in(server, msg, target);
 	if (target_type == SEND_TARGET_CHANNEL)
-		xmpp_channel_send_message(XMPP_SERVER(server), target, recoded);
+		; /* TODO */
 	else
-		xmpp_send_message(XMPP_SERVER(server), target, recoded);
-
-	g_free(recoded);
+		xmpp_send_message(XMPP_SERVER(server), target, str);
+	g_free(str);
 }
 
 static void
 server_cleanup(XMPP_SERVER_REC *server)
 {
-	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!IS_XMPP_SERVER(server))
+		return;
 
 	/* close the connection */
 	if (lm_connection_get_state(server->lmconn) !=
@@ -97,50 +99,42 @@ server_cleanup(XMPP_SERVER_REC *server)
 	g_free(server->ping_id);
 }
 
-
 SERVER_REC *
 xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 {
 	XMPP_SERVER_REC *server;
-	char *str;
 
-	g_return_val_if_fail(IS_XMPP_SERVER_CONNECT(conn), NULL);
 	if (conn->address == NULL || conn->address[0] == '\0')
 		return NULL;
 	if (conn->nick == NULL || conn->nick[0] == '\0')
 		return NULL;
+	g_return_val_if_fail(IS_XMPP_SERVER_CONNECT(conn), NULL);
 
 	server = g_new0(XMPP_SERVER_REC, 1);
 	server->chat_type = XMPP_PROTOCOL;
-
-	/* extract user informations */
-	str = conn->nick;
-
-	server->user = xmpp_extract_user(str);
-	server->host = g_strdup(conn->address);
-	server->jid = xmpp_have_host(str) ? xmpp_strip_resource(str) :
-	    g_strconcat(server->user, "@", server->host, NULL);
-	server->resource = xmpp_extract_resource(str);
+	server->user = xmpp_extract_user(conn->nick);
+	server->host = xmpp_have_host(conn->nick) ?
+	    xmpp_extract_host(conn->nick) : g_strdup(conn->address);
+	server->jid = xmpp_have_host(conn->nick) ?
+	    xmpp_strip_resource(conn->nick)
+	    : g_strconcat(server->user, "@", server->host, NULL);
+	server->resource = xmpp_extract_resource(conn->nick);
 	if (server->resource == NULL)
 		server->resource = g_strdup("irssi-xmpp");
-
-	g_free(str);
-
-	/* init xmpp's properties */
 	server->priority = settings_get_int("xmpp_priority");
 	if (xmpp_priority_out_of_bound(server->priority))
 		server->priority = 0;
-	server->default_priority = TRUE;
-
 	server->ping_id = NULL;
-	server->features = 0;
-	server->resources = NULL;
+	server->server_features = NULL;
+	server->my_features = NULL;
+	server->my_resources = NULL;
 	server->roster = NULL;
-	server->hmessage = NULL;
-	server->hpresence = NULL;
-	server->hiq = NULL;
-
-	/* fill connrec record */
+	server->msg_handlers = NULL;
+	server->channels_join = channels_join;
+	server->isnickflag = isnickflag_func;
+	server->ischannel = ischannel_func;
+	server->get_nick_flags = get_nick_flags;
+	server->send_message = send_message;
 	server->connrec = (XMPP_SERVER_CONNECT_REC *)conn;
 	server_connect_ref(conn);
 
@@ -152,10 +146,10 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 		server->connrec->port = (server->connrec->use_ssl) ?
 		    LM_CONNECTION_DEFAULT_PORT_SSL : LM_CONNECTION_DEFAULT_PORT;
 
-	server->connrec->nick =
-	    g_strdup(settings_get_bool("xmpp_set_nick_as_username") ?
+	g_free(conn->nick);
+	conn->nick = g_strdup(settings_get_bool("xmpp_set_nick_as_username") ?
 	    server->user : server->jid);
-	server->nickname = g_strdup(server->connrec->nick);
+	server->nickname = g_strdup(conn->nick);
 
 	/* init loudmouth connection structure */
 	server->lmconn = lm_connection_new(NULL);
@@ -166,46 +160,45 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 
 	server_connect_init((SERVER_REC *)server);
 	server->connect_tag = 1;
-
 	return (SERVER_REC *)server;
 }
 
 static LmSSLResponse
 lm_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 {
-	XMPP_SERVER_REC *server = XMPP_SERVER(user_data);
+	XMPP_SERVER_REC *server;
 
+	if ((server = XMPP_SERVER(user_data)) == NULL)
+		return LM_SSL_RESPONSE_CONTINUE;
 	switch (status) {
 	case LM_SSL_STATUS_NO_CERT_FOUND:
-		signal_emit("xmpp server status", 2, server,
-			"SSL: No certificate found!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "No certificate found");
 		break;
 	case LM_SSL_STATUS_UNTRUSTED_CERT:
-		signal_emit("xmpp server status", 2, server,
-			"SSL: Certificate is not trusted!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "Certificate is not trusted");
 		break;
 	case LM_SSL_STATUS_CERT_EXPIRED:
-		signal_emit("xmpp server status", 2, server,
-			"SSL: Certificate has expired!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "Certificate has expired");
 		break;
 	case LM_SSL_STATUS_CERT_NOT_ACTIVATED:
-		signal_emit("xmpp server status", 2, server,
-			"SSL: Certificate has not been activated!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "Certificate has not been activated");
 		break;
 	case LM_SSL_STATUS_CERT_HOSTNAME_MISMATCH:
-		signal_emit("xmpp server status", 2, server,
-			"SSL: Certificate hostname does not match expected hostname!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "Certificate hostname does not match expected hostname");
 		break;
 	case LM_SSL_STATUS_CERT_FINGERPRINT_MISMATCH: 
-		signal_emit("xmpp server status", 2, server,
-			"SSL: Certificate fingerprint does not match expected fingerprint!");
+		signal_emit("xmpp ssl error", 2, server,
+		    "Certificate fingerprint does not match expected fingerprint");
 		break;
 	case LM_SSL_STATUS_GENERIC_ERROR:
-		/*signal_emit("xmpp server status", 2, server,
-			"SSL: Generic SSL error!");*/
+		signal_emit("xmpp ssl error", 2, server, "Generic error");
 		break;
 	}
-
 	return LM_SSL_RESPONSE_CONTINUE;
 }
 
@@ -215,15 +208,9 @@ lm_close_cb(LmConnection *connection, LmDisconnectReason reason,
 {
 	XMPP_SERVER_REC *server;
 
-	server = XMPP_SERVER(user_data);
-	if (server == NULL || !server->connected)
+	if ((server = XMPP_SERVER(user_data)) == NULL || !server->connected
+	    || reason == LM_DISCONNECT_REASON_OK)
 		return;
-
-	/* normal disconnection */
-	if (reason == LM_DISCONNECT_REASON_OK)
-		return;
-
-	/* connection lost */
 	server->connection_lost = TRUE;
 	server_disconnect(SERVER(server));
 }
@@ -233,59 +220,18 @@ lm_auth_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
 {
 	XMPP_SERVER_REC *server;
-	LmMessage *msg;
-	LmMessageNode *query;
-	char *priority;
 	
-	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return;
-
-	if (!success)
-		goto err;
-
+	if (!success) {
+		server_connect_failed(SERVER(server), "Authentication failed");
+		return;
+	}
 	signal_emit("xmpp server status", 2, server,
 	    "Authenticated successfully.");
-
-	/* fetch the roster */
-	signal_emit("xmpp server status", 2, server, "Requesting the roster.");
-	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_IQ,
-	    LM_MESSAGE_SUB_TYPE_GET);
-	query = lm_message_node_add_child(msg->node, "query", NULL);
-	lm_message_node_set_attribute(query, "xmlns", XMLNS_ROSTER);
-	lm_send(server, msg, NULL);
-	lm_message_unref(msg);
-
-	/* discover server's features */
-	msg = lm_message_new_with_sub_type(server->host, LM_MESSAGE_TYPE_IQ,
-	    LM_MESSAGE_SUB_TYPE_GET);
-	query = lm_message_node_add_child(msg->node, "query", NULL);
-	lm_message_node_set_attribute(query, "xmlns", XMLNS_DISCO_INFO);
-	lm_send(server, msg, NULL);
-	lm_message_unref(msg);
-
-	/* set presence available */
-	signal_emit("xmpp server status", 2, server,
-	    "Sending available presence message.");
-	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
-	    LM_MESSAGE_SUB_TYPE_AVAILABLE);
-
-	priority = g_strdup_printf("%d", server->priority);
-	lm_message_node_add_child(msg->node, "priority", priority);
-	g_free(priority);
-
-	lm_send(server, msg, NULL);
-	lm_message_unref(msg);
-	
-	server->show = XMPP_PRESENCE_AVAILABLE;
-
 	lookup_servers = g_slist_remove(lookup_servers, server);
 	server_connect_finished(SERVER(server));
 	signal_emit("event connected", 1, server);
-	return;
-
-err:
-	server_connect_failed(SERVER(server), "Authentication failed");
 }
 
 static void
@@ -295,15 +241,13 @@ lm_open_cb(LmConnection *connection, gboolean success,
 	XMPP_SERVER_REC *server;
 	IPADDR ip;
 	char *host;
-	GError *error = NULL;
+	GError *error;
 
-	server = XMPP_SERVER(user_data);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return;
-
+	error = NULL;
 	if (!success)
 		goto err;
-
 	/* get the server address */
 	host = lm_connection_get_local_host(server->lmconn);
 	if (host != NULL) {
@@ -312,12 +256,10 @@ lm_open_cb(LmConnection *connection, gboolean success,
 		g_free(host);
 	} else
 		signal_emit("server connecting", 1, server);
-
 	if (!lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
-	    (LmResultFunction)lm_auth_cb, server, NULL, &error))
+	    lm_auth_cb, server, NULL, &error))
 		goto err;
-
 	return;
 
 err:
@@ -338,7 +280,6 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 	char *recoded;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), FALSE);
-
 	str = settings_get_str("xmpp_proxy_type");
 	if (str != NULL && g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) == 0)
 		type = LM_PROXY_TYPE_HTTP;
@@ -349,7 +290,6 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 		}
 		return FALSE;
 	}
-
 	str = settings_get_str("xmpp_proxy_address");
 	if (str == NULL || *str == '\0') {
 		if (error != NULL) {
@@ -359,7 +299,6 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 		}
 		return FALSE;
 	}
-
 	int port = settings_get_int("xmpp_proxy_port");
 	if (port <= 0) {
 		if (error != NULL) {
@@ -369,26 +308,21 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 		}
 		return FALSE;
 	}
-
 	proxy = lm_proxy_new_with_server(type, str, port);
-	
 	str = settings_get_str("xmpp_proxy_user");
 	if (str != NULL && *str != '\0') {
 		recoded = xmpp_recode_out(str);
 		lm_proxy_set_username(proxy, recoded);
 		g_free(recoded);
 	}
-
 	str = settings_get_str("xmpp_proxy_password");
 	if (str != NULL && *str != '\0') {
 		recoded = xmpp_recode_out(str);
 		lm_proxy_set_password(proxy, recoded);
 		g_free(recoded);
 	}
-
 	lm_connection_set_proxy(server->lmconn, proxy);
 	lm_proxy_unref(proxy);
-
 	return TRUE;
 }
 
@@ -400,8 +334,6 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 
 	if (!IS_XMPP_SERVER(server))
 		return;
-
-	/* SSL */
 	if (server->connrec->use_ssl) {
 		if (!lm_ssl_is_supported()) {
 			error = g_new(GError, 1);
@@ -409,30 +341,20 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 			    g_strdup("SSL is not supported in this build");
 			goto err;
 		}
-
-		ssl = lm_ssl_new(NULL, (LmSSLFunction)lm_ssl_cb,
-		    server, NULL);
+		ssl = lm_ssl_new(NULL, lm_ssl_cb, server, NULL);
 		lm_connection_set_ssl(server->lmconn, ssl);
 		lm_ssl_unref(ssl);
 	} 
-
-	/* Proxy */
 	if (settings_get_bool("xmpp_use_proxy"))
 		if (!set_proxy(server, &error))
 			goto err;
-
 	lm_connection_set_disconnect_function(server->lmconn,
-	    (LmDisconnectFunction)lm_close_cb, (gpointer)server,
-	    NULL);
-
+	    lm_close_cb, server, NULL);
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
-
-	if (!lm_connection_open(server->lmconn, 
-	    (LmResultFunction)lm_open_cb, (gpointer)server, NULL,
-	    &error))
+	if (!lm_connection_open(server->lmconn,  lm_open_cb, server,
+	    NULL, &error))
 		goto err;
-
 	return;
 
 err:
@@ -450,67 +372,55 @@ sig_connected(XMPP_SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;
-
-	server->channels_join = (void (*)(SERVER_REC *, const char *, int))
-	    xmpp_channels_join;
-	server->isnickflag = isnickflag_func;
-	server->ischannel = ischannel_func;
-	server->get_nick_flags = get_nick_flags;
-	server->send_message = send_message;
-	
 	server->connected = TRUE;
 	server->connect_tag = -1;
+	server->show = XMPP_PRESENCE_AVAILABLE;
 }
 
 static void
-sig_server_disconnected(XMPP_SERVER_REC *server)
+sig_connected_last(XMPP_SERVER_REC *server)
 {
-	if (!IS_XMPP_SERVER(server))
-		return;
+	LmMessage *lmsg;
+	char *str;
 
-	server_cleanup(server);
-}
-
-static void
-sig_server_connect_failed(XMPP_SERVER_REC *server, char *msg)
-{
-	if (!IS_XMPP_SERVER(server))
-		return;
-
-	server_cleanup(server);
+	/* set presence available */
+	lmsg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
+	    LM_MESSAGE_SUB_TYPE_AVAILABLE);
+	str = g_strdup_printf("%d", server->priority);
+	lm_message_node_add_child(lmsg->node, "priority", str);
+	g_free(str);
+	signal_emit("xmpp send presence", 2, server, lmsg);
+	lm_message_unref(lmsg);
 }
 
 static void
 sig_server_quit(XMPP_SERVER_REC *server, char *reason)
 {
-	LmMessage *msg;
-	char *status_recoded;
+	LmMessage *lmsg;
+	char *str;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
-	
-	msg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
+	lmsg = lm_message_new_with_sub_type(NULL, LM_MESSAGE_TYPE_PRESENCE,
 	    LM_MESSAGE_SUB_TYPE_UNAVAILABLE);
-
-	status_recoded = xmpp_recode_out((reason != NULL) ?
+	str = xmpp_recode_out((reason != NULL) ?
 	    reason : settings_get_str("quit_message"));
-	lm_message_node_add_child(msg->node, "status", status_recoded);
-	g_free(status_recoded);
-
-	lm_send(server, msg, NULL);
-	lm_message_unref(msg);
+	lm_message_node_add_child(lmsg->node, "status", str);
+	g_free(str);
+	signal_emit("xmpp send presence", 2, server, lmsg);
+	lm_message_unref(lmsg);
 }
 
 void
 xmpp_servers_init(void)
 {
-	signal_add_first("server connected", (SIGNAL_FUNC)sig_connected);
-	signal_add_last("server disconnected",
-	    (SIGNAL_FUNC)sig_server_disconnected);
-	signal_add_last("server connect failed",
-	    (SIGNAL_FUNC)sig_server_connect_failed);
-	signal_add("server quit", (SIGNAL_FUNC)sig_server_quit);
+	signal_add_first("server connected", sig_connected);
+	signal_add_last("server connected", sig_connected_last);
+	signal_add_last("server disconnected", server_cleanup);
+	signal_add_last("server connect failed", server_cleanup);
+	signal_add("server quit", sig_server_quit);
 
+	settings_add_int("xmpp", "xmpp_priority", 0);
 	settings_add_bool("xmpp_lookandfeel", "xmpp_set_nick_as_username",
 	    FALSE);
 	settings_add_bool("xmpp_proxy", "xmpp_use_proxy", FALSE);
@@ -538,10 +448,9 @@ xmpp_servers_deinit(void)
 			server_disconnect(SERVER(tmp->data));
 	}
 
-	signal_remove("server connected", (SIGNAL_FUNC)sig_connected);
-	signal_remove("server disconnected",
-	    (SIGNAL_FUNC)sig_server_disconnected);
-	signal_remove("server connect failed",
-	    (SIGNAL_FUNC)sig_server_connect_failed);
-	signal_remove("server quit", (SIGNAL_FUNC)sig_server_quit);
+	signal_remove("server connected", sig_connected);
+	signal_remove("server connected", sig_connected_last);
+	signal_remove("server disconnected", server_cleanup);
+	signal_remove("server connect failed", server_cleanup);
+	signal_remove("server quit", sig_server_quit);
 }

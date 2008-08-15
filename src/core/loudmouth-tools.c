@@ -20,21 +20,8 @@
 #include <string.h>
 #include "loudmouth/loudmouth.h"
 
-#include "module.h"
-#include "settings.h"
-#include "signals.h"
-
-#include "xmpp-servers.h"
-#include "xmpp-tools.h"
-
-const char *
-lm_tools_get_xmlns(LmMessageNode *node, const char *name)
-{
-	return NULL;
-}
-
 LmMessageNode *
-lm_tools_message_node_find(LmMessageNode *node, const char *name,
+lm_find_node(LmMessageNode *node, const char *name,
     const char *attribute, const char *value)
 {
 	LmMessageNode *l;		
@@ -43,31 +30,13 @@ lm_tools_message_node_find(LmMessageNode *node, const char *name,
 	g_return_val_if_fail(name != NULL, NULL);
 	g_return_val_if_fail(attribute != NULL, NULL);
 	g_return_val_if_fail(value != NULL, NULL);
-
 	if (node == NULL)
 		return NULL;
-
 	for (l = node->children; l != NULL; l = l->next)
-		if (g_ascii_strcasecmp(l->name, name) == 0) {
-
+		if (strcmp(l->name, name) == 0) {
 			v = lm_message_node_get_attribute(l, attribute);
 			if (v != NULL && strcmp(value, v) == 0)
 				return l;
 		}
-
 	return NULL;
-}
-
-gboolean
-lm_send(XMPP_SERVER_REC *server, LmMessage *message, GError **error)
-{
-
-	if (settings_get_bool("xmpp_raw_window")) {
-		char *text =
-		    xmpp_recode_in(lm_message_node_to_string(message->node));
-		signal_emit("xmpp raw out", 2, server, text);
-		g_free(text);
-	}
-
-	return lm_connection_send(server->lmconn, message, error);
 }

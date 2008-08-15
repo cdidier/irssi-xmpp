@@ -21,56 +21,6 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-channels.h"
-
-static void
-save_channels(XMPP_SERVER_REC *server, XMPP_SERVER_CONNECT_REC *conn)
-{
-	GSList *tmp;
-	XMPP_CHANNEL_REC *channel;
-	char *str;
-
-	if (!IS_XMPP_SERVER(server) || !IS_XMPP_SERVER_CONNECT(conn))
-		return;
-
-	if (conn->channels_list != NULL) {
-		for (tmp = conn->channels_list; tmp != NULL; tmp = tmp->next)
-			g_free(tmp->data);
-		g_slist_free(conn->channels_list);
-		conn->channels_list = NULL;
-	}
-
-	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
-		channel = tmp->data;
-
-		if (channel->key != NULL)
-			str = g_strdup_printf("\"%s/%s\" \"%s\"",
-			    channel->name, channel->nick, channel->key);
-		else
-			str = g_strdup_printf("\"%s/%s\"", channel->name,
-			    channel->nick);
-
-		conn->channels_list = g_slist_append(conn->channels_list,
-		    g_strdup(str));
-	}
-}
-
-static void
-restore_channels(XMPP_SERVER_REC *server)
-{
-	GSList *tmp;
-
-	if (!IS_XMPP_SERVER(server) && server->connrec->channels_list != NULL)
-		return;
-
-	for (tmp = server->connrec->channels_list; tmp != NULL;
-	    tmp = tmp->next) {
-		xmpp_channels_join_automatic(server, tmp->data);
-		g_free(tmp->data);
-	}
-	g_slist_free(server->connrec->channels_list);
-	server->connrec->channels_list = NULL;
-}
 
 static void
 sig_server_connect_copy(SERVER_CONNECT_REC **dest, XMPP_SERVER_CONNECT_REC *src)
@@ -96,9 +46,6 @@ sig_server_reconnect_save_status(XMPP_SERVER_CONNECT_REC *conn,
 
 	conn->show = server->show;
 	conn->priority = server->priority;
-	conn->default_priority = server->default_priority;
-
-	save_channels(server, conn);
 }
 
 static void
@@ -110,8 +57,6 @@ sig_connected(XMPP_SERVER_REC *server)
 	signal_emit("xmpp own_presence", 4, server, server->connrec->show,
 	    server->connrec->away_reason, server->connrec->priority);
 	g_free_and_null(server->connrec->away_reason);
-
-	restore_channels(server);
 }
 
 void

@@ -27,12 +27,10 @@
 #include "window-items.h"
 
 #include "xmpp-servers.h"
-#include "xmpp-channels.h"
-#include "xmpp-channels.h"
+/*#include "xmpp-channels.h"*/
 #include "xmpp-commands.h"
-#include "xmpp-rosters.h"
-#include "xmpp-rosters-tools.h"
-#include "xmpp-tools.h"
+#include "rosters-tools.h"
+#include "tools.h"
 
 static char *
 quoted_if_space(const char *name, const char *res)
@@ -64,7 +62,7 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 
 	list = NULL;
 
-	user = xmpp_rosters_find_user(server->roster, nick, NULL, NULL);
+	user = rosters_find_user(server->roster, nick, NULL, NULL);
 	if (user == NULL)
 		return NULL;
 
@@ -163,9 +161,9 @@ sig_complete_word(GList **list, WINDOW_REC *window, const char *word,
 		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
 		    word+1 : word , TRUE, TRUE));
 
-	} else if (!IS_XMPP_CHANNEL(window->active))
+	}/* else if (!IS_XMPP_CHANNEL(window->active))
 		*list = g_list_concat(*list, get_nicks(server, word, FALSE,
-		    TRUE));
+		    TRUE));*/
 }
 
 static void
@@ -217,9 +215,7 @@ static void
 sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
-	GSList *gl;
 	XMPP_SERVER_REC *server;
-	XMPP_ROSTER_GROUP_REC *group;
 	int len;
 	char **tmp;
 
@@ -246,6 +242,7 @@ sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
 		signal_stop();
 }
 
+/*
 static GList *
 get_channels(XMPP_SERVER_REC *server, const char *word)
 {
@@ -257,23 +254,16 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 	
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(word != NULL, NULL);
-
 	len = strlen(word);
 	list = NULL;
-
-	/* get joined channels */
 	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
 		channel = XMPP_CHANNEL(tmp->data);
-
 		if (channel != NULL &&
 		    g_strncasecmp(channel->name, word, len) == 0)
 			list = g_list_append(list, g_strdup(channel->name));
 	}
-
-	/* get channels from setup */
 	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
 		channel_setup = tmp->data;
-
 		if ((IS_XMPP_CHANNEL_SETUP(channel_setup)
 		    || *channel_setup->name != '#')
 		    && g_strncasecmp(channel_setup->name, word, len) == 0
@@ -281,9 +271,9 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 			list = g_list_append(list,
 			    g_strdup(channel_setup->name));
 	}
-
 	return list;
 }
+*/
 
 static void
 sig_complete_command_channels(GList **list, WINDOW_REC *window,
@@ -299,7 +289,7 @@ sig_complete_command_channels(GList **list, WINDOW_REC *window,
 	if (server == NULL)
 		return;
 
-	*list = get_channels(server, word);
+/*	*list = get_channels(server, word);*/
 
 	if (*list != NULL)
 		signal_stop();
@@ -322,8 +312,8 @@ sig_complete_command_invite(GList **list, WINDOW_REC *window,
 
 	/* complete channels */
 	tmp = g_strsplit(args, " ", 2);
-	if (tmp[0] != NULL && tmp[1] == NULL)
-		*list = get_channels(server, word);
+/*	if (tmp[0] != NULL && tmp[1] == NULL)
+		*list = get_channels(server, word);*/
 	g_strfreev(tmp);
 
 	if (*list != NULL)
@@ -368,7 +358,7 @@ sig_complete_command_away(GList **list, WINDOW_REC *window,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_CHAT]));
 
 	if (g_strncasecmp(word,
-	    xmpp_presence_show[XMPP_PRESENCE_ONLINE_STR], len) == 0)
+	    xmpp_presence_show[XMPP_PRESENCE_ONLINE], len) == 0)
 		*list = g_list_append(*list, g_strdup("online"));
 
 	signal_stop();

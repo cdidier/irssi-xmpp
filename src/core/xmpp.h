@@ -10,7 +10,8 @@ typedef struct _XMPP_CHANNEL_REC XMPP_CHANNEL_REC;
 typedef struct _XMPP_NICK_REC XMPP_NICK_REC;
 
 #define IS_XMPP_ITEM(rec) (IS_XMPP_CHANNEL(rec) || IS_XMPP_QUERY(rec))
-#define XMPP_PROTOCOL (chat_protocol_lookup("XMPP"))
+#define XMPP_PROTOCOL_NAME "XMPP"
+#define XMPP_PROTOCOL (chat_protocol_lookup(XMPP_PROTOCOL_NAME))
 
 #define IRSSI_XMPP_PACKAGE "irssi-xmpp"
 #define IRSSI_XMPP_VERSION "1.0-dev"
