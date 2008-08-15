@@ -19,16 +19,16 @@
 
 #include "module.h"
 
-#include "features.h"
+#include "disco.h"
 
 void
 xep_init(void)
 {
-	features_init();
+	disco_init();
 }
 
 void
 xep_deinit(void)
 {
-	features_deinit();
+	disco_deinit();
 }

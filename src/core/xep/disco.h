@@ -1,13 +1,13 @@
 /* $Id$ */
 
-#ifndef __FEATURES_H
-#define __FEATURES_H
+#ifndef __DISCO_H
+#define __DISCO_H
 
 __BEGIN_DECLS
 void	xmpp_add_feature(XMPP_SERVER_REC *, const char *);
 
-void	features_init(void);
-void	features_deinit(void);
+void	disco_init(void);
+void	disco_deinit(void);
 __END_DECLS
 
 #endif

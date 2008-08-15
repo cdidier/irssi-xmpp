@@ -14,7 +14,7 @@ SRCS=	xmpp-commands.c \
 	rosters-tools.c \
 	stanzas.c \
 	tools.c \
-	xep/features.c \
+	xep/disco.c \
 	xep/xep.c
 
 LIB_LIBS = `pkg-config --libs loudmouth-1.0`
