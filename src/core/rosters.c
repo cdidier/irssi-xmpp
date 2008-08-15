@@ -496,6 +496,9 @@ rosters_init(void)
 	signal_add_first("server disconnected", roster_cleanup);
 	signal_add("xmpp recv presence", sig_recv_presence);
 	signal_add("xmpp recv iq", sig_recv_iq);
+
+	settings_add_str("xmpp_roster", "roster_service_name",
+	    "Agents/Services");
 }
 
 void
