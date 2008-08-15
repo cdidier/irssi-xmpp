@@ -38,7 +38,7 @@ user_is_shown(XMPP_ROSTER_USER_REC *user)
 	return (user->resources != NULL
 	    && user->subscription == XMPP_SUBSCRIPTION_BOTH)
 	    || (user->subscription != XMPP_SUBSCRIPTION_BOTH
-	    && settings_get_bool("roster_show_offline_unsuscribed"))
+	    && settings_get_bool("roster_show_unsuscribed"))
 	    || settings_get_bool("roster_show_offline");
 }
 
@@ -117,10 +117,9 @@ show_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(user != NULL);
 
-	if (user->error)
-		first_show = xmpp_presence_show[XMPP_PRESENCE_ERROR];
-	else if (user->resources == NULL)
-		first_show = xmpp_presence_show[XMPP_PRESENCE_UNAVAILABLE];
+	if (user->resources == NULL)
+		first_show = xmpp_presence_show[user->error ?
+		    XMPP_PRESENCE_ERROR : XMPP_PRESENCE_UNAVAILABLE];
 	else
 		first_show = get_first_show(user->resources);
 
@@ -354,9 +353,10 @@ fe_rosters_init(void)
 	    (SIGNAL_FUNC)sig_unsubscribed);
 
 	settings_add_str("xmpp_roster", "roster_default_group", "General");
+	settings_add_str("xmpp_roster", "roster_service_name",
+	    "Agents/Services");
 	settings_add_bool("xmpp_roster", "roster_show_offline", TRUE);
-	settings_add_bool("xmpp_roster", "roster_show_offline_unsuscribed",
-	    TRUE);
+	settings_add_bool("xmpp_roster", "roster_show_unsuscribed", TRUE);
 }
 
 void

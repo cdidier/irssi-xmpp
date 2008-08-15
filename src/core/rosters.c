@@ -31,8 +31,8 @@
 #define XMLNS_ROSTER "jabber:iq:roster"
 
 const char *xmpp_presence_show[] = {
-	"X",
 	"-",
+	"X",
 	"xa",
 	"dnd",
 	"away",
@@ -71,22 +71,61 @@ func_sort_group(gconstpointer group1, gconstpointer group2)
 
 	group1_name = ((XMPP_ROSTER_GROUP_REC *)group1)->name;
 	group2_name = ((XMPP_ROSTER_GROUP_REC *)group2)->name;
-	if (group1_name == NULL || (group2_name != NULL
-	    && strcmp(group2_name,
-	    settings_get_str("roster_service_name")) == 0))
+	if (group1_name == NULL)
 		return -1;
-	if (group1_name != NULL || (group2_name == NULL
-	    && strcmp(group1_name,
-	    settings_get_str("roster_service_name")) == 0))
+	if (group2_name == NULL)
 		 return 1;
 	return strcmp(group1_name, group2_name);
 }
 
 static int
-func_sort_resource(gconstpointer resource1, gconstpointer resource2)
+func_sort_resource(gconstpointer resource1_ptr, gconstpointer resource2_ptr)
 {
-	return ((XMPP_ROSTER_RESOURCE_REC *)resource2)->priority
-		- ((XMPP_ROSTER_RESOURCE_REC *)resource1)->priority;
+	int cmp;
+	XMPP_ROSTER_RESOURCE_REC *resource1, *resource2;
+
+	resource1 = (XMPP_ROSTER_RESOURCE_REC *)resource1_ptr;
+	resource2 = (XMPP_ROSTER_RESOURCE_REC *)resource2_ptr;
+	if ((cmp = resource2->priority - resource1->priority) == 0)
+		return resource2->show - resource1->show;
+	return cmp;
+}
+
+static int
+func_sort_user_by_name(XMPP_ROSTER_USER_REC *user1, XMPP_ROSTER_USER_REC *user2)
+{
+	if (user1->name == NULL && user2->name != NULL)
+		return strcmp(user1->jid, user2->name);
+	if (user1->name != NULL && user2->name == NULL)
+		return strcmp(user1->name, user2->jid);
+	if (user1->name != NULL && user2->name != NULL)
+		return strcmp(user1->name, user2->name);
+	return strcmp(user1->jid, user2->jid);
+}
+
+static int
+func_sort_user(gconstpointer user1_ptr, gconstpointer user2_ptr)
+{
+	GSList *resources1_list, *resources2_list;
+	XMPP_ROSTER_USER_REC *user1, *user2;
+	XMPP_ROSTER_RESOURCE_REC *fisrt_resources1, *fisrt_resources2;
+
+	user1 = (XMPP_ROSTER_USER_REC *)user1_ptr;
+	resources1_list = user1->resources;
+	user2 = (XMPP_ROSTER_USER_REC *)user2_ptr;
+	resources2_list = user2->resources;
+	if (resources1_list == NULL && resources2_list == NULL
+	    && user1->error == user2->error)
+		return func_sort_user_by_name(user1, user2);
+	if (user1->error || resources1_list == NULL)
+		return 1;
+	if (user2->error || resources2_list == NULL)
+		return -1;
+	fisrt_resources1 = (XMPP_ROSTER_RESOURCE_REC *)resources1_list->data;
+	fisrt_resources2 = (XMPP_ROSTER_RESOURCE_REC *)resources2_list->data;
+	if (fisrt_resources1->show == fisrt_resources2->show)
+		return func_sort_user_by_name(user1, user2);
+	return fisrt_resources2->show - fisrt_resources1->show;
 }
 
 static XMPP_ROSTER_RESOURCE_REC *
@@ -301,6 +340,7 @@ static void
 update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
     const char *show_str, const char *status, const char *priority_str)
 {
+	XMPP_ROSTER_GROUP_REC *group;
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *jid, *res;
@@ -312,15 +352,16 @@ update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
 	new = own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
-	user = rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user == NULL && !(own = strcmp(jid, server->jid) == 0
-	     && strcmp(res, server->resource) != 0))
-		goto out;
-	else
+	user = rosters_find_user(server->roster, jid, &group, NULL);
+	if (user == NULL) {
+		if (!(own = strcmp(jid, server->jid) == 0
+		     && strcmp(res, server->resource) != 0))
+			goto out;
+	} else
 		user->error = FALSE;
 	/* find resource or create it if it doesn't exist */	
-	resource = !own ? rosters_find_resource(user, res) :
-	    rosters_find_own_resource(server, res);
+	resource = rosters_find_resource(!own ?
+	    user->resources : server->my_resources, res);
 	if (resource == NULL) {
 		resource = create_resource(res);
 		new = TRUE;
@@ -349,6 +390,9 @@ update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
 				server->my_resources = g_slist_sort(
 				    server->my_resources, func_sort_resource);
 		}
+		if (!own) /* sort the group */
+			group->users = g_slist_sort(group->users,
+			    func_sort_user);
 		signal_emit("xmpp presence changed", 4, server, full_jid,
 		    resource->show, resource->status);
 	}
@@ -362,6 +406,7 @@ static void
 user_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
     const char *status)
 {
+	XMPP_ROSTER_GROUP_REC *group;
 	XMPP_ROSTER_USER_REC *user;
 	XMPP_ROSTER_RESOURCE_REC *resource;
 	char *jid, *res;
@@ -372,11 +417,14 @@ user_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 	own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
-	user = rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user == NULL && !(own = strcmp(jid, server->jid) == 0))
-		goto out;
-	resource = !own ? rosters_find_resource(user, res) :
-	    rosters_find_own_resource(server, res);
+	user = rosters_find_user(server->roster, jid, &group, NULL);
+	if (user == NULL) {
+		if (!(own = strcmp(jid, server->jid) == 0))
+			goto out;
+	} else
+		user->error = FALSE;
+	resource = rosters_find_resource(!own ?
+	    user->resources : server->my_resources, res);
 	if (resource == NULL)
 		goto out;
 	signal_emit("xmpp presence offline", 3, server, jid, res);
@@ -388,6 +436,8 @@ user_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 		server->my_resources = g_slist_remove(server->my_resources,
 		    resource);
 	cleanup_resource(resource, NULL);
+	if (!own) /* sort the group */
+		group->users = g_slist_sort(group->users, func_sort_user);
 
 out:
 	g_free(jid);
@@ -397,19 +447,35 @@ out:
 static void
 user_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 {
+	XMPP_ROSTER_GROUP_REC *group;
 	XMPP_ROSTER_USER_REC *user;
-	char *jid;
+	XMPP_ROSTER_RESOURCE_REC *resource;
+	char *jid, *res;
+	gboolean own;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
+	own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
-	user = rosters_find_user(server->roster, jid, NULL, NULL);
-	if (user != NULL) {
-		user->error = TRUE;
+	res = xmpp_extract_resource(full_jid);
+	user = rosters_find_user(server->roster, jid, &group, NULL);
+	if (user == NULL && !(own = strcmp(jid, server->jid) == 0))
+		goto out;
+	resource = rosters_find_resource(!own ?
+	    user->resources : server->my_resources, res);
+	if (resource != NULL) {
+		resource->show = XMPP_PRESENCE_ERROR;
+		if (!own) /* sort the group */
+			group->users = g_slist_sort(group->users,
+			    func_sort_user);
 		signal_emit("xmpp presence changed", 4, server, full_jid,
 		    XMPP_PRESENCE_ERROR, NULL);
-	}
+	} else
+		user->error = TRUE;
+
+out:
 	g_free(jid);
+	g_free(res);
 }
 
 
@@ -496,9 +562,6 @@ rosters_init(void)
 	signal_add_first("server disconnected", roster_cleanup);
 	signal_add("xmpp recv presence", sig_recv_presence);
 	signal_add("xmpp recv iq", sig_recv_iq);
-
-	settings_add_str("xmpp_roster", "roster_service_name",
-	    "Agents/Services");
 }
 
 void
