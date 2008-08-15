@@ -73,6 +73,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	if (strcmp(from, server->host) == 0) {
 		cleanup_features(server->server_features);
 		server->server_features = features;
+		signal_emit("xmpp server features", 1, server);
 	} else
 		cleanup_features(features);
 }
