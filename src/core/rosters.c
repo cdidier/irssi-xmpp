@@ -86,8 +86,9 @@ func_sort_resource(gconstpointer resource1_ptr, gconstpointer resource2_ptr)
 
 	resource1 = (XMPP_ROSTER_RESOURCE_REC *)resource1_ptr;
 	resource2 = (XMPP_ROSTER_RESOURCE_REC *)resource2_ptr;
-	if ((cmp = resource2->priority - resource1->priority) == 0)
-		return resource2->show - resource1->show;
+	if ((cmp = resource2->priority - resource1->priority) == 0
+	    && (cmp = resource2->show - resource1->show) == 0)
+		return strcmp(resource1->name, resource2->name);
 	return cmp;
 }
 
@@ -380,19 +381,15 @@ update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
 	    resource->status, priority, resource->priority)) {
 		resource->show = show;
 		resource->status = g_strdup(status);
-		if (resource->priority != priority) {
-			resource->priority = priority;
-			/* the resource has changed, sort the resources */
-			if (!own)
-				user->resources = g_slist_sort(
-				    user->resources, func_sort_resource);
-			else
-				server->my_resources = g_slist_sort(
-				    server->my_resources, func_sort_resource);
-		}
-		if (!own) /* sort the group */
+		resource->priority = priority;
+		if (!own) {
+			user->resources = g_slist_sort(
+			    user->resources, func_sort_resource);
 			group->users = g_slist_sort(group->users,
 			    func_sort_user);
+		} else
+			server->my_resources = g_slist_sort(
+			    server->my_resources, func_sort_resource);
 		signal_emit("xmpp presence changed", 4, server, full_jid,
 		    resource->show, resource->status);
 	}
