@@ -20,15 +20,18 @@
 #include "module.h"
 
 #include "disco.h"
+#include "ping.h"
 
 void
 xep_init(void)
 {
 	disco_init();
+	ping_init();
 }
 
 void
 xep_deinit(void)
 {
 	disco_deinit();
+	ping_deinit();
 }

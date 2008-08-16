@@ -29,13 +29,24 @@
 
 #define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
 
+static GSList *my_features;
+
 void
-xmpp_add_feature(XMPP_SERVER_REC *server, const char *feature)
+xmpp_add_feature(char *feature)
 {
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(feature != NULL && *feature == '\0');
-	server->my_features = g_slist_prepend(server->my_features,
-	    g_strdup(feature));
+	g_return_if_fail(feature != NULL && *feature != '\0');
+	my_features = g_slist_prepend(my_features, feature);
+}
+
+gboolean
+xmpp_have_feature(GSList *list, const char *feature)
+{
+	GSList *tmp;
+
+	for (tmp = list; tmp != NULL; tmp = tmp->next)
+		if (strcmp(feature, tmp->data) == 0)
+			return TRUE;
+	return FALSE;
 }
 
 static void
@@ -79,19 +90,27 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 }
 
 static void
-sig_connected(XMPP_SERVER_REC *server)
+send_disco(XMPP_SERVER_REC *server, const char *dest)
 {
 	LmMessage *lmsg;
 	LmMessageNode *node;
+	char *recoded;
 
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	/* discover server's features */
-	lmsg = lm_message_new_with_sub_type(server->host, LM_MESSAGE_TYPE_IQ,
+	recoded = xmpp_recode_out(dest);
+	lmsg = lm_message_new_with_sub_type(recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
+	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
 	lm_message_node_set_attribute(node, "xmlns", XMLNS_DISCO);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
+}
+
+static void
+sig_connected(XMPP_SERVER_REC *server)
+{
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	send_disco(server, server->host);
 }
 
 static void
@@ -100,13 +119,12 @@ sig_disconnected(XMPP_SERVER_REC *server)
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	cleanup_features(server->server_features);
 	server->server_features = NULL;
-	cleanup_features(server->my_features);
-	server->my_features = NULL;
 }
 
 void
 disco_init(void)
 {
+	my_features = NULL;
 	signal_add("server connected", sig_connected);
 	signal_add("server disconnected", sig_disconnected);
 	signal_add("xmpp recv iq", sig_recv_iq);
@@ -118,4 +136,5 @@ disco_deinit(void)
 	signal_remove("server connected", sig_connected);
 	signal_add("server disconnected", sig_disconnected);
 	signal_remove("xmpp recv iq", sig_recv_iq);
+	g_slist_free(my_features);
 }

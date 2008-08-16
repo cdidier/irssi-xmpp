@@ -126,7 +126,6 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 		server->priority = 0;
 	server->ping_id = NULL;
 	server->server_features = NULL;
-	server->my_features = NULL;
 	server->my_resources = NULL;
 	server->roster = NULL;
 	server->msg_handlers = NULL;

@@ -48,7 +48,6 @@ struct _XMPP_SERVER_REC {
 	int		 priority;
 	char		*ping_id;
 	GSList		*server_features;
-	GSList		*my_features;
 	GSList		*my_resources;
 	GSList		*roster;
 
