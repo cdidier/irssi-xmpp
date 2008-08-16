@@ -48,8 +48,8 @@ typedef struct _XMPP_ROSTER_GROUP_REC {
 } XMPP_ROSTER_GROUP_REC;
 
 __BEGIN_DECLS
-void xmpp_rosters_init(void);
-void xmpp_rosters_deinit(void);
+void rosters_init(void);
+void rosters_deinit(void);
 __END_DECLS
 
 #endif
