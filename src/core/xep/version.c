@@ -48,8 +48,6 @@ send_version(XMPP_SERVER_REC *server, const char *dest,
 	struct utsname u;
 	char *recoded;
 
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(dest != NULL);
 	recoded = xmpp_recode_out(dest);
 	lmsg = lm_message_new_with_sub_type(recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_RESULT);
