@@ -21,6 +21,7 @@
 
 #include "disco.h"
 #include "ping.h"
+#include "vcard.h"
 #include "version.h"
 
 void
@@ -28,6 +29,7 @@ xep_init(void)
 {
 	disco_init();
 	ping_init();
+	vcard_init();
 	version_init();
 }
 
@@ -36,5 +38,6 @@ xep_deinit(void)
 {
 	disco_deinit();
 	ping_deinit();
+	vcard_deinit();
 	version_deinit();
 }

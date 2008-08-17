@@ -16,6 +16,7 @@ SRCS=	xmpp-commands.c \
 	tools.c \
 	xep/disco.c \
 	xep/ping.c \
+	xep/vcard.c \
 	xep/version.c \
 	xep/xep.c
 
