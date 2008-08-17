@@ -68,10 +68,9 @@ static void
 sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(id);
 	GTimeVal now;
 
+	g_return_if_fail(IS_XMPP_SERVER(server));
 	if (type != LM_MESSAGE_SUB_TYPE_RESULT)
 		return;
 	/* pong response from server of our ping */
