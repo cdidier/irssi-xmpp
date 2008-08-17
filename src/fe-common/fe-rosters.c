@@ -39,7 +39,8 @@ user_is_shown(XMPP_ROSTER_USER_REC *user)
 	    || (user->subscription == XMPP_SUBSCRIPTION_BOTH
 	    && settings_get_bool("roster_show_offline"))
 	    || (user->subscription != XMPP_SUBSCRIPTION_BOTH
-	    && settings_get_bool("roster_show_unsuscribed"));
+	    && (settings_get_bool("roster_show_unsuscribed")
+	    || settings_get_bool("roster_show_offline")));
 }
 
 static void
