@@ -269,16 +269,31 @@ err:
 		g_error_free(error);
 }
 
+gboolean
+set_ssl(LmConnection *lmconn, GError **error, gpointer user_data)
+{
+	LmSSL *ssl;
 
-static gboolean
-set_proxy(XMPP_SERVER_REC *server, GError **error)
+	if (!lm_ssl_is_supported() && error != NULL) {
+		*error = g_new(GError, 1);
+		(*error)->message =
+		    g_strdup("SSL is not supported in this build");
+		return FALSE;
+	}
+	ssl = lm_ssl_new(NULL, lm_ssl_cb, user_data, NULL);
+	lm_connection_set_ssl(lmconn, ssl);
+	lm_ssl_unref(ssl);
+	return TRUE;
+}
+
+gboolean
+set_proxy(LmConnection *lmconn, GError **error)
 {
 	LmProxy *proxy;
 	LmProxyType type;
 	const char *str;
 	char *recoded;
 
-	g_return_val_if_fail(IS_XMPP_SERVER(server), FALSE);
 	str = settings_get_str("xmpp_proxy_type");
 	if (str != NULL && g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) == 0)
 		type = LM_PROXY_TYPE_HTTP;
@@ -320,7 +335,7 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 		lm_proxy_set_password(proxy, recoded);
 		g_free(recoded);
 	}
-	lm_connection_set_proxy(server->lmconn, proxy);
+	lm_connection_set_proxy(lmconn, proxy);
 	lm_proxy_unref(proxy);
 	return TRUE;
 }
@@ -328,25 +343,16 @@ set_proxy(XMPP_SERVER_REC *server, GError **error)
 void
 xmpp_server_connect(XMPP_SERVER_REC *server)
 {
-	LmSSL *ssl;
 	GError *error = NULL;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
-	if (server->connrec->use_ssl) {
-		if (!lm_ssl_is_supported()) {
-			error = g_new(GError, 1);
-			error->message =
-			    g_strdup("SSL is not supported in this build");
-			goto err;
-		}
-		ssl = lm_ssl_new(NULL, lm_ssl_cb, server, NULL);
-		lm_connection_set_ssl(server->lmconn, ssl);
-		lm_ssl_unref(ssl);
-	} 
-	if (settings_get_bool("xmpp_use_proxy"))
-		if (!set_proxy(server, &error))
-			goto err;
+	if (server->connrec->use_ssl
+	    && !set_ssl(server->lmconn, &error, server))
+		goto err;
+	if (settings_get_bool("xmpp_use_proxy")
+	    && !set_proxy(server->lmconn, &error))
+		goto err;
 	lm_connection_set_disconnect_function(server->lmconn,
 	    lm_close_cb, server, NULL);
 	lookup_servers = g_slist_append(lookup_servers, server);
@@ -357,11 +363,9 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 	return;
 
 err:
-	if (IS_SERVER(server)) {
-		server->connection_lost = TRUE;
-		server_connect_failed(SERVER(server),
-		    (error != NULL) ? error->message : NULL);
-	}
+	server->connection_lost = TRUE;
+	server_connect_failed(SERVER(server),
+	    (error != NULL) ? error->message : NULL);
 	if (error != NULL)
 		g_error_free(error);
 }
