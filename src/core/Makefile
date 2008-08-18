@@ -10,6 +10,7 @@ SRCS=	xmpp-commands.c \
 	xmpp-settings.c \
 	loudmouth-tools.c \
 	protocol.c \
+	register.c \
 	rosters.c \
 	rosters-tools.c \
 	stanzas.c \

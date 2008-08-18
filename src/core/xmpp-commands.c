@@ -29,6 +29,7 @@
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"
 #include "xmpp-servers.h"
+#include "register.h"
 #include "rosters-tools.h"
 #include "tools.h"
 
@@ -128,7 +129,28 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 static void
 cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
-	/* TODO */
+	GHashTable *optlist;
+	char *str, *jid, *username, *password, *host, *host_free;
+	int port;
+	void *free_arg;
+
+	return; /* command disabled */
+
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
+	    "xmppconnect", &optlist, &jid, &password))
+		return;
+	username = xmpp_strip_resource(jid);
+	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid))
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	host = g_hash_table_lookup(optlist, "host");
+	host_free = NULL;
+	if (host == NULL || *host == '\0')
+		host = host_free = xmpp_extract_host(jid);
+	port = str = g_hash_table_lookup(optlist, "port") ? atoi(str) : 0;
+	xmpp_register(host, port, g_hash_table_lookup(optlist, "ssl") != NULL,
+	    jid, password);
+	g_free(username);
+	g_free(host_free);
 }
 
 /* SYNTAX: XMPPUNREGISTER [-ssl] [-host <server>] [-port <port>]
