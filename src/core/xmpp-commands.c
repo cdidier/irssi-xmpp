@@ -552,7 +552,7 @@ xmpp_commands_init(void)
 
 	command_set_options("connect", "+xmppnet");
 	command_set_options("server add", "-xmppnet");
-	command_set_options("xmppconnect", "ssl -network -host @port @priority");
+	command_set_options("xmppconnect", "ssl -network -host @port");
 
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
 	settings_add_bool("xmpp_roster", "roster_add_send_subscribe", TRUE);
