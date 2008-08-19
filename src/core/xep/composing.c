@@ -28,7 +28,6 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
-#include "rosters-tools.h"
 #include "tools.h"
 #include "disco.h"
 
