@@ -1,8 +1,10 @@
 # $Id$
 
 LIB= fe_xmpp
-SRCS=	fe-xmpp-queries.c \
+SRCS=	fe-xmpp-messages.c \
+	fe-xmpp-queries.c \
 	fe-xmpp-status.c \
+	fe-xmpp-windows.c \
 	fe-rosters.c \
 	fe-stanzas.c \
 	fe-xmpp-core.c \
