@@ -30,6 +30,7 @@
 #include "xmpp-queries.h"
 #include "rosters-tools.h"
 #include "tools.h"
+#include "disco.h"
 
 #define XMLNS_EVENT "jabber:x:event"
 
@@ -243,6 +244,7 @@ void
 composing_init(void)
 {
 	composings = NULL;
+	xmpp_add_feature(XMLNS_EVENT);
 
 	signal_add("xmpp composing start", sig_composing_start);
 	signal_add("xmpp composing stop", sig_composing_stop);
