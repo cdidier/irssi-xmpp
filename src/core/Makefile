@@ -15,6 +15,7 @@ SRCS=	xmpp-commands.c \
 	rosters-tools.c \
 	stanzas.c \
 	tools.c \
+	xep/chatstates.c \
 	xep/composing.c \
 	xep/disco.c \
 	xep/ping.c \
