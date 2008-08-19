@@ -19,12 +19,16 @@
 
 #include "module.h"
 
+#include "fe-composing.h"
+
 void
 fe_xep_init(void)
 {
+	fe_composing_init();
 }
 
 void
 fe_xep_deinit(void)
 {
+	fe_composing_deinit();
 }

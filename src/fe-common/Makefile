@@ -10,7 +10,9 @@ SRCS=	fe-xmpp-messages.c \
 	fe-xmpp-core.c \
 	module-formats.c \
 	xmpp-completion.c \
-	xep/fe-xep.c
+	xep/fe-xep.c \
+	xep/fe-composing.c
+
 
 LIB_LIBS = `pkg-config --libs glib-2.0`
 
