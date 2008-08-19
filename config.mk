@@ -11,13 +11,13 @@ IRSSI_DOC ?= ${PREFIX}/share/doc/irssi
 IRSSI_HELP ?= ${PREFIX}/share/irssi/help
 
 # includes and libs
-INCS =	-I../../src/core \
+INCS =	${LIB_INCS} \
+	-I../../src/core \
 	-I${IRSSI_INCLUDE} \
 	-I${IRSSI_INCLUDE}/src \
 	-I${IRSSI_INCLUDE}/src/core \
 	-I$(IRSSI_INCLUDE)/src/fe-common/core \
-	`pkg-config --cflags loudmouth-1.0` \
-	${LIB_INCS}
+	`pkg-config --cflags loudmouth-1.0`
 LIBS =	${LIB_LIBS}
 
 # flags

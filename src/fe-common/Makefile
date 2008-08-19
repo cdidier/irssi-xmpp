@@ -14,6 +14,7 @@ SRCS=	fe-xmpp-messages.c \
 	xep/fe-composing.c
 
 
+LIB_INCS = -I../../src/fe-common 
 LIB_LIBS = `pkg-config --libs glib-2.0`
 
 include ../rules.mk
