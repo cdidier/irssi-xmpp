@@ -31,8 +31,8 @@
 #include "rosters-tools.h"
 
 const char *fe_xmpp_presence_show[] = {
-	"error",
 	"Offline",
+	"error",
 	"Not Available",
 	"Busy",
 	"Away",
