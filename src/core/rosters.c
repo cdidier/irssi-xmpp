@@ -372,7 +372,8 @@ update_user_presence(XMPP_SERVER_REC *server, const char *full_jid,
 		else
 			server->my_resources =
 			    g_slist_prepend(server->my_resources, resource);
-		signal_emit("xmpp presence online", 3, server, jid, res);
+		signal_emit("xmpp presence online", 4, server, full_jid,
+		    jid, res);
 	}
 	show = xmpp_get_show(show_str);
 	priority = (priority_str != NULL) ?
@@ -424,7 +425,7 @@ user_unavailable(XMPP_SERVER_REC *server, const char *full_jid,
 	    user->resources : server->my_resources, res);
 	if (resource == NULL)
 		goto out;
-	signal_emit("xmpp presence offline", 3, server, jid, res);
+	signal_emit("xmpp presence offline", 4, server, full_jid, jid, res);
 	signal_emit("xmpp presence changed", 4, server, full_jid,
 	    XMPP_PRESENCE_UNAVAILABLE, status);
 	if (!own)
