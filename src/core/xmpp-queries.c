@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "module.h"
+#include "channels.h"
 #include "nicklist.h"
 #include "signals.h"
 
@@ -32,37 +33,32 @@ xmpp_query_create(const char *server_tag, const char *data, int automatic)
 {
 	XMPP_QUERY_REC *rec, *rec_tmp;
 	XMPP_SERVER_REC *server;
-/*	const char *channel_name; */
+	CHANNEL_REC *channel;
+	NICK_REC *nick;
+	const char *channel_name;
 
 	g_return_val_if_fail(server_tag != NULL, NULL);
 	g_return_val_if_fail(data != NULL, NULL);
-	server = XMPP_SERVER(server_find_tag(server_tag));
-	if (server == NULL)
+	if ((server = XMPP_SERVER(server_find_tag(server_tag))) == NULL)
 		return NULL;
 	rec = g_new0(XMPP_QUERY_REC, 1);
 	rec->chat_type = XMPP_PROTOCOL;
-
 	/* query created from a channel */
-/*	channel_name = NULL;
+	channel_name = NULL;
 	signal_emit("xmpp windows get active channel", 1, &channel_name);
 	if (channel_name != NULL) {
-		XMPP_CHANNEL_REC *channel;
-		NICK_REC *nick;
-
-		channel = xmpp_channel_find(server, channel_name);
+		channel = channel_find(SERVER(server), channel_name);
 		if (channel != NULL) {
-			nick = nicklist_find(CHANNEL(channel), data);
+			nick = nicklist_find(channel, data);
 			if (nick != NULL)
 				rec->name = g_strdup(nick->host);
 		}
 	}
-	
-	if (rec->name == NULL) */
+	if (rec->name == NULL)
 		rec->name = rosters_resolve_name(server, data);
 	if (rec->name != NULL) {
 		/* test if the query already exist */
-		rec_tmp = xmpp_query_find(server, rec->name);
-		if (rec_tmp != NULL) {
+		if ((rec_tmp = xmpp_query_find(server, rec->name)) != NULL) {
 			g_free(rec->name);
 			g_free(rec);
 			signal_emit("xmpp query raise", 2, server, rec_tmp);
