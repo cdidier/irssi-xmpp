@@ -11,7 +11,9 @@ SRCS=	fe-xmpp-messages.c \
 	module-formats.c \
 	xmpp-completion.c \
 	xep/fe-xep.c \
-	xep/fe-composing.c
+	xep/fe-composing.c \
+	xep/fe-vcard.c \
+	xep/fe-version.c
 
 
 LIB_INCS = -I../../src/fe-common 
