@@ -1,7 +1,7 @@
 # $Id$
 
 LIB= text_xmpp
-SRCS=	text-core.c \
+SRCS=	text-xmpp-core.c \
 	text-composing.c
 
 LIB_INCS = -I../../src/fe-text/include/irssi/src/fe-text
