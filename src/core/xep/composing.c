@@ -232,9 +232,8 @@ sig_offline(XMPP_SERVER_REC *server, const char *jid)
 static void
 sig_disconnected(XMPP_SERVER_REC *server)
 {
-	if (!IS_XMPP_SERVER(server))
-		return;
-	cleanup_composings(server);
+	if (IS_XMPP_SERVER(server))
+		cleanup_composings(server);
 }
 
 
