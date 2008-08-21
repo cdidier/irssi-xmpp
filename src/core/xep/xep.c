@@ -22,6 +22,7 @@
 #include "chatstates.h"
 #include "composing.h"
 #include "disco.h"
+#include "oob.h"
 #include "ping.h"
 #include "vcard.h"
 #include "version.h"
@@ -32,6 +33,7 @@ xep_init(void)
 	chatstates_init();
 	composing_init();
 	disco_init();
+	oob_init();
 	ping_init();
 	vcard_init();
 	version_init();
@@ -43,6 +45,7 @@ xep_deinit(void)
 	chatstates_deinit();
 	composing_deinit();
 	disco_deinit();
+	oob_deinit();
 	ping_deinit();
 	vcard_deinit();
 	version_deinit();
