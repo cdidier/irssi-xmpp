@@ -34,13 +34,15 @@ static int message_types[] = {
 static void
 send_stanza(XMPP_SERVER_REC *server, LmMessage *lmsg)
 {
-	char *raw;
+	char *xml, *recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(lmsg != NULL);
-	raw = xmpp_recode_in(lm_message_node_to_string(lmsg->node));
-	signal_emit("xmpp xml out", 2, server, raw);
-	g_free(raw);
+	xml = lm_message_node_to_string(lmsg->node);
+	recoded = xmpp_recode_in(xml);
+	g_free(xml);
+	signal_emit("xmpp xml out", 2, server, recoded);
+	g_free(recoded);
 	lm_connection_send(server->lmconn, lmsg, NULL);
 }
 
