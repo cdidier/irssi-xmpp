@@ -29,20 +29,23 @@ xmpp_send_message(XMPP_SERVER_REC *server, const char *to,
     const char *msg)
 {
 	LmMessage *lmsg;
-	char *jid, *str;
+	char *jid, *recoded, *str;
 
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(to != NULL);
-	g_return_if_fail(msg != NULL);
 	jid = rosters_resolve_name(server, to);
-	str = xmpp_recode_out((jid != NULL) ? jid : to);
+	recoded = xmpp_recode_out((jid != NULL) ? jid : to);
 	g_free(jid);
-	lmsg = lm_message_new_with_sub_type(str,
+	lmsg = lm_message_new_with_sub_type(recoded,
 	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
-	g_free(str);
-	str = xmpp_recode_out(msg);
-	lm_message_node_add_child(lmsg->node, "body", str);
-	g_free(str);
+	g_free(recoded);
+	str = NULL;
+	signal_emit("xmpp formats strip codes", 2, msg, &str);
+	if (str != NULL) {
+		recoded = xmpp_recode_out(str);
+		g_free(str);
+	} else
+		recoded = xmpp_recode_out(msg);
+	lm_message_node_add_child(lmsg->node, "body", recoded);
+	g_free(recoded);
 	signal_emit("xmpp send message", 2, server, lmsg);
 	lm_message_unref(lmsg);
 }

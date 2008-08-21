@@ -34,6 +34,7 @@
 #include "fe-rosters.h"
 #include "fe-stanzas.h"
 #include "xmpp-completion.h"
+#include "xmpp-formats.h"
 #include "xep/fe-xep.h"
 
 static void
@@ -70,6 +71,7 @@ fe_xmpp_init(void)
 	fe_rosters_init();
 	fe_stanzas_init();
 	xmpp_completion_init();
+	xmpp_formats_init();
 	fe_xep_init();
 
 	module_register("xmpp", "fe");
@@ -89,13 +91,14 @@ fe_xmpp_deinit(void)
 	signal_remove("xmpp server status", sig_server_status);
 	signal_remove("server add fill", sig_server_add_fill);
 
-	fe_xmpp_messages_init();
+	fe_xmpp_messages_deinit();
 	fe_xmpp_queries_deinit();
 	fe_xmpp_status_deinit();
 	fe_xmpp_windows_deinit();
 	fe_rosters_deinit();
 	fe_stanzas_deinit();
 	xmpp_completion_deinit();
+	xmpp_formats_deinit();
 	fe_xep_deinit();
 
 	theme_unregister();
