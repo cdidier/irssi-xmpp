@@ -62,35 +62,7 @@ cleanup_features(GSList *list)
 }
 
 static void
-sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
-    const char *id, const char *from, const char *to)
-{
-	LmMessageNode *node;
-	GSList *features;
-
-	if (type != LM_MESSAGE_SUB_TYPE_RESULT)
-		return;
-	node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_DISCO);
-	if (node == NULL)
-		return;
-	features = NULL;
-	for (node = node->children; node != NULL; node = node->next) {
-		if (strcmp(node->name, "feature") == 0) {
-			features = g_slist_prepend(features, xmpp_recode_in(
-			    lm_message_node_get_attribute(node, "var")));
-		}
-	}
-	signal_emit("xmpp features", 3, server, from, features);
-	if (strcmp(from, server->host) == 0) {
-		cleanup_features(server->server_features);
-		server->server_features = features;
-		signal_emit("xmpp server features", 1, server);
-	} else
-		cleanup_features(features);
-}
-
-static void
-send_disco(XMPP_SERVER_REC *server, const char *dest)
+request_disco(XMPP_SERVER_REC *server, const char *dest)
 {
 	LmMessage *lmsg;
 	LmMessageNode *node;
@@ -107,10 +79,69 @@ send_disco(XMPP_SERVER_REC *server, const char *dest)
 }
 
 static void
+send_disco(XMPP_SERVER_REC *server, const char *dest)
+{
+	LmMessage *lmsg;
+	LmMessageNode *node, *child;
+	GSList *tmp;
+	char *recoded;
+
+	recoded = xmpp_recode_out(dest);
+	lmsg = lm_message_new_with_sub_type(recoded, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_RESULT);
+	g_free(recoded);
+	node = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(node, "xmlns", XMLNS_DISCO);
+	child = lm_message_node_add_child(node, "identity", NULL);
+	lm_message_node_set_attribute(child, "category", "client");
+	lm_message_node_set_attribute(child, "type", "console");
+	lm_message_node_set_attribute(child, "name", IRSSI_XMPP_PACKAGE);
+	for (tmp = my_features; tmp != NULL; tmp = tmp->next) {
+		child = lm_message_node_add_child(node, "feature", NULL);
+		lm_message_node_set_attribute(child, "var", tmp->data);
+	}
+	signal_emit("xmpp send iq", 2, server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+static void
+sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	LmMessageNode *node;
+	GSList *features;
+
+	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
+		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_DISCO);
+		if (node == NULL)
+			return;
+		features = NULL;
+		for (node = node->children; node != NULL; node = node->next) {
+			if (strcmp(node->name, "feature") == 0) {
+				features = g_slist_prepend(features,
+				    xmpp_recode_in(
+			    	    lm_message_node_get_attribute(node, "var")));
+			}
+		}
+		signal_emit("xmpp features", 3, server, from, features);
+		if (strcmp(from, server->host) == 0) {
+			cleanup_features(server->server_features);
+			server->server_features = features;
+			signal_emit("xmpp server features", 1, server);
+		} else
+			cleanup_features(features);
+	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
+		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_DISCO);
+		if (node != NULL)
+			send_disco(server, from);
+	}
+}
+
+static void
 sig_connected(XMPP_SERVER_REC *server)
 {
 	if (IS_XMPP_SERVER(server))
-		send_disco(server, server->host);
+		request_disco(server, server->host);
 }
 
 static void
@@ -126,6 +157,7 @@ void
 disco_init(void)
 {
 	my_features = NULL;
+	xmpp_add_feature(XMLNS_DISCO);
 	signal_add("server connected", sig_connected);
 	signal_add("server disconnected", sig_disconnected);
 	signal_add("xmpp recv iq", sig_recv_iq);
