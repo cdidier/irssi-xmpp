@@ -29,80 +29,12 @@
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
 #include "tools.h"
+#include "datalist.h"
 #include "disco.h"
 
 #define XMLNS_EVENT "jabber:x:event"
 
-struct composing_data {
-	XMPP_SERVER_REC *server;
-	char		*jid;
-	char		*id;
-};
-
-static GSList *composings;
-
-static struct composing_data *
-find_cd(XMPP_SERVER_REC *server, const char *jid)
-{
-	GSList *tmp;
-	struct composing_data *cd;
-
-	for (tmp = composings; tmp != NULL; tmp = tmp->next) {
-		cd = tmp->data;
-		if (cd->server == server && strcmp(cd->jid, jid) == 0)
-			return cd;
-	}
-	return NULL;
-}
-
-static void
-add_cd(XMPP_SERVER_REC *server, const char *jid, const char *id)
-{
-	struct composing_data *cd;
-
-	if ((cd = find_cd(server, jid)) != NULL) {
-		g_free(cd->id);
-		cd->id = g_strdup(id);
-	} else {
-		cd = g_new0(struct composing_data, 1);
-		cd->server = server;
-		cd->jid = g_strdup(jid);
-		cd->id = g_strdup(id);
-		composings = g_slist_append(composings, cd);
-	}
-}
-
-static void
-cleanup_cd(struct composing_data *cd)
-{
-	composings = g_slist_remove(composings, cd);
-	g_free(cd->jid);
-	g_free(cd->id);
-	g_free(cd);
-}
-
-static void
-remove_cd(XMPP_SERVER_REC *server, const char *jid)
-{
-	struct composing_data *cd;
-
-	if ((cd = find_cd(server, jid)) != NULL)
-		cleanup_cd(cd);
-}
-
-static void
-cleanup_composings(XMPP_SERVER_REC *server)
-{
-	GSList *tmp, *next;
-	struct composing_data *cd;
-
-	for (tmp = composings; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		cd = tmp->data;
-		if (server == NULL || cd->server == server)
-			cleanup_cd(cd);
-	}
-}
+DATALIST *composings;
 
 #define send_start(server, dest, id) \
 	send_composing_event(server, dest, id, TRUE)
@@ -134,23 +66,23 @@ send_composing_event(XMPP_SERVER_REC *server, const char *dest, const char *id,
 static void
 sig_composing_start(XMPP_SERVER_REC *server, const char *dest)
 {
-	struct composing_data *cd;
+	DATALIST_REC *rec;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(dest != NULL);
-	if ((cd = find_cd(server, dest)) != NULL)
-		send_start(server, dest, cd->id);
+	if ((rec = datalist_find(composings, server, dest)) != NULL)
+		send_start(server, dest, rec->data);
 }
 
 static void
 sig_composing_stop(XMPP_SERVER_REC *server, const char *dest)
 {
-	struct composing_data *cd;
+	DATALIST_REC *rec;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(dest != NULL);
-	if ((cd = find_cd(server, dest)) != NULL)
-		send_stop(server, dest, cd->id);
+	if ((rec = datalist_find(composings, server, dest)) != NULL)
+		send_stop(server, dest, rec->data);
 }
 
 static void
@@ -190,9 +122,9 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	if (lm_message_node_get_child(lmsg->node, "body") != NULL
 	    || lm_message_node_get_child(lmsg->node, "subject") != NULL) {
 		if (lm_message_node_get_child(node, "composing") != NULL)
-			add_cd(server, from, id);
+			datalist_add(composings, server, from, g_strdup(id));
 		else
-			remove_cd(server, from);
+			datalist_remove(composings, server, from);
 		signal_emit("xmpp composing hide", 2, server, from);
 	} else {
 		if (lm_message_node_get_child(node, "composing") != NULL)
@@ -226,21 +158,26 @@ static void
 sig_offline(XMPP_SERVER_REC *server, const char *jid)
 {
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	remove_cd(server, jid);
+	datalist_remove(composings, server, jid);
 }
 
 static void
 sig_disconnected(XMPP_SERVER_REC *server)
 {
 	if (IS_XMPP_SERVER(server))
-		cleanup_composings(server);
+		datalist_cleanup(composings, server);
 }
 
+static void
+freedata_func(DATALIST_REC *rec)
+{
+	g_free(rec->data);
+}
 
 void
 composing_init(void)
 {
-	composings = NULL;
+	composings = datalist_new(freedata_func);
 	xmpp_add_feature(XMLNS_EVENT);
 	signal_add("xmpp composing start", sig_composing_start);
 	signal_add("xmpp composing stop", sig_composing_stop);
@@ -263,5 +200,5 @@ composing_deinit(void)
 	signal_remove("xmpp send message", sig_send_message);
 	signal_remove("xmpp presence offline", sig_offline);
 	signal_remove("server disconnected", sig_disconnected);
-	cleanup_composings(NULL);
+	datalist_destroy(composings);
 }
