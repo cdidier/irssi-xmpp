@@ -34,7 +34,7 @@
 
 #define XMLNS_EVENT "jabber:x:event"
 
-DATALIST *composings;
+static DATALIST *composings;
 
 #define send_start(server, dest, id) \
 	send_composing_event(server, dest, id, TRUE)
