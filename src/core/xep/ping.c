@@ -40,13 +40,12 @@ static int	 timeout_tag;
 static GSList	*supported_servers;
 
 static void
-send_ping(XMPP_SERVER_REC *server, const char *dest)
+request_ping(XMPP_SERVER_REC *server, const char *dest)
 {
 	LmMessage *lmsg;
 	LmMessageNode *node;
 	char *recoded;
 
-	g_return_if_fail(IS_XMPP_SERVER(server));
 	recoded = xmpp_recode_in(dest);
 	lmsg = lm_message_new_with_sub_type(recoded,
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
@@ -65,22 +64,46 @@ send_ping(XMPP_SERVER_REC *server, const char *dest)
 }
 
 static void
+send_ping(XMPP_SERVER_REC *server, const char *dest, const char *id)
+{
+	LmMessage *lmsg;
+	char *recoded;
+
+	recoded = xmpp_recode_in(dest);
+	lmsg = lm_message_new_with_sub_type(recoded,
+	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_RESULT);
+	g_free(recoded);
+	if (id != NULL)
+		lm_message_node_set_attribute(lmsg->node, "id", id);
+	signal_emit("xmpp send iq", 2, server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+static void
 sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
+	LmMessageNode *node;
 	GTimeVal now;
 
-	g_return_if_fail(IS_XMPP_SERVER(server));
-	if (type != LM_MESSAGE_SUB_TYPE_RESULT)
-		return;
-	/* pong response from server of our ping */
-	if (server->ping_id != NULL && strcmp(from, server->host) == 0
-	    && strcmp(id, server->ping_id) == 0) {
-		g_get_current_time(&now);
-		server->lag = (int)get_timeval_diff(&now, &server->lag_sent);
-		memset(&server->lag_sent, 0, sizeof(server->lag_sent));
-		g_free_and_null(server->ping_id);	
-		signal_emit("server lag", 1, server);
+	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
+		/* pong response from server of our ping */
+		if (server->ping_id != NULL && strcmp(from, server->host) == 0
+	    	&& strcmp(id, server->ping_id) == 0) {
+			g_get_current_time(&now);
+			server->lag =
+			    (int)get_timeval_diff(&now, &server->lag_sent);
+			memset(&server->lag_sent, 0, sizeof(server->lag_sent));
+			g_free_and_null(server->ping_id);	
+			signal_emit("server lag", 1, server);
+		} else {
+			/* TODO */
+		}
+	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
+		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_PING);
+		if (node != NULL)
+			send_ping(server, from,
+			    lm_message_node_get_attribute(lmsg->node, "id"));
 	}
 }
 
@@ -129,7 +152,7 @@ check_ping_func(void)
 		} else if ((server->lag_last_check + lag_check_time) < now &&
 		    server->connected) {
 			/* no commands in buffer - get the lag */
-			send_ping(server, server->host);
+			request_ping(server, server->host);
 		}
 	}
 	return 1;
