@@ -6,38 +6,42 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *
+ *	  
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ *			  
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+ */		 
 
 #include "module.h"
+#include "levels.h"
+#include "printtext.h"
+#include "signals.h"
+#include "fe-common/irc/module-formats.h"
 
-#include "fe-composing.h"
-#include "fe-ping.h"
-#include "fe-vcard.h"
-#include "fe-version.h"
+#include "xmpp-servers.h"
+#include "rosters-tools.h"
+#include "../module-formats.h"
 
-void
-fe_xep_init(void)
+static void
+sig_ping(XMPP_SERVER_REC *server, const char *jid, long usecs)
 {
-	fe_composing_init();
-	fe_ping_init();
-	fe_vcard_init();
-	fe_version_init();
+	printformat_module(IRC_MODULE_NAME, server, jid, MSGLEVEL_CRAP,
+	    IRCTXT_CTCP_PING_REPLY, jid, usecs/1000, usecs%1000);
 }
 
 void
-fe_xep_deinit(void)
+fe_ping_init(void)
 {
-	fe_composing_deinit();
-	fe_ping_deinit();
-	fe_vcard_deinit();
-	fe_version_deinit();
+	signal_add("xmpp ping", sig_ping);
+}
+
+void
+fe_ping_deinit(void)
+{   
+	signal_remove("xmpp ping", sig_ping);
 }

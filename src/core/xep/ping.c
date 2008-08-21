@@ -38,6 +38,11 @@
 
 #define XMLNS_PING "urn:xmpp:ping"
 
+struct ping_data {
+	char	 *id;
+	GTimeVal  time;
+};
+
 static int	 timeout_tag;
 static GSList	*supported_servers;
 static DATALIST *pings;
@@ -45,6 +50,7 @@ static DATALIST *pings;
 static void
 request_ping(XMPP_SERVER_REC *server, const char *dest)
 {
+	struct ping_data *pd;
 	LmMessage *lmsg;
 	LmMessageNode *node;
 	char *recoded;
@@ -61,6 +67,12 @@ request_ping(XMPP_SERVER_REC *server, const char *dest)
 		    g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
 		g_get_current_time(&server->lag_sent);
 		server->lag_last_check = time(NULL);
+	} else {
+		pd = g_new0(struct ping_data, 1);
+		pd->id =
+		    g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
+		g_get_current_time(&pd->time);
+		datalist_add(pings, server, dest, pd);
 	}
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
@@ -86,8 +98,10 @@ static void
 sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
+	DATALIST_REC *rec;
 	LmMessageNode *node;
 	GTimeVal now;
+	struct ping_data *pd;
 
 	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
 		/* pong response from server of our ping */
@@ -99,8 +113,14 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			memset(&server->lag_sent, 0, sizeof(server->lag_sent));
 			g_free_and_null(server->ping_id);	
 			signal_emit("server lag", 1, server);
-		} else {
-			/* TODO */
+		} else if (lmsg->node->children == NULL
+		    && (rec = datalist_find(pings, server, from)) != NULL) {
+			pd = rec->data;
+			if (strcmp(id, pd->id) == 0) {
+				g_get_current_time(&now);
+				signal_emit("xmpp ping", 3, server, from,
+				    get_timeval_diff(&now, &pd->time));
+			}
 		}
 	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
 		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_PING);
@@ -177,19 +197,12 @@ cmd_ping(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	request_ping(server, dest);
 	g_free(dest);
 	cmd_params_free(free_arg);
-/*
-	GTimeVal *time;
-
-	time = g_new0(GTimeVal, 1);
-	g_get_current_time(time);
-	datalist_add(pings, server, jid, time);
-	request_ping(server, jid);
-*/
 }
 
 static void
 freedata_func(DATALIST_REC *rec)
 {
+	g_free(((struct ping_data *)rec->data)->id);
 	g_free(rec->data);
 }
 
