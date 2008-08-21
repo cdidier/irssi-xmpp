@@ -35,7 +35,8 @@ void
 xmpp_add_feature(char *feature)
 {
 	g_return_if_fail(feature != NULL && *feature != '\0');
-	my_features = g_slist_prepend(my_features, feature);
+	my_features = g_slist_insert_sorted(my_features, feature,
+	    (GCompareFunc)strcmp);
 }
 
 gboolean
