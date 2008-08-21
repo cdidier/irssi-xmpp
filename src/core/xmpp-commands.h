@@ -47,8 +47,10 @@ extern const char *xmpp_command_roster[];
 	} G_STMT_END
 
 __BEGIN_DECLS
-void xmpp_commands_init(void);
-void xmpp_commands_deinit(void);
+char	*xmpp_get_dest(const char *, XMPP_SERVER_REC *, WI_ITEM_REC *);
+
+void	xmpp_commands_init(void);
+void	xmpp_commands_deinit(void);
 __END_DECLS
 
 #endif

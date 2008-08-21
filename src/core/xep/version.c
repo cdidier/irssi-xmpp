@@ -25,8 +25,6 @@
 #include <string.h>
 
 #include "module.h"
-#include "channels.h"
-#include "nicklist.h"
 #include "queries.h"
 #include "settings.h"
 #include "signals.h"
@@ -34,7 +32,6 @@
 #include "xmpp-servers.h"
 #include "xmpp-commands.h"
 #include "disco.h"
-#include "rosters-tools.h"
 #include "tools.h"
 
 #define XMLNS_VERSION "jabber:iq:version"
@@ -89,25 +86,15 @@ request_version(XMPP_SERVER_REC *server, const char *dest)
 static void
 cmd_ver(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 {
-	NICK_REC *nick;
-	char *dest, *jid;
+	char *cmd_dest, *dest;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
-	if (!cmd_get_params(data, &free_arg, 1, &dest))
+	if (!cmd_get_params(data, &free_arg, 1, &cmd_dest))
 		return;
-	jid = NULL;
-	if (*dest == '\0')
-		dest = IS_QUERY(item) ? QUERY(item)->name :
-		    (jid = g_strconcat(server->jid, "/", server->resource,
-		    NULL));
-	else if (IS_CHANNEL(item)
-	    && (nick = nicklist_find(CHANNEL(item), dest)) != NULL)
-		dest = nick->host;
-	else if ((jid = rosters_resolve_name(server, dest)) != NULL)
-		dest = jid;
+	dest = xmpp_get_dest(cmd_dest, server, item);
 	request_version(server, dest);
-	g_free(jid);
+	g_free(dest);
 	cmd_params_free(free_arg);
 }
 

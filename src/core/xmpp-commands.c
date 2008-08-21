@@ -21,6 +21,7 @@
 
 #include "module.h"
 #include "channels.h"
+#include "nicklist.h"
 #include "recode.h"
 #include "settings.h"
 #include "signals.h"
@@ -568,6 +569,23 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	g_free(str);
 	server->send_message(SERVER(server), target, recoded, type);
 	g_free(recoded);
+}
+
+char *
+xmpp_get_dest(const char *cmd_dest, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	NICK_REC *nick;
+	char *dest;
+
+	if (cmd_dest == NULL || *cmd_dest == '\0')
+		return IS_QUERY(item) ? g_strdup(QUERY(item)->name)
+		    : g_strconcat(server->jid, "/", server->resource, NULL);
+	if (IS_CHANNEL(item)
+	    && (nick = nicklist_find(CHANNEL(item), cmd_dest)) != NULL)
+		return g_strdup(nick->host);
+	if ((dest = rosters_resolve_name(server, cmd_dest)) != NULL)
+		return dest;
+	return g_strdup(cmd_dest);
 }
 
 void

@@ -31,6 +31,8 @@
 #include "signals.h"
 
 #include "xmpp-servers.h"
+#include "xmpp-commands.h"
+#include "datalist.h"
 #include "disco.h"
 #include "tools.h"
 
@@ -38,6 +40,7 @@
 
 static int	 timeout_tag;
 static GSList	*supported_servers;
+static DATALIST *pings;
 
 static void
 request_ping(XMPP_SERVER_REC *server, const char *dest)
@@ -117,8 +120,10 @@ sig_server_features(XMPP_SERVER_REC *server)
 static void
 sig_disconnected(XMPP_SERVER_REC *server)
 {
-	if (IS_XMPP_SERVER(server))
+	if (IS_XMPP_SERVER(server)) {
 		supported_servers = g_slist_remove(supported_servers, server);
+		datalist_cleanup(pings, server);
+	}
 }
 
 static int
@@ -158,14 +163,46 @@ check_ping_func(void)
 	return 1;
 }
 
+/* SYNTAX: PING [[<jid>[/<resource>]]|[<name]] */
+static void
+cmd_ping(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	char *cmd_dest, *dest;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 1, &cmd_dest))
+		return;
+	dest = xmpp_get_dest(cmd_dest, server, item);
+	request_ping(server, dest);
+	g_free(dest);
+	cmd_params_free(free_arg);
+/*
+	GTimeVal *time;
+
+	time = g_new0(GTimeVal, 1);
+	g_get_current_time(time);
+	datalist_add(pings, server, jid, time);
+	request_ping(server, jid);
+*/
+}
+
+static void
+freedata_func(DATALIST_REC *rec)
+{
+	g_free(rec->data);
+}
+
 void
 ping_init(void)
 {
 	supported_servers = NULL;
+	pings = datalist_new(freedata_func);
 	xmpp_add_feature(XMLNS_PING);
 	signal_add("xmpp recv iq", sig_recv_iq);
 	signal_add("xmpp server features", sig_server_features);
 	signal_add("server disconnected", sig_disconnected);
+	command_bind_xmpp("ping", NULL, (SIGNAL_FUNC)cmd_ping);
 	timeout_tag = g_timeout_add(1000, (GSourceFunc)check_ping_func, NULL);
 }
 
@@ -176,5 +213,7 @@ ping_deinit(void)
 	signal_remove("xmpp recv iq", sig_recv_iq);
 	signal_remove("xmpp server features", sig_server_features);
 	signal_remove("server disconnected", sig_disconnected);
+	command_unbind("ping", (SIGNAL_FUNC)cmd_ping);
 	g_slist_free(supported_servers);
+	datalist_destroy(pings);
 }
