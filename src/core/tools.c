@@ -22,6 +22,7 @@
 #include "module.h"
 #include "recode.h"
 #include "settings.h"
+#include "signals.h"
 
 #define XMPP_PRIORITY_MIN -128
 #define XMPP_PRIORITY_MAX 127
@@ -41,15 +42,20 @@ char *
 xmpp_recode_out(const char *str)
 {
 	G_CONST_RETURN char *charset;
-	char *recoded;
+	char *recoded, *stripped;
 
 	if (str == NULL || *str == '\0')
 		return NULL;
-	if (xmpp_get_local_charset(&charset) || charset == NULL)
-		return g_strdup(str);
-	recoded = g_convert_with_fallback(str, -1, utf8_charset, charset, NULL,
-	    NULL, NULL, NULL);
-	return (recoded != NULL) ? recoded : g_strdup(str);
+	recoded = stripped = NULL;
+	signal_emit("xmpp formats strip codes", 2, str, &stripped);
+	if (stripped != NULL) 
+		str = stripped;
+	if (!xmpp_get_local_charset(&charset) && charset != NULL)
+		recoded = g_convert_with_fallback(str, -1, utf8_charset,
+		    charset, NULL, NULL, NULL, NULL);
+	recoded = recoded != NULL ? recoded : g_strdup(str);
+	g_free(stripped);
+	return recoded;
 }
 
 char *
