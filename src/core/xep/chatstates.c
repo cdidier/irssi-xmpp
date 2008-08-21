@@ -54,7 +54,6 @@ void
 chatstates_init(void)
 {
 	xmpp_add_feature(XMLNS_CHATSTATES);
-
 	signal_add("xmpp recv message", sig_recv_message);
 }
 
