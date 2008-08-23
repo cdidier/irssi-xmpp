@@ -3,12 +3,6 @@
 #ifndef __TOOLS_H
 #define __TOOLS_H
 
-#define xmpp_extract_nick(jid)						\
-	xmpp_extract_resource(jid)
-
-#define xmpp_extract_channel(jid)					\
-	xmpp_strip_resource(jid)
-
 __BEGIN_DECLS
 char	*xmpp_recode_out(const char *);
 char	*xmpp_recode_in(const char *);

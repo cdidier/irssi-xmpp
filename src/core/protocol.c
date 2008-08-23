@@ -24,26 +24,6 @@
 #include "rosters-tools.h"
 #include "tools.h"
 
-void
-xmpp_send_message(XMPP_SERVER_REC *server, const char *to,
-    const char *msg)
-{
-	LmMessage *lmsg;
-	char *jid, *recoded;
-
-	jid = rosters_resolve_name(server, to);
-	recoded = xmpp_recode_out((jid != NULL) ? jid : to);
-	g_free(jid);
-	lmsg = lm_message_new_with_sub_type(recoded,
-	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
-	g_free(recoded);
-	recoded = xmpp_recode_out(msg);
-	lm_message_node_add_child(lmsg->node, "body", recoded);
-	g_free(recoded);
-	signal_emit("xmpp send message", 2, server, lmsg);
-	lm_message_unref(lmsg);
-}
-
 static void
 sig_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
     const int priority)

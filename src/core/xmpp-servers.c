@@ -28,7 +28,7 @@
 
 #include "xmpp-servers.h"
 #include "protocol.h"
-#include "rosters.h" /* for XMPP_PRESENCE_AVAILABLE */
+#include "rosters-tools.h"
 #include "tools.h"
 
 static void
@@ -58,21 +58,33 @@ static void
 send_message(SERVER_REC *server, const char *target, const char *msg,
     int target_type)
 {
-	char *str;
+	LmMessage *lmsg;
+	char *str, *recoded;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
-	g_return_if_fail(server != NULL);
 	g_return_if_fail(target != NULL);
 	g_return_if_fail(msg != NULL);
-	
+	if (target_type == SEND_TARGET_CHANNEL) {
+		recoded = xmpp_recode_out(target);
+		lmsg = lm_message_new_with_sub_type(recoded,
+		    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_GROUPCHAT);
+	} else {
+		str = rosters_resolve_name(XMPP_SERVER(server), target);
+		recoded = xmpp_recode_out(str != NULL ? str : target);
+		g_free(str);
+		lmsg = lm_message_new_with_sub_type(recoded,
+		    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
+	}
+	g_free(recoded);
 	/* ugly from irssi: recode the sent message back */
 	str = recode_in(server, msg, target);
-	if (target_type == SEND_TARGET_CHANNEL)
-		; /* TODO */
-	else
-		xmpp_send_message(XMPP_SERVER(server), target, str);
+	recoded = xmpp_recode_out(str);
 	g_free(str);
+	lm_message_node_add_child(lmsg->node, "body", recoded);
+	g_free(recoded);
+	signal_emit("xmpp send message", 2, server, lmsg);
+	lm_message_unref(lmsg);
 }
 
 static void
@@ -416,6 +428,31 @@ sig_server_quit(XMPP_SERVER_REC *server, char *reason)
 	lm_message_unref(lmsg);
 }
 
+static void
+disconnect_all(void)
+{
+	GSList *tmp, *next;
+
+	for (tmp = lookup_servers; tmp != NULL; tmp = next) {
+		next = tmp->next;
+		if (IS_XMPP_SERVER(tmp->data))
+			server_connect_failed(SERVER(tmp->data), NULL);
+	}
+	for (tmp = servers; tmp != NULL; tmp = next) {
+		next = tmp->next;
+		if (IS_XMPP_SERVER(tmp->data))
+			server_disconnect(SERVER(tmp->data));
+	}
+}
+
+static void
+sig_session_save(void)
+{
+	/* We don't support /UPGRADE, so disconnect all servers
+	 * before performing it. */
+	disconnect_all();
+}
+
 void
 xmpp_servers_init(void)
 {
@@ -424,6 +461,7 @@ xmpp_servers_init(void)
 	signal_add_last("server disconnected", server_cleanup);
 	signal_add_last("server connect failed", server_cleanup);
 	signal_add("server quit", sig_server_quit);
+	signal_add_first("session save", sig_session_save);
 
 	settings_add_int("xmpp", "xmpp_priority", 0);
 	settings_add_bool("xmpp_lookandfeel", "xmpp_set_nick_as_username",
@@ -439,23 +477,13 @@ xmpp_servers_init(void)
 void
 xmpp_servers_deinit(void)
 {
-	GSList *tmp, *next;
-
 	/* disconnect all servers before unloading the module */
-	for (tmp = lookup_servers; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		if (IS_XMPP_SERVER(tmp->data))
-			server_connect_failed(SERVER(tmp->data), NULL);
-	}
-	for (tmp = servers; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		if (IS_XMPP_SERVER(tmp->data))
-			server_disconnect(SERVER(tmp->data));
-	}
+	disconnect_all();
 
 	signal_remove("server connected", sig_connected);
 	signal_remove("server connected", sig_connected_last);
 	signal_remove("server disconnected", server_cleanup);
 	signal_remove("server connect failed", server_cleanup);
 	signal_remove("server quit", sig_server_quit);
+	signal_remove("session save", sig_session_save);
 }

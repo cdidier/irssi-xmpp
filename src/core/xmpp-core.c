@@ -30,7 +30,6 @@
 #include "xmpp-queries.h"
 #include "xmpp-servers.h"
 #include "xmpp-servers-reconnect.h"
-#include "xmpp-session.h"
 #include "xmpp-settings.h"
 #include "protocol.h"
 #include "register.h"
@@ -80,7 +79,7 @@ xmpp_core_init(void)
 	CHAT_PROTOCOL_REC *rec;
 
 	rec = g_new0(CHAT_PROTOCOL_REC, 1);
-	rec->name = "XMPP";
+	rec->name = XMPP_PROTOCOL_NAME;
 	rec->fullname = "XMPP, Extensible messaging and presence protocol";
 	rec->chatnet = "xmppnet";
 	rec->case_insensitive = FALSE;
@@ -99,7 +98,6 @@ xmpp_core_init(void)
 	xmpp_commands_init();
 	xmpp_servers_init();
 	xmpp_servers_reconnect_init();
-	xmpp_session_init();
 	xmpp_settings_init();
 	protocol_init();
 	register_init();
@@ -118,7 +116,6 @@ xmpp_core_deinit(void)
 	xmpp_servers_deinit();
 	xmpp_commands_deinit();
 	xmpp_servers_reconnect_deinit();
-	xmpp_session_deinit();
 	xmpp_settings_deinit();
 	protocol_deinit();
 	register_deinit();

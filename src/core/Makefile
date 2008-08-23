@@ -6,7 +6,6 @@ SRCS=	xmpp-commands.c \
 	xmpp-queries.c \
 	xmpp-servers.c \
 	xmpp-servers-reconnect.c \
-	xmpp-session.c \
 	xmpp-settings.c \
 	loudmouth-tools.c \
 	protocol.c \
