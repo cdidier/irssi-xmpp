@@ -1,0 +1,337 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2007 Colin DIDIER
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+/*
+ * XEP-0045: Multi-User Chat
+ */
+
+#include <string.h>
+
+#include "module.h"
+#include "commands.h"
+#include "settings.h"
+#include "signals.h"
+
+#include "rosters-tools.h"
+#include "tools.h"
+#include "disco.h"
+#include "muc.h"
+#include "muc-commands.h"
+#include "muc-events.h"
+#include "muc-nicklist.h"
+#include "muc-reconnect.h"
+
+CHANNEL_REC *
+muc_create(XMPP_SERVER_REC *server, const char *name,
+    const char *visible_name, int automatic, const char *nick)
+{
+	MUC_REC *rec;
+
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+	g_return_val_if_fail(name != NULL, NULL);
+	rec = g_new0(MUC_REC, 1);
+	rec->chat_type = XMPP_PROTOCOL;
+	rec->nick = g_strdup((nick != NULL) ? nick : 
+	  (*settings_get_str("nick") != '\0') ?
+	  settings_get_str("nick") : server->user);
+	channel_init((CHANNEL_REC *)rec, SERVER(server), name, visible_name,
+	    automatic);
+	return (CHANNEL_REC *)rec;
+}
+
+void
+muc_nick(MUC_REC *channel, const char *nick)
+{
+	LmMessage *lmsg;
+	LmMessageNode *node;
+	char *recoded, *str;
+
+	g_return_if_fail(IS_MUC(channel));
+	if (!channel->server->connected)
+		return;
+	str = g_strconcat(channel->name, "/", nick, NULL);
+	recoded = xmpp_recode_out(str);
+	g_free(str);
+	lmsg = lm_message_new(recoded, LM_MESSAGE_TYPE_PRESENCE);
+	g_free(recoded);
+	node = lm_message_node_add_child(lmsg->node, "x", NULL);
+	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC);
+	if (!channel->joined) {
+		if (channel->key != NULL) {
+			recoded = xmpp_recode_out(channel->key);
+			lm_message_node_add_child(node, "password", recoded);
+			g_free(recoded);
+		}
+		node = lm_message_node_add_child(node, "history", NULL);
+		str = g_strdup_printf("%d",
+		    settings_get_int("xmpp_history_maxstanzas"));
+		lm_message_node_set_attribute(node, "maxstanzas", str);
+		g_free(str);
+		if (channel->server->show != XMPP_PRESENCE_AVAILABLE) {
+			recoded = xmpp_recode_out(
+			    xmpp_presence_show[channel->server->show]);
+			lm_message_node_add_child(lmsg->node, "show", recoded);
+			g_free(recoded);
+		}
+		if (channel->server->away_reason != NULL) {
+			recoded = xmpp_recode_out(
+			    channel->server->away_reason);
+			lm_message_node_add_child(lmsg->node, "status",
+			    recoded);
+			g_free(recoded);
+		}
+	}
+	signal_emit("xmpp send presence", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+send_join(MUC_REC *channel)
+{
+	g_return_if_fail(IS_MUC(channel));
+	if (!channel->server->connected)
+		return;
+	disco_request(channel->server, channel->name);
+	muc_nick(channel, channel->nick);
+}
+
+void
+muc_join(XMPP_SERVER_REC *server, const char *data, gboolean automatic)
+{
+	MUC_REC *channel;
+	char *chanline, *channame, *nick, *key;
+	void *free_arg;
+
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	g_return_if_fail(data != NULL);
+	if (!server->connected)
+		return;
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST,
+	    &chanline, &key))
+		return;
+	nick = muc_extract_nick(chanline);
+	channame = muc_extract_channel(chanline);
+	if (muc_find(server, channame) == NULL) {
+		channel = (MUC_REC *)muc_create(server,
+		    channame, NULL, automatic, nick);
+		channel->key = (key == NULL || *key == '\0') ?
+		    NULL : g_strdup(key);
+		send_join(channel);
+	}
+	g_free(nick);
+	g_free(channame);
+	cmd_params_free(free_arg);
+}
+
+static void
+send_part(MUC_REC *channel, const char *reason)
+{
+	LmMessage *lmsg;
+	LmMessageNode *node;
+	char *channame, *recoded;
+
+	if (!channel->server->connected)
+		return;
+	channame = g_strconcat(channel->name, "/", channel->nick, NULL);
+	recoded = xmpp_recode_out(channame);
+	g_free(channame);
+	lmsg = lm_message_new_with_sub_type(recoded,
+	    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_UNAVAILABLE);
+	g_free(recoded);
+	node = lm_message_node_add_child(lmsg->node, "x", NULL);
+	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC);
+	if (reason != NULL) {
+		recoded = xmpp_recode_out(reason);
+		lm_message_node_add_child(lmsg->node, "status", recoded);
+		g_free(recoded);
+	}
+	signal_emit("xmpp send presence", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_part(MUC_REC *channel, const char *reason)
+{
+	g_return_if_fail(IS_MUC(channel));
+	send_part(channel, reason);
+	channel->left = TRUE;
+	if (channel->ownnick != NULL)
+		signal_emit("message part", 5, channel->server, channel->name,
+		    channel->ownnick->nick, channel->ownnick->host, reason);
+	channel_destroy(CHANNEL(channel));
+}
+
+static void
+sig_features(XMPP_SERVER_REC *server, const char *name, GSList *list)
+{
+	MUC_REC *channel;
+	GString *modes;
+
+	if ((channel = muc_find(server, name)) == NULL)
+		return;
+	modes = g_string_new(NULL);
+	if (disco_have_feature(list, "muc_hidden"))
+		g_string_append(modes, "h");
+	if (disco_have_feature(list, "muc_membersonly"))
+		g_string_append(modes, "m");
+	if (disco_have_feature(list, "muc_moderated"))
+		g_string_append(modes, "M");
+	if (disco_have_feature(list, "muc_nonanonymous"))
+		g_string_append(modes, "a");
+	if (disco_have_feature(list, "muc_open"))
+		g_string_append(modes, "o");
+	if (disco_have_feature(list, "muc_passwordprotected"))
+		g_string_append(modes, "k");
+	if (disco_have_feature(list, "muc_persistent"))
+		 g_string_append(modes, "p");
+	if (disco_have_feature(list, "muc_public"))
+		g_string_append(modes, "u");
+	if (disco_have_feature(list, "muc_semianonymous"))
+		g_string_append(modes, "b");
+	if (disco_have_feature(list, "muc_temporary"))
+		g_string_append(modes, "t");
+	if (disco_have_feature(list, "muc_unmoderated"))
+		g_string_append(modes, "n");
+	if (disco_have_feature(list, "muc_unsecured"))
+		g_string_append(modes, "d");
+	if (disco_have_feature(list, "muc_passwordprotected")
+	    && channel->key != NULL)
+		g_string_append_printf(modes, " %s", channel->key);
+	if (strcmp(modes->str, channel->mode) != 0) {
+		g_free(channel->mode);
+		channel->mode = modes->str;
+		signal_emit("channel mode changed", 2, channel, channel->name);
+	}
+	g_string_free(modes, FALSE);
+}
+
+static void
+sig_channel_created(MUC_REC *channel)
+{
+	if (!IS_MUC(channel))
+		return;
+	if (channel->nicks != NULL)
+		g_hash_table_destroy(channel->nicks);
+	channel->nicks = g_hash_table_new((GHashFunc)g_str_hash,
+	    (GCompareFunc)g_str_equal);
+}
+
+static void
+sig_channel_destroyed(MUC_REC *channel)
+{
+	if (!IS_MUC(channel))
+		return;
+	if (!channel->server->disconnected && !channel->left)
+		muc_part(channel, settings_get_str("part_message"));
+	g_free(channel->nick);
+}
+
+static CHANNEL_REC *
+channel_find_func(SERVER_REC *server, const char *channel_name)
+{
+	GSList *tmp;
+	CHANNEL_REC *channel;
+
+	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+		channel = tmp->data;
+		if (channel->chat_type != server->chat_type)
+			continue;
+		if (g_strcasecmp(channel_name, channel->name) == 0)
+			return channel;
+	}
+	return NULL;
+}
+
+static void
+channels_join_func(SERVER_REC *server, const char *data, int automatic)
+{
+	/* ignore automatic joins from irssi */
+	if (automatic)
+		return;
+	muc_join(XMPP_SERVER(server), data, FALSE);
+}
+
+static int
+ischannel_func(SERVER_REC *server, const char *data)
+{
+	return muc_find(server, data) != NULL ? TRUE : FALSE;
+}
+
+static void
+sig_connected(SERVER_REC *server)
+{
+	GSList *tmp;
+	CHANNEL_SETUP_REC *channel_setup;
+
+	if (!IS_XMPP_SERVER(server))
+		return;
+	server->channel_find_func = channel_find_func;
+	server->channels_join = channels_join_func;
+	server->ischannel = ischannel_func;
+	/* autojoin channels */
+	if (!server->connrec->no_autojoin_channels) {
+		for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
+			channel_setup = tmp->data;
+			if (IS_MUC_SETUP(channel_setup)
+			    && channel_setup->autojoin
+			    && strcmp(channel_setup->chatnet,
+			    server->connrec->chatnet) == 0)
+				 muc_join(XMPP_SERVER(server),
+				     channel_setup->name, TRUE);
+		}
+	}
+}
+
+void
+muc_init(void)
+{
+	CHAT_PROTOCOL_REC *chat;
+
+	if ((chat = chat_protocol_find(XMPP_PROTOCOL_NAME)) != NULL)
+		chat->channel_create = (CHANNEL_REC *(*)
+		    (SERVER_REC *, const char *, const char *, int))muc_create;
+
+	disco_add_feature(XMLNS_MUC);
+	muc_commands_init();
+	muc_events_init();
+	muc_nicklist_init();
+	muc_reconnect_init();
+	muc_session_init();
+
+	signal_add("xmpp features", sig_features);
+	signal_add("channel created", sig_channel_created);
+	signal_add("channel destroyed", sig_channel_destroyed);
+	signal_add("server connected", sig_connected);
+
+	settings_add_int("xmpp_lookandfeel", "xmpp_history_maxstanzas", 30);
+}
+
+void
+muc_deinit(void)
+{
+	signal_remove("xmpp features", sig_features);
+	signal_remove("channel created", sig_channel_created);
+	signal_remove("channel destroyed",sig_channel_destroyed);
+	signal_remove("server connected", sig_connected);
+
+	muc_commands_deinit();
+	muc_events_deinit();
+	muc_nicklist_deinit();
+	muc_reconnect_deinit();
+}

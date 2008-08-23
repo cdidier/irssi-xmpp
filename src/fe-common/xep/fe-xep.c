@@ -20,6 +20,7 @@
 #include "module.h"
 
 #include "fe-composing.h"
+#include "fe-muc.h"
 #include "fe-ping.h"
 #include "fe-vcard.h"
 #include "fe-version.h"
@@ -28,6 +29,7 @@ void
 fe_xep_init(void)
 {
 	fe_composing_init();
+	fe_muc_init();
 	fe_ping_init();
 	fe_vcard_init();
 	fe_version_init();
@@ -37,6 +39,7 @@ void
 fe_xep_deinit(void)
 {
 	fe_composing_deinit();
+	fe_muc_deinit();
 	fe_ping_deinit();
 	fe_vcard_deinit();
 	fe_version_deinit();

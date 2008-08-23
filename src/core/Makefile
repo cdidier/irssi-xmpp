@@ -18,6 +18,11 @@ SRCS=	xmpp-commands.c \
 	xep/composing.c \
 	xep/datalist.c \
 	xep/disco.c \
+	xep/muc-commands.c \
+	xep/muc-events.c \
+	xep/muc-nicklist.c \
+	xep/muc-reconnect.c \
+	xep/muc.c \
 	xep/oob.c \
 	xep/ping.c \
 	xep/vcard.c \
