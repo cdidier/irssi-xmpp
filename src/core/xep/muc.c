@@ -312,7 +312,6 @@ muc_init(void)
 	muc_events_init();
 	muc_nicklist_init();
 	muc_reconnect_init();
-	muc_session_init();
 
 	signal_add("xmpp features", sig_features);
 	signal_add("channel created", sig_channel_created);
