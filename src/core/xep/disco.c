@@ -32,7 +32,7 @@
 static GSList *my_features;
 
 void
-xmpp_add_feature(char *feature)
+disco_add_feature(char *feature)
 {
 	g_return_if_fail(feature != NULL && *feature != '\0');
 	my_features = g_slist_insert_sorted(my_features, feature,
@@ -40,7 +40,7 @@ xmpp_add_feature(char *feature)
 }
 
 gboolean
-xmpp_have_feature(GSList *list, const char *feature)
+disco_have_feature(GSList *list, const char *feature)
 {
 	GSList *tmp;
 
@@ -62,13 +62,15 @@ cleanup_features(GSList *list)
 	}
 }
 
-static void
-request_disco(XMPP_SERVER_REC *server, const char *dest)
+void
+disco_request(XMPP_SERVER_REC *server, const char *dest)
 {
 	LmMessage *lmsg;
 	LmMessageNode *node;
 	char *recoded;
 
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	g_return_if_fail(dest != NULL && dest != '\0');
 	recoded = xmpp_recode_out(dest);
 	lmsg = lm_message_new_with_sub_type(recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
@@ -142,7 +144,7 @@ static void
 sig_connected(XMPP_SERVER_REC *server)
 {
 	if (IS_XMPP_SERVER(server))
-		request_disco(server, server->host);
+		disco_request(server, server->host);
 }
 
 static void
@@ -158,7 +160,7 @@ void
 disco_init(void)
 {
 	my_features = NULL;
-	xmpp_add_feature(XMLNS_DISCO);
+	disco_add_feature(XMLNS_DISCO);
 	signal_add("server connected", sig_connected);
 	signal_add("server disconnected", sig_disconnected);
 	signal_add("xmpp recv iq", sig_recv_iq);

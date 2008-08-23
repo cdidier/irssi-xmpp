@@ -53,7 +53,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 void
 chatstates_init(void)
 {
-	xmpp_add_feature(XMLNS_CHATSTATES);
+	disco_add_feature(XMLNS_CHATSTATES);
 	signal_add("xmpp recv message", sig_recv_message);
 }
 

@@ -133,7 +133,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 void
 version_init(void)
 {
-	xmpp_add_feature(XMLNS_VERSION);
+	disco_add_feature(XMLNS_VERSION);
 	settings_add_bool("xmpp", "xmpp_send_version", TRUE);
 	command_bind_xmpp("ver", NULL, (SIGNAL_FUNC)cmd_ver);
 	signal_add("xmpp recv iq", sig_recv_iq);

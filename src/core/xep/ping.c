@@ -133,7 +133,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 static void
 sig_server_features(XMPP_SERVER_REC *server)
 {
-	if (xmpp_have_feature(server->server_features, XMLNS_PING))
+	if (disco_have_feature(server->server_features, XMLNS_PING))
 		supported_servers = g_slist_prepend(supported_servers, server);
 }
 
@@ -211,7 +211,7 @@ ping_init(void)
 {
 	supported_servers = NULL;
 	pings = datalist_new(freedata_func);
-	xmpp_add_feature(XMLNS_PING);
+	disco_add_feature(XMLNS_PING);
 	signal_add("xmpp recv iq", sig_recv_iq);
 	signal_add("xmpp server features", sig_server_features);
 	signal_add("server disconnected", sig_disconnected);

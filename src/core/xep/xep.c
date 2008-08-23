@@ -30,9 +30,9 @@
 void
 xep_init(void)
 {
+	disco_init(); /* init sevice discovery first */
 	chatstates_init();
 	composing_init();
-	disco_init();
 	oob_init();
 	ping_init();
 	vcard_init();
@@ -42,9 +42,9 @@ xep_init(void)
 void
 xep_deinit(void)
 {
+	disco_deinit();
 	chatstates_deinit();
 	composing_deinit();
-	disco_deinit();
 	oob_deinit();
 	ping_deinit();
 	vcard_deinit();

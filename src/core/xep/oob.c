@@ -63,7 +63,7 @@ sig_recv_x(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 void
 oob_init(void)
 {
-	xmpp_add_feature(XMLNS_OOB_X);
+	disco_add_feature(XMLNS_OOB_X);
 	signal_add("xmpp recv message", sig_recv_x);
 	signal_add("xmpp recv presence", sig_recv_x);
 }
