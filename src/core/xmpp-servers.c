@@ -92,17 +92,8 @@ server_cleanup(XMPP_SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;
-
-	/* close the connection */
-	if (lm_connection_get_state(server->lmconn) !=
-	    LM_CONNECTION_STATE_CLOSED) {
-		lm_connection_close(server->lmconn, NULL);
-	}
+	lm_connection_close(server->lmconn, NULL);
 	lm_connection_unref(server->lmconn);
-
-	lookup_servers = g_slist_remove(lookup_servers, server);
-	servers = g_slist_remove(servers, server);
-
 	g_free(server->nickname);
 	g_free(server->jid);
 	g_free(server->user);
@@ -252,13 +243,11 @@ lm_open_cb(LmConnection *connection, gboolean success,
 	XMPP_SERVER_REC *server;
 	IPADDR ip;
 	char *host;
-	GError *error;
 
 	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return;
-	error = NULL;
-	if (!success)
-		goto err;
+	if (!success) 
+		return;
 	/* get the server address */
 	host = lm_connection_get_local_host(server->lmconn);
 	if (host != NULL) {
@@ -267,18 +256,9 @@ lm_open_cb(LmConnection *connection, gboolean success,
 		g_free(host);
 	} else
 		signal_emit("server connecting", 1, server);
-	if (!lm_connection_authenticate(connection, server->user,
+	lm_connection_authenticate(connection, server->user,
 	    server->connrec->password, server->resource,
-	    lm_auth_cb, server, NULL, &error))
-		goto err;
-	return;
-
-err:
-	server->connection_lost = TRUE;
-	server_connect_failed(SERVER(server),
-	    (error != NULL) ? error->message : "Connection failed");
-	if (error != NULL)
-		g_error_free(error);
+	    lm_auth_cb, server, NULL, NULL);
 }
 
 gboolean
@@ -355,31 +335,41 @@ set_proxy(LmConnection *lmconn, GError **error)
 void
 xmpp_server_connect(XMPP_SERVER_REC *server)
 {
-	GError *error = NULL;
+	GError *error;
+	const char *err_msg;
 
 	if (!IS_XMPP_SERVER(server))
 		return;
+	error = NULL;
+	err_msg = NULL;
 	if (server->connrec->use_ssl
-	    && !set_ssl(server->lmconn, &error, server))
+	    && !set_ssl(server->lmconn, &error, server)) {
+		err_msg = "Cannot init ssl";
 		goto err;
+	}
 	if (settings_get_bool("xmpp_use_proxy")
-	    && !set_proxy(server->lmconn, &error))
+	    && !set_proxy(server->lmconn, &error)) {
+		err_msg = "Cannot set proxy";
 		goto err;
+	}
 	lm_connection_set_disconnect_function(server->lmconn,
 	    lm_close_cb, server, NULL);
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
 	if (!lm_connection_open(server->lmconn,  lm_open_cb, server,
-	    NULL, &error))
+	    NULL, &error)) {
+		err_msg = "Connection failed";
 		goto err;
+	}
 	return;
 
 err:
 	server->connection_lost = TRUE;
-	server_connect_failed(SERVER(server),
-	    (error != NULL) ? error->message : NULL);
-	if (error != NULL)
+	if (error != NULL) {
+		server_connect_failed(SERVER(server), error->message);
 		g_error_free(error);
+	} else
+		server_connect_failed(SERVER(server), err_msg);
 }
 
 static void

@@ -126,7 +126,7 @@ register_stanzas(XMPP_SERVER_REC *server)
 void
 stanzas_init(void)
 {
-	signal_add_first("server connecting", register_stanzas);
+	signal_add_first("server connected", register_stanzas);
 	signal_add_first("server disconnected", unregister_stanzas);
 	signal_add_last("xmpp send message", send_stanza); 
 	signal_add_last("xmpp send presence", send_stanza); 
@@ -137,8 +137,8 @@ stanzas_init(void)
 void
 stanzas_deinit(void)
 {
-	signal_remove("server connecting", (SIGNAL_FUNC)register_stanzas);
-	signal_remove("server disconnected", (SIGNAL_FUNC)unregister_stanzas);
+	signal_remove("server connected", register_stanzas);
+	signal_remove("server disconnected", unregister_stanzas);
 	signal_remove("xmpp send message", send_stanza); 
 	signal_remove("xmpp send presence", send_stanza); 
 	signal_remove("xmpp send iq", send_stanza); 
