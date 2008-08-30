@@ -270,7 +270,13 @@ channels_join_func(SERVER_REC *server, const char *data, int automatic)
 static int
 ischannel_func(SERVER_REC *server, const char *data)
 {
-	return muc_find(server, data) != NULL ? TRUE : FALSE;
+	char *str;
+	gboolean r;
+
+	str = muc_extract_channel(data);
+	r = muc_find(server, data) != NULL ? TRUE : FALSE;
+	g_free(str);
+	return r;
 }
 
 static void

@@ -35,10 +35,11 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 {
 	LmMessageNode *node;
 
-	if (type != LM_MESSAGE_SUB_TYPE_NOT_SET
+	if ((type != LM_MESSAGE_SUB_TYPE_NOT_SET
 	    && type != LM_MESSAGE_SUB_TYPE_HEADLINE
 	    && type != LM_MESSAGE_SUB_TYPE_NORMAL
 	    && type != LM_MESSAGE_SUB_TYPE_CHAT)
+	    || server->ischannel(SERVER(server), from))
 		return;
 	if (lm_find_node(lmsg->node, "composing", "xmlns",
 	    XMLNS_CHATSTATES) != NULL) {

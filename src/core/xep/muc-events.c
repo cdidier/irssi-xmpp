@@ -21,6 +21,7 @@
  * XEP-0045: Multi-User Chat
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "module.h"
@@ -220,10 +221,23 @@ nick_kicked(MUC_REC *channel, const char *nickname, const char *actor,
 }
 
 static void
-joinerror(MUC_REC *channel, int error)
+error_message(MUC_REC *channel, const char *code)
+{
+	switch (atoi(code)) {
+	case 401:
+		signal_emit("xmpp channel error", 2, channel, "not allowed");
+		break;
+	}
+}
+
+static void
+error_join(MUC_REC *channel, const char *code)
 {
 	char *altnick;
+	int error;
 
+	error = atoi(code);
+	/* TODO: emit display signal */
 	/* rejoin with alternate nick */
 	if (error == MUC_ERROR_USE_RESERVED_ROOM_NICK
 	    || error == MUC_ERROR_NICK_IN_USE) {
@@ -244,15 +258,237 @@ joinerror(MUC_REC *channel, int error)
 }
 
 static void
+error_presence(MUC_REC *channel, const char *code, const char *nick)
+{
+	int error;
+
+	error = atoi(code);
+	switch (atoi(code)) {
+	case 409:
+		signal_emit("message xmpp channel nick in use", 2, channel,
+			channel, nick);
+		break;
+	}
+}
+
+static void
+available(MUC_REC *channel, const char *from, LmMessage *lmsg)
+{
+	LmMessageNode *node;
+	const char *item_affiliation, *item_role, *nick;
+	char *item_jid, *item_nick, *status;
+	gboolean own, forced, created;
+
+	item_affiliation = item_role = status = NULL;
+	item_jid = item_nick = NULL;
+	own = forced = created = FALSE;
+	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
+	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
+	node = node != NULL ? lm_message_node_get_child(node, "item") : NULL;
+	if (node != NULL) {
+		/* <item affiliation='item_affiliation'
+		 *     role='item_role'
+		 *     nick='item_nick'/> */
+		item_affiliation =
+		    lm_message_node_get_attribute(node, "affiliation");
+		item_role =
+		    lm_message_node_get_attribute(node, "role");
+		item_jid = xmpp_recode_in(
+		    lm_message_node_get_attribute(node, "jid"));
+		item_nick = xmpp_recode_in(
+		    lm_message_node_get_attribute(node, "nick"));
+		/* <status code='110'/> */
+		own = lm_find_node(node, "status", "code", "110") != NULL;
+		/* <status code='210'/> */
+		forced = lm_find_node(node, "status", "code", "210") != NULL;
+		/* <status code='201'/> */
+		created = lm_find_node(node, "status", "code", "201") != NULL;
+	}
+	nick = item_nick != NULL ? item_nick : from;
+	if (created) {
+		/* TODO send disco
+		 * show event IRCTXT_CHANNEL_CREATED */
+	}
+	if (own || strcmp(nick, channel->nick) == 0)
+		own_event(channel, nick, item_jid, item_affiliation, item_role,
+		    forced);
+	else 
+		nick_event(channel, nick, item_jid, item_affiliation, item_role);
+	/* <status>text</status> */
+	node = lm_message_node_get_child(lmsg->node, "status");
+	if (node != NULL)
+		status = xmpp_recode_in(node->value);
+	/* <show>show</show> */
+	node = lm_message_node_get_child(lmsg->node, "show");
+	nick_presence(channel, nick, node != NULL ? node->value : NULL, status);
+	g_free(item_jid);
+	g_free(item_nick);
+	g_free(status);
+}
+
+static void
+unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
+{
+	LmMessageNode *node, *child;
+	const char *status_code;
+	char *reason, *actor, *item_nick, *status;
+
+	status_code = NULL;
+	reason = actor = item_nick = status = NULL;
+	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
+	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
+	if (node != NULL) {
+		/* <status code='status_code'/> */
+		child = lm_message_node_get_child(node, "status");
+		if (child != NULL)
+			status_code =
+			    lm_message_node_get_attribute(child, "code");
+		/* <item nick='item_nick'> */
+		node = lm_message_node_get_child(node, "item");
+		if (node != NULL) {
+			item_nick = xmpp_recode_in(
+			    lm_message_node_get_attribute(node, "nick"));
+			/* <reason>reason</reason> */
+			child = lm_message_node_get_child(node, "reason");
+			if (child != NULL)
+				reason = xmpp_recode_in(child->value);
+			/* <actor jid='actor'/> */
+			child = lm_message_node_get_child(node, "actor");
+			if (child != NULL)
+				actor = xmpp_recode_in(
+				    lm_message_node_get_attribute(child, "jid"));
+		}
+	}
+	if (status_code != NULL) {
+		switch (atoi(status_code)) {
+		case 303: /* <status code='303'/> */
+			signal_emit("xmpp channel nick", 5, channel, nick,
+			    item_nick);
+			break;
+		case 307: /* kick: <status code='307'/> */
+			nick_kicked(channel, nick, actor, reason);
+			break;
+		case 301: /* ban: <status code='301'/> */
+			nick_kicked(channel, nick, actor, reason);
+			break;
+		}
+	} else {
+		/* <status>text</status> */
+		node = lm_message_node_get_child(lmsg->node, "status");
+		if (node != NULL)
+			status = xmpp_recode_in(node->value);
+		nick_part(channel, nick, status);
+		g_free(status);
+	}
+	g_free(item_nick);
+	g_free(reason);
+	g_free(actor);
+}
+
+static MUC_REC *
+get_muc(XMPP_SERVER_REC *server, const char *data)
+{
+	MUC_REC *channel;
+	char *str;
+
+	str = muc_extract_channel(data);
+	channel = muc_find(server, str);
+	g_free(str);
+	return channel;
+}
+
+static void
 sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
+	MUC_REC *channel;
+	LmMessageNode *node;
+	char *nick, *str;
+	gboolean action, own;
+
+	if ((channel = get_muc(server, from)) == NULL)
+		return;
+	nick = muc_extract_nick(from);
+	switch (type) {
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		node = lm_message_node_get_child(lmsg->node, "error");
+		if (node == NULL)
+			goto out;
+		/* TODO: extract error type and name -> XMLNS_STANZAS */
+		error_message(channel,
+		    lm_message_node_get_attribute(node, "code"));
+		break;
+	case LM_MESSAGE_SUB_TYPE_NOT_SET:
+		/* TODO: invite */
+		break;
+	case LM_MESSAGE_SUB_TYPE_GROUPCHAT:
+		node = lm_message_node_get_child(lmsg->node, "subject");
+		if (node != NULL) {
+			str = xmpp_recode_in(node->value);
+			topic(channel, str, nick);
+			g_free(str);
+		}
+		node = lm_message_node_get_child(lmsg->node, "body");
+		if (node != NULL && nick != NULL) {
+			str = xmpp_recode_in(node->value);
+			own = strcmp(nick, channel->nick) == 0;
+			action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
+			if (action && own)
+				signal_emit("message xmpp own_action", 4,
+				    server, str+4, channel->name,
+				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+			else if (action)
+				signal_emit("message xmpp action", 5,
+				    server, str+4, nick, channel->name,
+				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+			else if (own)
+				signal_emit("message xmpp own_public", 3,
+				    server, str, channel->name);
+			else
+				signal_emit("message public", 5,
+				    server, str, nick, "", channel->name);
+			g_free(str);
+		}
+		break;
+	}
+out:
+	g_free(nick);
 }
 
 static void
 sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
+	MUC_REC *channel;
+	LmMessageNode *node;
+	char *nick;
+
+	if ((channel = get_muc(server, from)) == NULL)
+		return;
+	nick = muc_extract_nick(from);
+	switch (type) {
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		node = lm_message_node_get_child(lmsg->node, "error");
+		if (node == NULL)
+			goto out;
+		/* TODO: extract error type and name -> XMLNS_STANZAS */
+		if (!channel->joined)
+			error_join(channel,
+			    lm_message_node_get_attribute(node, "code"));
+		else
+			error_presence(channel,
+			    lm_message_node_get_attribute(node, "code"), nick);
+		break;
+	case LM_MESSAGE_SUB_TYPE_AVAILABLE:
+		available(channel, nick, lmsg);
+		break;
+	case LM_MESSAGE_SUB_TYPE_UNAVAILABLE:
+		unavailable(channel, nick, lmsg);
+		break;
+	}
+
+out:
+	g_free(nick);
 }
 
 void
