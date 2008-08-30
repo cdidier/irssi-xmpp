@@ -20,12 +20,12 @@
 #include "module.h"
 #include "modules.h"
 
-#include "text-composing.h"
+#include "xep/text-xep.h"
 
 void
 text_xmpp_init(void)
 {
-	text_composing_init();
+	text_xep_init();
 
 	module_register("xmpp", "text");
 }
@@ -33,5 +33,5 @@ text_xmpp_init(void)
 void
 text_xmpp_deinit(void)
 {
-	text_composing_deinit();
+	text_xep_deinit();
 }
