@@ -226,7 +226,11 @@ sig_message_own_public(SERVER_REC *server, char *msg, char *target)
 	channel = channel_find(server, target);
 	if (channel == NULL)
 		return;
+#ifndef MUC
+	nick = server->nick;
+#else
 	nick = ((MUC_REC *)channel)->nick;
+#endif
 #if IRSSI_VERSION_DATE >= 20071006
 	nickmode = channel_get_nickmode(CHANNEL(channel), nick);
 #else
