@@ -176,31 +176,27 @@ lm_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 		return LM_SSL_RESPONSE_CONTINUE;
 	switch (status) {
 	case LM_SSL_STATUS_NO_CERT_FOUND:
-		signal_emit("xmpp ssl error", 2, server,
-		    "No certificate found");
+		g_warning("SSL: no certificate found");
 		break;
 	case LM_SSL_STATUS_UNTRUSTED_CERT:
-		signal_emit("xmpp ssl error", 2, server,
-		    "Certificate is not trusted");
+		g_warning("SSL: certificate is not trusted");
 		break;
 	case LM_SSL_STATUS_CERT_EXPIRED:
-		signal_emit("xmpp ssl error", 2, server,
-		    "Certificate has expired");
+		g_warning("SSL: certificate has expired");
 		break;
 	case LM_SSL_STATUS_CERT_NOT_ACTIVATED:
-		signal_emit("xmpp ssl error", 2, server,
-		    "Certificate has not been activated");
+		g_warning("SSL: certificate has not been activated");
 		break;
 	case LM_SSL_STATUS_CERT_HOSTNAME_MISMATCH:
-		signal_emit("xmpp ssl error", 2, server,
-		    "Certificate hostname does not match expected hostname");
+		g_warning("SSL: certificate hostname does not match "
+		    "expected hostname");
 		break;
 	case LM_SSL_STATUS_CERT_FINGERPRINT_MISMATCH: 
-		signal_emit("xmpp ssl error", 2, server,
-		    "Certificate fingerprint does not match expected fingerprint");
+		g_warning("SSL: certificate fingerprint does not match "
+		    "expected fingerprint");
 		break;
 	case LM_SSL_STATUS_GENERIC_ERROR:
-		signal_emit("xmpp ssl error", 2, server, "Generic error");
+		g_warning("SSL: generic error");
 		break;
 	}
 	return LM_SSL_RESPONSE_CONTINUE;
