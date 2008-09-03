@@ -196,10 +196,10 @@ set_away(XMPP_SERVER_REC *server, const char *data)
 
 	if (!IS_XMPP_SERVER(server))
 		return;
-	g_strstrip((char *)data);
 	tmp = g_strsplit(data, " ", 2);
 	if (*data == '\0') {
 		show = XMPP_PRESENCE_AVAILABLE;
+		reason = NULL;
 	} else {
 		show = xmpp_get_show(tmp[0]);
 		if (show == XMPP_PRESENCE_AVAILABLE && g_ascii_strcasecmp(
