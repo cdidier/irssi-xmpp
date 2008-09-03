@@ -52,7 +52,11 @@ create_server_setup(void)
 static SERVER_CONNECT_REC *
 create_server_connect(void)
 {
-	return (SERVER_CONNECT_REC *)g_new0(XMPP_SERVER_CONNECT_REC, 1);
+	XMPP_SERVER_CONNECT_REC *conn;
+
+	conn = g_new0(XMPP_SERVER_CONNECT_REC, 1);
+	conn->channels_list = NULL;
+	return (SERVER_CONNECT_REC *)conn;
 }
 
 static CHANNEL_SETUP_REC *

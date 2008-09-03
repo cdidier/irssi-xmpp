@@ -27,13 +27,18 @@
 static void
 sig_conn_copy(SERVER_CONNECT_REC **dest, XMPP_SERVER_CONNECT_REC *src)
 {
+	GSList *tmp;
 	XMPP_SERVER_CONNECT_REC *conn;
 
 	g_return_if_fail(dest != NULL);
 	if (!IS_XMPP_SERVER_CONNECT(src))
 		return;
 	conn = (XMPP_SERVER_CONNECT_REC *)*dest;
-	conn->channels_list = g_slist_copy(src->channels_list);
+	conn->channels_list = NULL;
+	for (tmp = src->channels_list; tmp != NULL; tmp = tmp->next) {
+		conn->channels_list = g_slist_append(conn->channels_list,
+		    g_strdup(tmp->data));
+	}
 }
 
 static void
@@ -46,7 +51,6 @@ sig_conn_remove(RECONNECT_REC *rec)
 	conn = XMPP_SERVER_CONNECT(rec->conn);
 	g_slist_foreach(conn->channels_list, (GFunc)g_free, NULL);
 	g_slist_free(conn->channels_list);
-
 }
 
 static void
@@ -57,8 +61,7 @@ save_channels(XMPP_SERVER_REC *server, XMPP_SERVER_CONNECT_REC *conn)
 	char *str;
 
 	if (conn->channels_list != NULL) {
-		for (tmp = conn->channels_list; tmp != NULL; tmp = tmp->next)
-			g_free(tmp->data);
+		g_slist_foreach(conn->channels_list, (GFunc)g_free, NULL);
 		g_slist_free(conn->channels_list);
 		conn->channels_list = NULL;
 	}
