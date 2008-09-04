@@ -23,6 +23,7 @@
 #include "channels.h"
 #include "levels.h"
 #include "module-formats.h"
+#include "nicklist.h"
 #include "printtext.h"
 #include "recode.h"
 #include "settings.h"
@@ -35,7 +36,6 @@
 #include "irssi-version.h"
 
 #include "xmpp-servers.h"
-#include "xep/muc.h"
 
 static void
 sig_history(SERVER_REC *server, const char *msg, const char *nick,
@@ -79,10 +79,10 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 #endif
 		text = !print_channel ?
 		    format_get_text(CORE_MODULE_NAME, NULL, server,
-		        target, TXT_PUBMSG, nick, msg, nickmode) :
+			target, TXT_PUBMSG, nick, msg, nickmode) :
 		    format_get_text(CORE_MODULE_NAME, NULL, server,
-		        target, TXT_PUBMSG_CHANNEL, nick, target, msg,
-		        nickmode);
+			target, TXT_PUBMSG_CHANNEL, nick, target, msg,
+			nickmode);
 		g_free(nickmode);
 	/* General */
 	} else
@@ -213,24 +213,18 @@ sig_message_own_public(SERVER_REC *server, char *msg, char *target)
 {
 	WINDOW_REC *window;
 	CHANNEL_REC *channel;
-	const char *nick;
-	char *nickmode, *freemsg = NULL, *recoded;
+	char *nick, *nickmode, *freemsg = NULL, *recoded;
 	gboolean print_channel;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(msg != NULL);
 	g_return_if_fail(target != NULL);
-
 	if (!IS_XMPP_SERVER(server))
 		return;
 	channel = channel_find(server, target);
-	if (channel == NULL)
+	if (channel == NULL || channel->ownnick == NULL)
 		return;
-#ifndef MUC
-	nick = server->nick;
-#else
-	nick = ((MUC_REC *)channel)->nick;
-#endif
+	nick = channel->ownnick->nick;
 #if IRSSI_VERSION_DATE >= 20071006
 	nickmode = channel_get_nickmode(CHANNEL(channel), nick);
 #else
@@ -246,7 +240,7 @@ sig_message_own_public(SERVER_REC *server, char *msg, char *target)
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *)channel, msg);
 	/* ugly from irssi: recode the sent message back for printing */
-        recoded = recode_in(SERVER(server), msg, target);
+	recoded = recode_in(SERVER(server), msg, target);
 	if (!print_channel)
 		printformat_module(CORE_MODULE_NAME, server, target,
 		    MSGLEVEL_PUBLIC | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
@@ -260,43 +254,6 @@ sig_message_own_public(SERVER_REC *server, char *msg, char *target)
 	g_free_not_null(freemsg);
 	signal_stop();
 	/* emit signal for chat-completion */
-}
-
-static void
-sig_message_own_private(XMPP_SERVER_REC *server, char *msg, char *target,
-    char *origtarget)
-{
-	QUERY_REC *query;
-	char *freemsg = NULL, *recoded;
-
-	g_return_if_fail(server != NULL);
-	g_return_if_fail(msg != NULL);
-	if (!IS_XMPP_SERVER(server))
-		return;
-	if (target == NULL) {
-		/* this should only happen if some special target failed and
-		 * we should display some error message. currently the special
-		 * targets are only ',' and '.'. */
-		g_return_if_fail(strcmp(origtarget, ",") == 0 ||
-		    strcmp(origtarget, ".") == 0);
-		printformat_module(CORE_MODULE_NAME, NULL, NULL,
-		    MSGLEVEL_CLIENTNOTICE, *origtarget == ',' ?
-		    TXT_NO_MSGS_GOT : TXT_NO_MSGS_SENT);
-		signal_stop();
-		return;
-	}
-	query = privmsg_get_query(SERVER(server), target, TRUE, MSGLEVEL_MSGS);
-	if (settings_get_bool("emphasis"))
-		msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
-	/* ugly from irssi: recode the sent message back for printing */
-        recoded = recode_in(SERVER(server), msg, target);
-	printformat_module(CORE_MODULE_NAME, server, target,
-	    MSGLEVEL_MSGS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
-	    query == NULL ? TXT_OWN_MSG_PRIVATE : TXT_OWN_MSG_PRIVATE_QUERY,
-	    target, msg, server->nickname);
-	g_free(recoded);
-	g_free_not_null(freemsg);
-	signal_stop();
 }
 
 static void
@@ -316,7 +273,6 @@ fe_xmpp_messages_init(void)
 	signal_add("message xmpp error", sig_error);
 	signal_add_first("message xmpp own_public", sig_message_own_public);
 	signal_add_first("message own_public", sig_message_ignore);
-	signal_add_first("message own_private", sig_message_own_private);
 }
 
 void
@@ -329,5 +285,4 @@ fe_xmpp_messages_deinit(void)
 	signal_remove("message xmpp error", sig_error);
 	signal_remove("message xmpp own_public", sig_message_own_public);
 	signal_remove("message own_public", sig_message_ignore);
-	signal_remove("message own_private", sig_message_own_private);
 }
