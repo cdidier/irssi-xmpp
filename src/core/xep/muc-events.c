@@ -362,8 +362,7 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 	if (status_code != NULL) {
 		switch (atoi(status_code)) {
 		case 303: /* <status code='303'/> */
-			signal_emit("xmpp channel nick", 5, channel, nick,
-			    item_nick);
+			nick_changed(channel, nick, item_nick);
 			break;
 		case 307: /* kick: <status code='307'/> */
 			nick_kicked(channel, nick, actor, reason);
