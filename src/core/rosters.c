@@ -335,6 +335,8 @@ update_user(XMPP_SERVER_REC *server, const char *jid, const char *subscription,
 		    && strcmp(user->name, name) != 0)) {
 			g_free(user->name);
 			user->name = g_strdup(name);
+			group->users = g_slist_sort(group->users,
+			    func_sort_user);
 		}
 	}
 	update_subscription(server, user, group, subscription);
