@@ -37,8 +37,6 @@ struct _XMPP_SERVER_CONNECT_REC {
 struct _XMPP_SERVER_REC {
 	#include "server-rec.h"
 
-	char		*nickname;
-
 	char		*jid;
 	char		*user;
 	char		*host;

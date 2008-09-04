@@ -18,6 +18,7 @@
  */
 
 #include "module.h"
+#include "settings.h"
 #include "signals.h"
 #include "window-items.h"
 
@@ -31,12 +32,10 @@ static void
 update_nick_statusbar(XMPP_SERVER_REC *server, MUC_REC *channel,
     gboolean redraw)
 {
-	g_return_if_fail(server != NULL);
-	if (!IS_XMPP_SERVER(server))
-		return;
 	g_free(server->nick);
-	server->nick = g_strdup(IS_MUC(channel) ?
-	    channel->nick : server->nickname);
+	server->nick = g_strdup(IS_MUC(channel) ? channel->nick
+	    : settings_get_bool("xmpp_set_nick_as_username") ?
+	    server->user : server->jid);
 	if (redraw)
 		statusbar_redraw(NULL, TRUE);
 }
@@ -48,8 +47,7 @@ sig_window_changed(WINDOW_REC *window, WINDOW_REC *oldwindow)
 	MUC_REC *channel;
 
 	g_return_if_fail(window != NULL);
-	server = XMPP_SERVER(window->active_server);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
 	channel = MUC(window->active);
 	if (channel != NULL
@@ -64,8 +62,7 @@ sig_window_destroyed(WINDOW_REC *window)
 	MUC_REC *channel;
 
 	g_return_if_fail(window != NULL);
-	server = XMPP_SERVER(window->active_server);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
 	channel = MUC(window->active);
 	if (channel != NULL || !IS_MUC(active_win->active))
@@ -73,12 +70,12 @@ sig_window_destroyed(WINDOW_REC *window)
 }
 
 static void
-sig_nick_changed(XMPP_SERVER_REC *server, MUC_REC *channel)
+sig_nick_changed(MUC_REC *channel)
 {
-	if (!IS_XMPP_SERVER(server) || !IS_MUC(channel))
+	if (!IS_MUC(channel))
 		return;
 	if (MUC(active_win->active) == channel)
-		update_nick_statusbar(server, channel, TRUE);
+		update_nick_statusbar(channel->server, channel, TRUE);
 }
 
 static void

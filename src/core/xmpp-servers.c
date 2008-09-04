@@ -96,7 +96,6 @@ server_cleanup(XMPP_SERVER_REC *server)
 	    LM_CONNECTION_STATE_CLOSED)
 		lm_connection_close(server->lmconn, NULL);
 	lm_connection_unref(server->lmconn);
-	g_free(server->nickname);
 	g_free(server->jid);
 	g_free(server->user);
 	g_free(server->host);
@@ -153,7 +152,6 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	g_free(conn->nick);
 	conn->nick = g_strdup(settings_get_bool("xmpp_set_nick_as_username") ?
 	    server->user : server->jid);
-	server->nickname = g_strdup(conn->nick);
 
 	/* init loudmouth connection structure */
 	server->lmconn = lm_connection_new(NULL);
