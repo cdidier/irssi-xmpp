@@ -503,6 +503,21 @@ sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		user_unavailable(server, from, status);
 		g_free(status);
 		break;
+	case LM_MESSAGE_SUB_TYPE_SUBSCRIBE:
+		node = lm_message_node_get_child(lmsg->node, "status");
+		status = node != NULL ? xmpp_recode_in(node->value) : NULL;
+		signal_emit("xmpp presence subscribe", 3, server, from, status);
+		g_free(status);
+		break;
+	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBE:
+		signal_emit("xmpp presence unsubscribe", 2, server, from);
+		break;
+	case LM_MESSAGE_SUB_TYPE_SUBSCRIBED:
+		signal_emit("xmpp presence subscribed", 2, server, from);
+		break;
+	case LM_MESSAGE_SUB_TYPE_UNSUBSCRIBED:
+		signal_emit("xmpp presence unsubscribed", 2, server, from);
+		break;
 	case LM_MESSAGE_SUB_TYPE_ERROR:
 		user_presence_error(server, from);
 		break;

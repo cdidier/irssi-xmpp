@@ -176,27 +176,31 @@ lm_ssl_cb(LmSSL *ssl, LmSSLStatus status, gpointer user_data)
 		return LM_SSL_RESPONSE_CONTINUE;
 	switch (status) {
 	case LM_SSL_STATUS_NO_CERT_FOUND:
-		g_warning("SSL: no certificate found");
+		g_warning("SSL (%s): no certificate found",
+		    server->connrec->address);
 		break;
 	case LM_SSL_STATUS_UNTRUSTED_CERT:
-		g_warning("SSL: certificate is not trusted");
+		g_warning("SSL (%s): certificate is not trusted",
+		    server->connrec->address);
 		break;
 	case LM_SSL_STATUS_CERT_EXPIRED:
-		g_warning("SSL: certificate has expired");
+		g_warning("SSL (%s): certificate has expired",
+		    server->connrec->address);
 		break;
 	case LM_SSL_STATUS_CERT_NOT_ACTIVATED:
-		g_warning("SSL: certificate has not been activated");
+		g_warning("SSL (%s): certificate has not been activated",
+		    server->connrec->address);
 		break;
 	case LM_SSL_STATUS_CERT_HOSTNAME_MISMATCH:
-		g_warning("SSL: certificate hostname does not match "
-		    "expected hostname");
+		g_warning("SSL (%s): certificate hostname does not match "
+		    "expected hostname", server->connrec->address);
 		break;
 	case LM_SSL_STATUS_CERT_FINGERPRINT_MISMATCH: 
-		g_warning("SSL: certificate fingerprint does not match "
-		    "expected fingerprint");
+		g_warning("SSL (%s): certificate fingerprint does not match "
+		    "expected fingerprint", server->connrec->address);
 		break;
 	case LM_SSL_STATUS_GENERIC_ERROR:
-		g_warning("SSL: generic error");
+		g_warning("SSL (%s): generic error", server->connrec->address);
 		break;
 	}
 	return LM_SSL_RESPONSE_CONTINUE;
