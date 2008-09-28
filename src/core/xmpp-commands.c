@@ -660,10 +660,12 @@ xmpp_commands_deinit(void)
 	command_unbind("roster remove", (SIGNAL_FUNC)cmd_roster_remove);
 	command_unbind("roster name", (SIGNAL_FUNC)cmd_roster_name);
 	command_unbind("roster group", (SIGNAL_FUNC)cmd_roster_group);
-	command_unbind("roster accept", (SIGNAL_FUNC)cmd_roster_accept);
-	command_unbind("roster deny", (SIGNAL_FUNC)cmd_roster_deny);
-	command_unbind("roster subscribe", (SIGNAL_FUNC)cmd_roster_subscribe);
-	command_unbind("roster unsubscribe",
-	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
+	command_unbind("presence", (SIGNAL_FUNC)cmd_presence);
+	command_unbind("presence accept", (SIGNAL_FUNC)cmd_presence_accept);
+	command_unbind("presence deny", (SIGNAL_FUNC)cmd_presence_deny);
+	command_unbind("presence subscribe",
+	    (SIGNAL_FUNC)cmd_presence_subscribe);
+	command_unbind("presence unsubscribe",
+	    (SIGNAL_FUNC)cmd_presence_unsubscribe);
 	command_unbind("me", (SIGNAL_FUNC)cmd_me);
 }
