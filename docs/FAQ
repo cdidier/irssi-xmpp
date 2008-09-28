@@ -1,7 +1,13 @@
 1. Connection:
 ==============
 
-1.1 How can I automatically connect to my account at irssi startup ?
+1.1 How can I automatically load irssi-xmpp at irssi startup ?
+
+Simply put "irssi-xmpp" in your startup file (~/.irssi/startup):
+    echo "irssi-xmpp" >> ~/.irssi/startup
+
+
+1.2 How can I automatically connect to my account at irssi startup ?
 
 You can put these things in your config file (The config file can be found
 here : "~/.irssi/config"):
@@ -32,10 +38,12 @@ Now you can connect to your jabber account by typing:
     /CONNECT <network>
 Or just restart irssi if you have set autoconnect to yes.
 
+
 2. General:
 ===========
 
 2.1 Why the lagmeter is not working ?
+
 
 3. Scripting:
 =============
@@ -46,7 +54,9 @@ Or just restart irssi if you have set autoconnect to yes.
 such as: Can't locate object method "xxx" via package "Irssi::Xmpp::Server".
 How can I get rid of that ?
 
+
 4. Themes:
 ==========
 
 4.1 How can I change the theme of the messages of irssi-xmpp ?
+

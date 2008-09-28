@@ -1,5 +1,3 @@
-!!! WARNING: This file isn't up-to-date so don't trust it !!!
-
 General commands:
 =================
 
@@ -35,7 +33,7 @@ roster.
 /ROSTER
     Shows your contacts in a list.
 
-/ROSTER ALL
+/ROSTER FULL
     Shows all your contacts in a list, even those who are offline.
 
 /ROSTER ADD <jid>
@@ -74,18 +72,18 @@ Subscription commands:
 These commands are useful if you want to manage the subscription of your
 contacts.
 
-/ROSTER ACCEPT <jid>
+/PRESENCE ACCEPT <jid>
     Accepts a subscription request, so the contact will be able to see your
     presence.
 
-/ROSTER DENY <jid>
+/PRESENCE DENY <jid>
     Denies a subscription, so the contact won't see your presence anymore.
 
-/ROSTER SUBSCRIBE <jid>
+/PRESENCE SUBSCRIBE <jid> <reason>
     Sends a subscription request to a JID. If the contact accepts your request,
     you'll be able to see his/her presence.
 
-/ROSTER UNSUBSCRIBE <jid>
+/PRESENCE UNSUBSCRIBE <jid>
     Unsubscribes to the contact's presence, so you won't see his/her presence
     anymore.
     
@@ -141,7 +139,7 @@ In "xmpp_lookandfeel" section:
     archives when joining a room.
     (default: 30)
 
-/SET xmpp_raw_window ON/OFF
+/SET xmpp_xml_console ON/OFF
     Creates a new window where the raw XML messages are displayed. Useful for
     debugging. (default: OFF)
 
