@@ -74,6 +74,40 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 }
 
 static GList *
+get_jids(XMPP_SERVER_REC *server, const char *jid)
+{
+	GSList *gl, *ul;
+	GList *list, *list_case, *offlist, *offlist_case;
+	XMPP_ROSTER_USER_REC *user;
+	int len;
+
+	list = list_case = offlist = offlist_case = NULL;
+	len = strlen(jid);
+	for (gl = server->roster; gl != NULL; gl = gl->next) {
+		for (ul = ((XMPP_ROSTER_GROUP_REC *)gl->data)->users;
+		    ul != NULL ; ul = ul->next) {
+			user = (XMPP_ROSTER_USER_REC *)ul->data;
+			if (strncmp(user->jid, jid, len) == 0) {
+				if (user->resources != NULL)
+					g_list_append(list, user->jid);
+				else 
+					g_list_append(offlist, user->jid);
+			} else if (g_strncasecmp(user->jid, jid, len) == 0) {
+				if (user->resources != NULL)
+					g_list_append(list_case, user->jid);
+				else
+					g_list_append(offlist_case, user->jid);
+			}
+		}
+	}
+	/* TODO: temporary list of jids */
+	list = g_list_concat(list, list_case);
+	list = g_list_concat(list, offlist);
+	list = g_list_concat(list, offlist_case);
+	return list;
+}
+
+static GList *
 get_nicks(XMPP_SERVER_REC *server, const char *nick, gboolean quoted,
     gboolean complete_names)
 {
@@ -84,8 +118,6 @@ get_nicks(XMPP_SERVER_REC *server, const char *nick, gboolean quoted,
 	int len;
 	gboolean pass2;
 	
-	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
-	g_return_val_if_fail(nick != NULL, NULL);
 	len = strlen(nick);
 	/* resources completion */
 	resource = xmpp_extract_resource(nick);
@@ -121,6 +153,7 @@ again:
 	}
 	if ((pass2 = !pass2))
 		goto again;
+	/* TODO: rewrite this function */
 	return list;
 }
 
@@ -194,8 +227,7 @@ sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
 	g_return_if_fail(window != NULL);
 	g_return_if_fail(word != NULL);
 	g_return_if_fail(args != NULL);
-	server = XMPP_SERVER(window->active_server);
-	if (server == NULL)
+	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
 	len = strlen(word);
 	tmp = g_strsplit(args, " ", 2);
@@ -203,6 +235,31 @@ sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
 	if (tmp[0] == NULL)
 		*list = g_list_concat(*list, get_nicks(server, *word == '"' ?
 		    word+1 : word , TRUE, FALSE));
+	g_strfreev(tmp);
+	if (*list != NULL)
+		signal_stop();
+}
+
+static void
+sig_complete_command_presence(GList **list, WINDOW_REC *window,
+    const char *word, const char *args, int *want_space)
+{
+	XMPP_SERVER_REC *server;
+	int len;
+	char **tmp;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(window != NULL);
+	g_return_if_fail(word != NULL);
+	g_return_if_fail(args != NULL);
+	if ((server = XMPP_SERVER(window->active_server)) == NULL)
+		return;
+	len = strlen(word);
+	tmp = g_strsplit(args, " ", 2);
+	/* complete nicks */
+	if (tmp[0] == NULL)
+		*list = g_list_concat(*list, get_jids(server, *word == '"' ?
+		    word+1 : word));
 	g_strfreev(tmp);
 	if (*list != NULL)
 		signal_stop();
@@ -327,14 +384,14 @@ xmpp_completion_init(void)
 	    sig_complete_command_roster_others);
 	signal_add("complete command roster name",
 	    sig_complete_command_roster_others);
-	signal_add("complete command roster accept",
-	    sig_complete_command_roster_others);
-	signal_add("complete command roster deny",
-	    sig_complete_command_roster_others);
-	signal_add("complete command roster subscribe",
-	    sig_complete_command_roster_others);
-	signal_add("complete command roster unsubscribe",
-	    sig_complete_command_roster_others);
+	signal_add("complete command presence accept",
+	    sig_complete_command_presence);
+	signal_add("complete command presence deny",
+	    sig_complete_command_presence);
+	signal_add("complete command presence subscribe",
+	    sig_complete_command_presence);
+	signal_add("complete command presence unsubscribe",
+	    sig_complete_command_presence);
 	signal_add("complete command join", sig_complete_command_channels);
 	signal_add("complete command part", sig_complete_command_channels);
 	signal_add("complete command invite", sig_complete_command_invite);
@@ -353,14 +410,14 @@ xmpp_completion_deinit(void)
 	    sig_complete_command_roster_others);
 	signal_remove("complete command roster name",
 	    sig_complete_command_roster_others);
-	signal_remove("complete command roster accept",
-	    sig_complete_command_roster_others);
-	signal_remove("complete command roster deny",
-	    sig_complete_command_roster_others);
-	signal_remove("complete command roster subscribe",
-	    sig_complete_command_roster_others);
-	signal_remove("complete command roster unsubscribe",
-	    sig_complete_command_roster_others);
+	signal_remove("complete command presence accept",
+	    sig_complete_command_presence);
+	signal_remove("complete command presence deny",
+	    sig_complete_command_presence);
+	signal_remove("complete command presence subscribe",
+	    sig_complete_command_presence);
+	signal_remove("complete command presence unsubscribe",
+	    sig_complete_command_presence);
 	signal_remove("complete command join", sig_complete_command_channels);
 	signal_remove("complete command part", sig_complete_command_channels);
 	signal_remove("complete command invite", sig_complete_command_invite);
