@@ -39,14 +39,20 @@ const char *xmpp_commands[] = {
 	"quote",
 	"roster",
 	"whois",
+	"presence",
 	NULL
 };
 
 const char *xmpp_command_roster[] = {
+	"full",
 	"add",
 	"remove",
 	"name",
 	"group",
+	NULL
+};
+
+const char *xmpp_command_presene[] = {
 	"accept",
 	"deny",
 	"subscribe",
@@ -447,9 +453,22 @@ out:
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: ROSTER ACCEPT <jid> */
+/* SYNTAX: PRESENCE */
 static void
-cmd_roster_accept(const char *data, XMPP_SERVER_REC *server)
+cmd_presence(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	CMD_XMPP_SERVER(server);
+	if (*data == '\0')
+		cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
+	else
+		command_runsub(xmpp_commands[XMPP_COMMAND_PRESENCE], data,
+		    server, item);
+}
+
+
+/* SYNTAX: PRESENCE ACCEPT <jid> */
+static void
+cmd_presence_accept(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *lmsg;
 	const char *jid;
@@ -470,9 +489,9 @@ cmd_roster_accept(const char *data, XMPP_SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: ROSTER DENY <jid> */
+/* SYNTAX: PRESENCE DENY <jid> */
 static void
-cmd_roster_deny(const char *data, XMPP_SERVER_REC *server)
+cmd_presence_deny(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *lmsg;
 	const char *jid;
@@ -493,9 +512,9 @@ cmd_roster_deny(const char *data, XMPP_SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: ROSTER SUBSCRIBE <jid> [<reason>] */
+/* SYNTAX: PRESENCE SUBSCRIBE <jid> [<reason>] */
 static void
-cmd_roster_subscribe(const char *data, XMPP_SERVER_REC *server)
+cmd_presence_subscribe(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *lmsg;
 	const char *jid, *reason;
@@ -522,9 +541,9 @@ cmd_roster_subscribe(const char *data, XMPP_SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: ROSTER UNSUBSCRIBE <jid> */
+/* SYNTAX: PRESENCE UNSUBSCRIBE <jid> */
 static void
-cmd_roster_unsubscribe(const char *data, XMPP_SERVER_REC *server)
+cmd_presence_unsubscribe(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *lmsg;
 	const char *jid;
@@ -605,14 +624,15 @@ xmpp_commands_init(void)
 	    (SIGNAL_FUNC)cmd_roster_remove);
 	command_bind_xmpp("roster name", NULL, (SIGNAL_FUNC)cmd_roster_name);
 	command_bind_xmpp("roster group", NULL, (SIGNAL_FUNC)cmd_roster_group);
-	command_bind_xmpp("roster accept", NULL,
-	    (SIGNAL_FUNC)cmd_roster_accept);
-	command_bind_xmpp("roster deny", NULL,
-	    (SIGNAL_FUNC)cmd_roster_deny);
-	command_bind_xmpp("roster subscribe", NULL,
-	    (SIGNAL_FUNC)cmd_roster_subscribe);
-	command_bind_xmpp("roster unsubscribe", NULL,
-	    (SIGNAL_FUNC)cmd_roster_unsubscribe);
+	command_bind_xmpp("presence", NULL, (SIGNAL_FUNC)cmd_presence);
+	command_bind_xmpp("presence accept", NULL,
+	    (SIGNAL_FUNC)cmd_presence_accept);
+	command_bind_xmpp("presence deny", NULL,
+	    (SIGNAL_FUNC)cmd_presence_deny);
+	command_bind_xmpp("presence subscribe", NULL,
+	    (SIGNAL_FUNC)cmd_presence_subscribe);
+	command_bind_xmpp("presence unsubscribe", NULL,
+	    (SIGNAL_FUNC)cmd_presence_unsubscribe);
 	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
 
 	command_set_options("connect", "+xmppnet");
