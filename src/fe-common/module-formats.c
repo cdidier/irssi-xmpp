@@ -45,7 +45,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	/* ---- */
 	{ NULL, "Subscription", 0, { 0 } },
 
-	{ "suscribe", "$0: wants to subscribe to your presence {comment $1}", 2, { 0, 0 } },
+	{ "suscribe", "$0: wants to subscribe to your presence {comment $1} (use command: PRESENCE ACCEPT|DENY $2)", 3, { 0, 0, 0 } },
 	{ "suscribed", "$0: wants you to see his/her presence", 1, { 0 } },
 	{ "unsuscribe", "$0: doesn't want to see your presence anymore", 1 , { 0 } },
 	{ "unsuscribed", "$0: doesn't want you to see his/her presence anymore", 1 , { 0 } },

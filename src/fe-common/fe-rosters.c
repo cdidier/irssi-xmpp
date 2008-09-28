@@ -208,10 +208,10 @@ sig_subscribe(XMPP_SERVER_REC *server, const char *jid, const char *status)
 	if (settings_get_bool("xmpp_status_window"))
 		printformat_module_window(MODULE_NAME,
 		    fe_xmpp_status_get_window(server), MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBE, name, status);
+		    XMPPTXT_SUBSCRIBE, name, status, jid);
 	else
 		printformat_module(MODULE_NAME, server, NULL, MSGLEVEL_CRAP,
-		    XMPPTXT_SUBSCRIBE, name, status);
+		    XMPPTXT_SUBSCRIBE, name, status, jid);
 	g_free(name);
 }
 
