@@ -18,7 +18,7 @@
  */
 
 /*
- * XEP-0022: Message Events
+ * XEP-0085: Chat State Notifications
  */
 
 #include "module.h"
