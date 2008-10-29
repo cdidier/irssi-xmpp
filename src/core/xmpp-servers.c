@@ -107,6 +107,7 @@ SERVER_REC *
 xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 {
 	XMPP_SERVER_REC *server;
+	char *recoded;
 
 	if (conn->address == NULL || conn->address[0] == '\0')
 		return NULL;
@@ -157,7 +158,9 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	server->lmconn = lm_connection_new(NULL);
 	lm_connection_set_server(server->lmconn, server->connrec->address);
 	lm_connection_set_port(server->lmconn, server->connrec->port);
-	lm_connection_set_jid(server->lmconn, server->jid);
+	recoded = xmpp_recode_out(server->jid);
+	lm_connection_set_jid(server->lmconn, recoded);
+	g_free(recoded);
 	lm_connection_set_keep_alive_rate(server->lmconn, 30);
 
 	server_connect_init((SERVER_REC *)server);
@@ -243,10 +246,9 @@ lm_open_cb(LmConnection *connection, gboolean success,
 	XMPP_SERVER_REC *server;
 	IPADDR ip;
 	char *host;
+	char *recoded_user, *recoded_password, *recoded_resource;
 
-	if ((server = XMPP_SERVER(user_data)) == NULL)
-		return;
-	if (!success) 
+	if ((server = XMPP_SERVER(user_data)) == NULL || !success)
 		return;
 	/* get the server address */
 	host = lm_connection_get_local_host(server->lmconn);
@@ -256,9 +258,15 @@ lm_open_cb(LmConnection *connection, gboolean success,
 		g_free(host);
 	} else
 		signal_emit("server connecting", 1, server);
-	lm_connection_authenticate(connection, server->user,
-	    server->connrec->password, server->resource,
-	    lm_auth_cb, server, NULL, NULL);
+	recoded_user = xmpp_recode_out(server->user);
+	recoded_password = xmpp_recode_out(server->connrec->password);
+	recoded_resource = xmpp_recode_out(server->resource);
+	lm_connection_authenticate(connection, recoded_user,
+	    recoded_password, recoded_resource, lm_auth_cb, server,
+	    NULL, NULL);
+	g_free(recoded_user);
+	g_free(recoded_password);
+	g_free(recoded_resource);
 }
 
 gboolean
