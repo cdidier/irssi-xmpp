@@ -25,6 +25,7 @@
 #include "muc.h"
 #include "oob.h"
 #include "ping.h"
+#include "registration.h"
 #include "vcard.h"
 #include "version.h"
 
@@ -37,6 +38,7 @@ xep_init(void)
 	muc_init();
 	oob_init();
 	ping_init();
+	registration_init();
 	vcard_init();
 	version_init();
 }
@@ -50,6 +52,7 @@ xep_deinit(void)
 	muc_deinit();
 	oob_deinit();
 	ping_deinit();
+	registration_deinit();
 	vcard_deinit();
 	version_deinit();
 }

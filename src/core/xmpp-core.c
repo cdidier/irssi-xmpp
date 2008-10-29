@@ -32,7 +32,6 @@
 #include "xmpp-servers-reconnect.h"
 #include "xmpp-settings.h"
 #include "protocol.h"
-#include "register.h"
 #include "rosters.h"
 #include "stanzas.h"
 #include "xep/xep.h"
@@ -104,7 +103,6 @@ xmpp_core_init(void)
 	xmpp_servers_reconnect_init();
 	xmpp_settings_init();
 	protocol_init();
-	register_init();
 	rosters_init();
 	stanzas_init();
 	xep_init();
@@ -122,7 +120,6 @@ xmpp_core_deinit(void)
 	xmpp_servers_reconnect_deinit();
 	xmpp_settings_deinit();
 	protocol_deinit();
-	register_deinit();
 	rosters_deinit();
 	stanzas_deinit();
 

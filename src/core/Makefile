@@ -9,7 +9,6 @@ SRCS=	xmpp-commands.c \
 	xmpp-settings.c \
 	loudmouth-tools.c \
 	protocol.c \
-	register.c \
 	rosters.c \
 	rosters-tools.c \
 	stanzas.c \
@@ -25,6 +24,7 @@ SRCS=	xmpp-commands.c \
 	xep/muc.c \
 	xep/oob.c \
 	xep/ping.c \
+	xep/registration.c \
 	xep/vcard.c \
 	xep/version.c \
 	xep/xep.c

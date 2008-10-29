@@ -60,7 +60,7 @@ const char *xmpp_command_presene[] = {
 	NULL
 };
 
-static char *
+char *
 cmd_connect_get_line(const char *data)
 {
 	GHashTable *optlist;
@@ -130,67 +130,6 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	g_free(line);
 	signal_emit("send command", 3, cmd_line, server, item);
 	g_free(cmd_line);
-}
-
-/* SYNTAX: XMPPREGISTER [-ssl] [-host <server>] [-port <port>]
- *                      <jid> <password> */
-static void
-cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
-{
-	GHashTable *optlist;
-	char *str, *jid, *username, *password, *host, *address;
-	int port;
-	void *free_arg;
-
-	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
-	    "xmppconnect", &optlist, &jid, &password))
-		return;
-	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid))
-		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	username = xmpp_extract_user(jid);
-	host = xmpp_extract_host(jid);
-	address = g_hash_table_lookup(optlist, "host");
-	if (address == NULL || *address == '\0')
-		address = host;
-	port = str = g_hash_table_lookup(optlist, "port") ? atoi(str) : 0;
-	xmpp_register(address, port, g_hash_table_lookup(optlist, "ssl") != NULL,
-	    username, host, password);
-	g_free(username);
-	g_free(host);
-	cmd_params_free(free_arg);
-}
-
-/* SYNTAX: XMPPUNREGISTER -yes */
-static void
-cmd_xmppunregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
-{
-	GHashTable *optlist;
-	LmMessage *lmsg;
-	LmMessageNode *node;
-	void *free_arg;
-
-	CMD_XMPP_SERVER(server);
-	if (!cmd_get_params(data, &free_arg, 0 | PARAM_FLAG_OPTIONS, 
-	    "xmppunregister", &optlist))
-		return;
-	if (g_hash_table_lookup(optlist, "yes") == NULL)
-		cmd_param_error(CMDERR_NOT_GOOD_IDEA);
-	lmsg = lm_message_new_with_sub_type(NULL,
-	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
-	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", "jabber:iq:register");
-	lm_message_node_add_child(node, "remove", NULL);
-	signal_emit("xmpp send iq", 2, server, lmsg);
-	lm_message_unref(lmsg);
-	cmd_params_free(free_arg);
-}
-
-/* SYNTAX: XMPPPASSWD -yes <old_password> <new_password> */
-static void
-cmd_xmpppasswd(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
-{
-	CMD_XMPP_SERVER(server);
-	/* TODO */
 }
 
 static void
@@ -610,11 +549,11 @@ xmpp_get_dest(const char *cmd_dest, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 void
 xmpp_commands_init(void)
 {
+	command_set_options("connect", "+xmppnet");
+	command_set_options("server add", "-xmppnet");
+	command_set_options("xmppconnect", "ssl -network -host @port");
 	command_bind("xmppconnect", NULL, (SIGNAL_FUNC)cmd_xmppconnect);
 	command_bind("xmppserver", NULL, (SIGNAL_FUNC)cmd_xmppserver);
-	command_bind("xmppregister", NULL, (SIGNAL_FUNC)cmd_xmppregister);
-	command_bind("xmppunregister", NULL, (SIGNAL_FUNC)cmd_xmppunregister);
-	command_bind("xmpppasswd", NULL, (SIGNAL_FUNC)cmd_xmpppasswd);
 	command_bind_xmpp("away", NULL, (SIGNAL_FUNC)cmd_away);
 	command_bind_xmpp("quote", NULL, (SIGNAL_FUNC)cmd_quote);
 	command_bind_xmpp("roster", NULL, (SIGNAL_FUNC)cmd_roster);
@@ -634,12 +573,6 @@ xmpp_commands_init(void)
 	command_bind_xmpp("presence unsubscribe", NULL,
 	    (SIGNAL_FUNC)cmd_presence_unsubscribe);
 	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
-
-	command_set_options("connect", "+xmppnet");
-	command_set_options("server add", "-xmppnet");
-	command_set_options("xmppconnect", "ssl -network -host @port");
-	command_set_options("xmppunregister", "yes");
-
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
 	settings_add_bool("xmpp_roster", "roster_add_send_subscribe", TRUE);
 }
@@ -649,9 +582,6 @@ xmpp_commands_deinit(void)
 {
 	command_unbind("xmppconnect", (SIGNAL_FUNC)cmd_xmppconnect);
 	command_unbind("xmppserver", (SIGNAL_FUNC)cmd_xmppserver);
-	command_unbind("xmppregister", (SIGNAL_FUNC)cmd_xmppregister);
-	command_unbind("xmppunregister", (SIGNAL_FUNC)cmd_xmppunregister);
-	command_unbind("xmpppasswd", (SIGNAL_FUNC)cmd_xmpppasswd);
 	command_unbind("away", (SIGNAL_FUNC)cmd_away);
 	command_unbind("quote", (SIGNAL_FUNC)cmd_quote);
 	command_unbind("roster", (SIGNAL_FUNC)cmd_roster);
