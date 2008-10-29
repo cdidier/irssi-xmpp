@@ -111,7 +111,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			server->lag =
 			    (int)get_timeval_diff(&now, &server->lag_sent);
 			memset(&server->lag_sent, 0, sizeof(server->lag_sent));
-			g_free_and_null(server->ping_id);	
+			g_free_and_null(server->ping_id);
 			signal_emit("server lag", 1, server);
 		} else if (lmsg->node->children == NULL
 		    && (rec = datalist_find(pings, server, from)) != NULL) {
@@ -140,16 +140,16 @@ sig_server_features(XMPP_SERVER_REC *server)
 static void
 sig_disconnected(XMPP_SERVER_REC *server)
 {
-	if (IS_XMPP_SERVER(server)) {
-		supported_servers = g_slist_remove(supported_servers, server);
-		datalist_cleanup(pings, server);
-	}
+	if (!IS_XMPP_SERVER(server))
+		return;
+	supported_servers = g_slist_remove(supported_servers, server);
+	datalist_cleanup(pings, server);
 }
 
 static int
 check_ping_func(void)
 {
-	GSList *tmp, *next;
+	GSList *tmp;
 	XMPP_SERVER_REC *server;
 	time_t now;
 	int lag_check_time, max_lag;
@@ -159,11 +159,8 @@ check_ping_func(void)
 	if (lag_check_time <= 0)
 		return 1;
 	now = time(NULL);
-	for (tmp = supported_servers; tmp != NULL; tmp = next) {
+	for (tmp = supported_servers; tmp != NULL; tmp = tmp->next) {
 		server = XMPP_SERVER(tmp->data);
-		next = tmp->next;
-		if (server == NULL) /* TODO check for supported feature */
-			continue;
 		if (server->lag_sent.tv_sec != 0) {
 			/* waiting for lag reply */
 			if (max_lag > 1 &&
