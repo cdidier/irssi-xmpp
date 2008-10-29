@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#ifndef __DATALIST_H
-#define __DATALIST_H
+#ifndef __TOOL_DATALIST_H
+#define __TOOL_DATALIST_H
 
 #include "xmpp-servers.h"
 

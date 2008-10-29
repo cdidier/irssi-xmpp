@@ -21,7 +21,7 @@
 
 #include "module.h"
 
-#include "datalist.h"
+#include "tool_datalist.h"
 
 DATALIST_REC *
 datalist_find(DATALIST *dl, XMPP_SERVER_REC *server, const char *jid)

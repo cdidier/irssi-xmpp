@@ -29,7 +29,7 @@
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
 #include "tools.h"
-#include "datalist.h"
+#include "tool_datalist.h"
 #include "disco.h"
 
 #define XMLNS_EVENT "jabber:x:event"

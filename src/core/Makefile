@@ -15,7 +15,6 @@ SRCS=	xmpp-commands.c \
 	tools.c \
 	xep/chatstates.c \
 	xep/composing.c \
-	xep/datalist.c \
 	xep/disco.c \
 	xep/muc-commands.c \
 	xep/muc-events.c \
@@ -25,6 +24,7 @@ SRCS=	xmpp-commands.c \
 	xep/oob.c \
 	xep/ping.c \
 	xep/registration.c \
+	xep/tool_datalist.c \
 	xep/vcard.c \
 	xep/version.c \
 	xep/xep.c

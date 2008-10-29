@@ -32,7 +32,7 @@
 
 #include "xmpp-servers.h"
 #include "xmpp-commands.h"
-#include "datalist.h"
+#include "tool_datalist.h"
 #include "disco.h"
 #include "tools.h"
 
