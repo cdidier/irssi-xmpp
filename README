@@ -24,13 +24,13 @@ Installation:
 =============
 
 Requirement:
-    o Loudmouth 1.2.x (http://www.loudmouth-project.org/)
-    o Irssi (>= 0.8.12) and its sources unpacked and configured
-      (http://irssi.org/)
+    o Loudmouth (>= 1.2.x): http://www.loudmouth-project.org/
+    o Irssi (>= 0.8.12) and its sources unpacked and configured:
+      http://irssi.org/
 
 Procedure:
-    o edit the file "config.mk" if needed and export this (and maybe others)
-      environment variable:
+    o edit the file "config.mk" if needed and export this environment
+      variable:
             $ export IRSSI_INCLUDE=/path/to/irssi/sources
     o build the sources:
             $ make
@@ -61,10 +61,11 @@ Mailing-list: irssi-xmpp-dev@gna.org
 MUC room: irssi-xmpp@chat.jabberfr.org
 Bug tracker: https://gna.org/bugs/?group=irssi-xmpp
 
-If irssi crashes, please build irssi with debug symbols and the module irssi-xmpp
-in debug mode (take a look at "config.mk" to activate it). Then you can run
-irssi in gdb and print the backtrace ("bt full") when irssi crashes.
-Paste the backtrace in your message would help to fix this bug.
+If irssi crashes, please build irssi with debug symbols and the module
+irssi-xmpp in debug mode (take a look at "config.mk" to activate it).
+Then you can run irssi in gdb and print the backtrace ("bt full") when
+irssi crashes.  Paste the backtrace in your message would help to fix
+this bug.
 
 Author:
 =======
