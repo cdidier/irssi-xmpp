@@ -30,7 +30,6 @@
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"
 #include "xmpp-servers.h"
-#include "register.h"
 #include "rosters-tools.h"
 #include "tools.h"
 
