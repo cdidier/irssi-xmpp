@@ -287,7 +287,7 @@ static void
 cmd_xmpppasswd(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;
-	char *old_password, *new_password;
+	char *old_password, *new_password, *recoded;
 	LmMessage *lmsg;
 	LmMessageNode *node;
 	void *free_arg;
@@ -300,11 +300,16 @@ cmd_xmpppasswd(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 		cmd_param_error(CMDERR_NOT_GOOD_IDEA);
 	if (strcmp(old_password, server->connrec->password) != 0)
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	lmsg = lm_message_new_with_sub_type(NULL,
+	lmsg = lm_message_new_with_sub_type(XMPP_SERVER(server)->host,
 	     LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
 	lm_message_node_set_attribute(node, "xmlns", XMLNS_REGISTER);
-	/* TODO  */
+	recoded = xmpp_recode_out(XMPP_SERVER(server)->user);
+	lm_message_node_add_child(node, "username", recoded);
+	g_free(recoded);
+	recoded = xmpp_recode_out(new_password);
+	lm_message_node_add_child(node, "password", recoded);
+	g_free(recoded);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
 	cmd_params_free(free_arg);
@@ -316,7 +321,9 @@ registration_init(void)
 	register_data = NULL;
 	command_bind("xmppregister", NULL, (SIGNAL_FUNC)cmd_xmppregister);
 	command_bind("xmppunregister", NULL, (SIGNAL_FUNC)cmd_xmppunregister);
+	command_set_options("xmppunregister", "yes");
 	command_bind("xmpppasswd", NULL, (SIGNAL_FUNC)cmd_xmpppasswd);
+	command_set_options("xmpppasswd", "yes");
 	disco_add_feature(XMLNS_REGISTRATION);
 }
 
