@@ -59,7 +59,7 @@ const char *xmpp_command_presene[] = {
 	NULL
 };
 
-char *
+static char *
 cmd_connect_get_line(const char *data)
 {
 	GHashTable *optlist;

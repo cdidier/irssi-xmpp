@@ -47,12 +47,14 @@
 
 gboolean set_ssl(LmConnection *, GError **, gpointer);
 gboolean set_proxy(LmConnection *, GError **);
-char *cmd_connect_get_line(const char *);
 
 struct register_data {
 	char	*username;
 	char	*host;
 	char	*password;
+	char	*server;
+	int	 port;
+	gboolean use_ssl;
 	char 	*id;
 	LmConnection		*lmconn;
 	LmMessageHandler	*handler;
@@ -67,6 +69,7 @@ rd_cleanup(struct register_data *rd)
 	g_free(rd->username);
 	g_free(rd->host);
 	g_free(rd->password);
+	g_free(rd->server);
 	g_free(rd->id);
 	if (rd->handler != NULL) {
 		if (lm_message_handler_is_valid(rd->handler))
@@ -86,8 +89,9 @@ handle_register(LmMessageHandler *handler, LmConnection *connection,
 	LmMessageNode *node;
 	struct register_data *rd;
 	const char *id;
-	char *reason;
+	char *reason, *cmd;
 
+	g_debug(xmpp_recode_in(lm_message_node_to_string(lmsg->node)));
 	rd = user_data;
 	id = lm_message_node_get_attribute(lmsg->node, "id");
 	if (id == NULL || (id != NULL && strcmp(id, rd->id) != 0))
@@ -114,8 +118,17 @@ handle_register(LmMessageHandler *handler, LmConnection *connection,
 		}
 		signal_emit("xmpp register failed", 3, rd->username, rd->host,
 		    reason);
-	} else
+		g_debug(reason);
+	} else {
 		signal_emit("xmpp register succed", 2, rd->username, rd->host);
+		cmd = g_strdup_printf(
+		    "%sXMPPCONNECT %s -host %s -port %d %s@%s %s",
+		    settings_get_str("cmdchars"),
+		    rd->use_ssl ? "-ssl" : "", rd->server, rd->port,
+		    rd->username, rd->host, rd->password);
+		signal_emit("send command", 3, cmd, NULL, NULL);
+		g_free(cmd);
+	}
 	rd_cleanup(rd);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 }
@@ -128,7 +141,7 @@ send_register(struct register_data *rd)
 	GError *error = NULL;
 	char *recoded;
 
-	lmsg = lm_message_new_with_sub_type(NULL,
+	lmsg = lm_message_new_with_sub_type(rd->host,
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
 	lm_message_node_set_attribute(node, "xmlns", XMLNS_REGISTER);
@@ -146,6 +159,7 @@ send_register(struct register_data *rd)
 		if (error != NULL)
 			g_error_free(error);
 	}
+	g_debug(xmpp_recode_in(lm_message_node_to_string(lmsg->node)));
 	lm_message_unref(lmsg);
 }
 
@@ -182,28 +196,22 @@ err:
 }
 
 static void
-start_registration(const char *server, int port, const gboolean use_ssl,
-    const char *username, const char *host, const char *password)
+start_registration(struct register_data *rd)
 {
 	LmConnection  *lmconn;
 	GError *error = NULL;
-	struct register_data *rd;
 
 	lmconn = lm_connection_new(NULL);
-	if (use_ssl && !set_ssl(lmconn, &error, NULL))
+	if (rd->use_ssl && !set_ssl(lmconn, &error, NULL))
 		goto err;
 	if (settings_get_bool("xmpp_use_proxy") && !set_proxy(lmconn, &error))
 		goto err;
-	if (port <= 0)
-		port = use_ssl ? LM_CONNECTION_DEFAULT_PORT_SSL
+	if (rd->port <= 0)
+		rd->port = rd->use_ssl ? LM_CONNECTION_DEFAULT_PORT_SSL
 		    : LM_CONNECTION_DEFAULT_PORT;
-	lm_connection_set_server(lmconn, host);
-	lm_connection_set_port(lmconn, port);
+	lm_connection_set_server(lmconn, rd->server);
+	lm_connection_set_port(lmconn, rd->port);
 	lm_connection_set_jid(lmconn, NULL);
-	rd = g_new0(struct register_data, 1);
-	rd->username = g_strdup(username);
-	rd->host = g_strdup(host);
-	rd->password = g_strdup(password);
 	rd->id = NULL;
 	rd->lmconn = lmconn;
 	rd->handler = NULL;
@@ -221,7 +229,7 @@ start_registration(const char *server, int port, const gboolean use_ssl,
 	return;
 
 err:
-	signal_emit("xmpp register error", 3, username, host,
+	signal_emit("xmpp register error", 3, rd->username, rd->host,
 	    error != NULL ? error->message : NULL);
 	if (error != NULL)
 		g_error_free(error);
@@ -234,26 +242,26 @@ static void
 cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;
-	char *str, *jid, *username, *password, *host, *address;
-	int port;
+	char *str, *jid, *password, *address;
 	void *free_arg;
+	struct register_data *rd;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
 	    "xmppconnect", &optlist, &jid, &password))
 		return;
 	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid))
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	username = xmpp_extract_user(jid);
-	host = xmpp_extract_host(jid);
+	rd = g_new0(struct register_data, 1);
+	rd->username = xmpp_extract_user(jid);
+	rd->host = xmpp_extract_host(jid);
+	rd->password = g_strdup(password);
 	address = g_hash_table_lookup(optlist, "host");
 	if (address == NULL || *address == '\0')
-		address = host;
-	port = (str = g_hash_table_lookup(optlist, "port")) ? atoi(str) : 0;
-	start_registration(address, port,
-	    g_hash_table_lookup(optlist, "ssl") != NULL,
-	    username, host, password);
-	g_free(username);
-	g_free(host);
+		address = rd->host;
+	rd->server = g_strdup(address);
+	rd->port = (str = g_hash_table_lookup(optlist, "port")) ? atoi(str) : 0;
+	rd->use_ssl = g_hash_table_lookup(optlist, "ssl") != NULL;
+	start_registration(rd);
 	cmd_params_free(free_arg);
 }
 
@@ -267,7 +275,7 @@ cmd_xmppunregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
-	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS, 
+	if (!cmd_get_params(data, &free_arg, 0 | PARAM_FLAG_OPTIONS, 
 	    "xmppunregister", &optlist))
 		return;
 	if (g_hash_table_lookup(optlist, "yes") == NULL)
