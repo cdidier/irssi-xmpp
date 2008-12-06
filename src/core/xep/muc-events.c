@@ -26,6 +26,7 @@
 
 #include "module.h"
 #include "commands.h"
+#include "misc.h"
 #include "settings.h"
 #include "signals.h"
 
@@ -34,6 +35,8 @@
 #include "disco.h"
 #include "muc.h"
 #include "muc-nicklist.h"
+
+#define MAX_LONG_STRLEN ((sizeof(long) * CHAR_BIT + 2) / 3 + 1)
 
 void send_join(MUC_REC *);
 
@@ -197,7 +200,7 @@ nick_presence(MUC_REC *channel, const char *nickname, const char *show_str,
 	    0, 0)) {
 		xmpp_nicklist_set_presence(nick, show, status);
 		if (channel->joined && channel->ownnick != NICK(nick)) {
-			/* TODO show event */
+			/* TODO eventually show event */
 		}
 	}
 }
@@ -283,31 +286,34 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	item_jid = item_nick = NULL;
 	own = forced = created = FALSE;
 	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
-	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
-	node = node != NULL ? lm_message_node_get_child(node, "item") : NULL;
-	if (node != NULL) {
-		/* <item affiliation='item_affiliation'
-		 *     role='item_role'
-		 *     nick='item_nick'/> */
-		item_affiliation =
-		    lm_message_node_get_attribute(node, "affiliation");
-		item_role =
-		    lm_message_node_get_attribute(node, "role");
-		item_jid = xmpp_recode_in(
-		    lm_message_node_get_attribute(node, "jid"));
-		item_nick = xmpp_recode_in(
-		    lm_message_node_get_attribute(node, "nick"));
-		/* <status code='110'/> */
-		own = lm_find_node(node, "status", "code", "110") != NULL;
-		/* <status code='210'/> */
-		forced = lm_find_node(node, "status", "code", "210") != NULL;
-		/* <status code='201'/> */
-		created = lm_find_node(node, "status", "code", "201") != NULL;
-	}
+	if ((node = lm_find_node(lmsg->node, "x", "xmlns",
+	    XMLNS_MUC_USER)) == NULL)
+		return;
+	/* <status code='110'/> */
+	own = lm_find_node(node, "status", "code", "110") != NULL;
+	/* <status code='210'/> */
+	forced = lm_find_node(node, "status", "code", "210") != NULL;
+	/* <status code='201'/> */
+	own = created = lm_find_node(node, "status", "code", "201") != NULL;
+	if ((node = lm_message_node_get_child(node, "item")) == NULL)
+		return;
+	/* <item affiliation='item_affiliation'
+	 *     role='item_role'
+	 *     jid='item_jid'
+	 *     nick='item_nick'/> */
+	item_affiliation = lm_message_node_get_attribute(node, "affiliation");
+	item_role = lm_message_node_get_attribute(node, "role");
+	item_jid = xmpp_recode_in( lm_message_node_get_attribute(node, "jid"));
+	item_nick = xmpp_recode_in( lm_message_node_get_attribute(node, "nick"));
 	nick = item_nick != NULL ? item_nick : from;
 	if (created) {
-		/* TODO send disco
-		 * show event IRCTXT_CHANNEL_CREATED */
+		char str[MAX_LONG_STRLEN], *data;
+
+		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
+		data = g_strconcat("_ ", channel->name, " ", str, NULL);
+		/* channel created */
+		signal_emit("event 329", 2, channel->server, data);
+		g_free(data);
 	}
 	if (own || strcmp(nick, channel->nick) == 0)
 		own_event(channel, nick, item_jid, item_affiliation, item_role,
