@@ -107,7 +107,6 @@ send_join(MUC_REC *channel)
 	g_return_if_fail(IS_MUC(channel));
 	if (!channel->server->connected)
 		return;
-	disco_request(channel->server, channel->name);
 	muc_nick(channel, channel->nick);
 }
 
