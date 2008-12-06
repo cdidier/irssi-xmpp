@@ -31,12 +31,12 @@
 #include "xep/muc-nicklist.h"
 
 static void
-sig_joinerror(MUC_REC *channel, int error)
+sig_joinerror(MUC_REC *channel, gpointer error)
 {
 	char *reason;
 
 	g_return_if_fail(IS_MUC(channel));
-	switch(error) {
+	switch(GPOINTER_TO_INT(error)) {
 	case MUC_ERROR_PASSWORD_INVALID_OR_MISSING:
 		reason = "Password required";
 		break;

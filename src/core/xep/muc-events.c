@@ -240,7 +240,7 @@ error_join(MUC_REC *channel, const char *code)
 	int error;
 
 	error = atoi(code);
-	/* TODO: emit display signal */
+	signal_emit("xmpp channel joinerror", 2, channel, GINT_TO_POINTER(error));
 	/* rejoin with alternate nick */
 	if (error == MUC_ERROR_USE_RESERVED_ROOM_NICK
 	    || error == MUC_ERROR_NICK_IN_USE) {
@@ -462,6 +462,7 @@ sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 {
 	MUC_REC *channel;
 	LmMessageNode *node;
+	const char *code;
 	char *nick;
 
 	if ((channel = get_muc(server, from)) == NULL)
@@ -473,12 +474,11 @@ sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		if (node == NULL)
 			goto out;
 		/* TODO: extract error type and name -> XMLNS_STANZAS */
+		code = lm_message_node_get_attribute(node, "code");
 		if (!channel->joined)
-			error_join(channel,
-			    lm_message_node_get_attribute(node, "code"));
+			error_join(channel, code);
 		else
-			error_presence(channel,
-			    lm_message_node_get_attribute(node, "code"), nick);
+			error_presence(channel, code, nick);
 		break;
 	case LM_MESSAGE_SUB_TYPE_AVAILABLE:
 		available(channel, nick, lmsg);
