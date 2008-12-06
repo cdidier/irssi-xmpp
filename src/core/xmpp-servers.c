@@ -98,7 +98,7 @@ server_cleanup(XMPP_SERVER_REC *server)
 	lm_connection_unref(server->lmconn);
 	g_free(server->jid);
 	g_free(server->user);
-	g_free(server->host);
+	g_free(server->domain);
 	g_free(server->resource);
 	g_free(server->ping_id);
 }
@@ -118,11 +118,11 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	server = g_new0(XMPP_SERVER_REC, 1);
 	server->chat_type = XMPP_PROTOCOL;
 	server->user = xmpp_extract_user(conn->nick);
-	server->host = xmpp_have_host(conn->nick) ?
-	    xmpp_extract_host(conn->nick) : g_strdup(conn->address);
-	server->jid = xmpp_have_host(conn->nick) ?
+	server->domain = xmpp_have_domain(conn->nick) ?
+	    xmpp_extract_domain(conn->nick) : g_strdup(conn->address);
+	server->jid = xmpp_have_domain(conn->nick) ?
 	    xmpp_strip_resource(conn->nick)
-	    : g_strconcat(server->user, "@", server->host, NULL);
+	    : g_strconcat(server->user, "@", server->domain, NULL);
 	server->resource = xmpp_extract_resource(conn->nick);
 	if (server->resource == NULL)
 		server->resource = g_strdup("irssi-xmpp");

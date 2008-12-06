@@ -115,7 +115,7 @@ xmpp_extract_user(const char *jid)
 }
 
 char *
-xmpp_extract_host(const char *jid)
+xmpp_extract_domain(const char *jid)
 {
 	char *pos1, *pos2;
 
@@ -130,7 +130,7 @@ xmpp_extract_host(const char *jid)
 }
 
 gboolean
-xmpp_have_host(const char *jid)
+xmpp_have_domain(const char *jid)
 {
 	char *pos;
 

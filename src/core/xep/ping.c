@@ -61,7 +61,7 @@ request_ping(XMPP_SERVER_REC *server, const char *dest)
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "ping", NULL);
 	lm_message_node_set_attribute(node, "xmlns", XMLNS_PING);
-	if (strcmp(dest, server->host) == 0) {
+	if (strcmp(dest, server->domain) == 0) {
 		g_free(server->ping_id);
 		server->ping_id =
 		    g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
@@ -105,7 +105,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 
 	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
 		/* pong response from server of our ping */
-		if (server->ping_id != NULL && strcmp(from, server->host) == 0
+		if (server->ping_id != NULL && strcmp(from, server->domain) == 0
 	    	&& strcmp(id, server->ping_id) == 0) {
 			g_get_current_time(&now);
 			server->lag =
@@ -174,7 +174,7 @@ check_ping_func(void)
 		} else if ((server->lag_last_check + lag_check_time) < now &&
 		    server->connected) {
 			/* no commands in buffer - get the lag */
-			request_ping(server, server->host);
+			request_ping(server, server->domain);
 		}
 	}
 	return 1;

@@ -39,7 +39,7 @@ struct _XMPP_SERVER_REC {
 
 	char		*jid;
 	char		*user;
-	char		*host;
+	char		*domain;
 	char		*resource;
 
 	int		 show;

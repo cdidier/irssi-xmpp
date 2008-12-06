@@ -71,7 +71,7 @@ cmd_connect_get_line(const char *data)
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
 	    "xmppconnect", &optlist, &jid, &password))
 		return NULL;
-	if (*jid == '\0' || *password == '\0' || !xmpp_have_host(jid)) {
+	if (*jid == '\0' || *password == '\0' || !xmpp_have_domain(jid)) {
 		cmd_params_free(free_arg);
 		signal_emit("error command", 1,
 		    GINT_TO_POINTER(CMDERR_NOT_ENOUGH_PARAMS));
@@ -86,7 +86,7 @@ cmd_connect_get_line(const char *data)
 	}
 	host = g_hash_table_lookup(optlist, "host");
 	if (host == NULL || *host == '\0')
-		host = host_free = xmpp_extract_host(jid);
+		host = host_free = xmpp_extract_domain(jid);
 	port = g_hash_table_lookup(optlist, "port");
 	if (port == NULL)
 		port = "0";
