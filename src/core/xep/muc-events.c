@@ -263,13 +263,9 @@ error_join(MUC_REC *channel, const char *code)
 static void
 error_presence(MUC_REC *channel, const char *code, const char *nick)
 {
-	int error;
-
-	error = atoi(code);
 	switch (atoi(code)) {
 	case 409:
-		signal_emit("message xmpp channel nick in use", 2, channel,
-			channel, nick);
+		signal_emit("message xmpp channel nick in use", 2, channel, nick);
 		break;
 	}
 }
