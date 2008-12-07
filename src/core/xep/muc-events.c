@@ -386,6 +386,11 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 	g_free(actor);
 }
 
+static void
+invite(const char *name, LmMessageNode *invite)
+{
+}
+
 static MUC_REC *
 get_muc(XMPP_SERVER_REC *server, const char *data)
 {
@@ -407,9 +412,20 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	char *nick, *str;
 	gboolean action, own;
 
-	if ((channel = get_muc(server, from)) == NULL)
-		return;
 	nick = muc_extract_nick(from);
+	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
+	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
+	if (node != NULL) {
+		switch (type) {
+		case LM_MESSAGE_SUB_TYPE_NOT_SET:
+			node = lm_message_node_get_child(node, "invite");
+			if (node != NULL)
+				invite(from, node);
+			break;	
+		}
+	}
+	if ((channel = get_muc(server, from)) == NULL)
+		goto out;
 	switch (type) {
 	case LM_MESSAGE_SUB_TYPE_ERROR:
 		node = lm_message_node_get_child(lmsg->node, "error");
@@ -418,9 +434,6 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		/* TODO: extract error type and name -> XMLNS_STANZAS */
 		error_message(channel,
 		    lm_message_node_get_attribute(node, "code"));
-		break;
-	case LM_MESSAGE_SUB_TYPE_NOT_SET:
-		/* TODO: invite */
 		break;
 	case LM_MESSAGE_SUB_TYPE_GROUPCHAT:
 		node = lm_message_node_get_child(lmsg->node, "subject");
