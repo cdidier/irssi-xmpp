@@ -5,10 +5,10 @@
 	+ Better support of XMPP
 	+ Multi-User Chat (XEP-0045), Entity Use Cases and Occupant Use Cases
 	+ Message Events (XEP-0022) and Chat State Notifications (XEP-0085)
-	  showed in the statusbar (statusbar "xmpp_composing"), you can
+	  showed in the status-bar (status-bar "xmpp_composing"), you can
 	  disable events sending (setting "xmpp_send_composing")
 	+ XMPP Ping (XEP-0199) support using the command /PING, it also allows
-	  the lagmeter to work
+	  the lag-meter to work
 	+ Software Version (XEP-0092) support using /VER and vCard (XEP-0054)
 	  using /WHOIS (partial retrieve)
 	+ Better UTF-8 support
