@@ -64,66 +64,66 @@ find_resource_func(gconstpointer resource, gconstpointer name)
 XMPP_ROSTER_GROUP_REC *
 find_group_from_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 {
-	GSList *group_list, *group_list_found;
+	GSList *gl, *gl_found;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
-	group_list = server->roster;
-	group_list_found = NULL;
-	while (group_list_found != NULL && group_list != NULL) {
-		group_list_found = g_slist_find(group_list, user);
-		group_list = group_list->next;
+	gl = server->roster;
+	gl_found = NULL;
+	while (gl_found != NULL && gl != NULL) {
+		gl_found = g_slist_find(gl, user);
+		gl = gl->next;
 	}
-	return (XMPP_ROSTER_GROUP_REC *)group_list->data;
+	return (XMPP_ROSTER_GROUP_REC *)gl->data;
 }
 
 XMPP_ROSTER_USER_REC *
 rosters_find_user(GSList *groups, const char *jid,
     XMPP_ROSTER_GROUP_REC **group, XMPP_ROSTER_RESOURCE_REC **resource)
 {
-	GSList *group_tmp, *group_list, *user_list;
+	GSList *group_tmp, *gl, *ul;
 	char *pos;
 
 	if ((pos = xmpp_find_resource_sep(jid)) != NULL)
 		*pos = '\0';
-	user_list = NULL;
-	for (group_list = groups; user_list == NULL && group_list != NULL;
-	    group_list = group_list->next) {
-		user_list = g_slist_find_custom(
-		    ((XMPP_ROSTER_GROUP_REC *)group_list->data)->users, jid,
+	ul = NULL;
+	for (gl = groups; ul == NULL && gl != NULL;
+	    gl = gl->next) {
+		ul = g_slist_find_custom(
+		    ((XMPP_ROSTER_GROUP_REC *)gl->data)->users, jid,
 		    find_user_func);
-		group_tmp = group_list;
+		group_tmp = gl;
 	}
 	if (group != NULL)
-		*group = user_list != NULL ?
+		*group = ul != NULL ?
 		    (XMPP_ROSTER_GROUP_REC *)group_tmp->data : NULL;
 	if (resource != NULL)
-		*resource = user_list != NULL && pos != NULL ?
+		*resource = ul != NULL && pos != NULL ?
 		    rosters_find_resource(
-		    ((XMPP_ROSTER_USER_REC *)user_list->data)->resources, pos+1)
+		    ((XMPP_ROSTER_USER_REC *)ul->data)->resources, pos+1)
 		    : NULL;
 	if (pos != NULL)
 		*pos = '/';
-	return user_list != NULL ?
-	    (XMPP_ROSTER_USER_REC *)user_list->data : NULL;
+	return ul != NULL ?
+	    (XMPP_ROSTER_USER_REC *)ul->data : NULL;
 }
 
 XMPP_ROSTER_USER_REC *
 find_username(GSList *groups, const char *name, XMPP_ROSTER_GROUP_REC **group)
 {
-	GSList *group_list, *group_tmp, *user_list;
+	GSList *gl, *group_tmp, *ul;
 
-	group_list = groups;
-	group_tmp = user_list = NULL;
-	while (user_list == NULL && group_list != NULL) {
-		user_list = g_slist_find_custom(
-		    ((XMPP_ROSTER_GROUP_REC *)group_list->data)->users, name,
+	gl = groups;
+	group_tmp = ul = NULL;
+	while (ul == NULL && gl != NULL) {
+		ul = g_slist_find_custom(
+		    ((XMPP_ROSTER_GROUP_REC *)gl->data)->users, name,
 		    find_username_func);
-		group_tmp = group_list;
-		group_list = g_slist_next(group_list);
+		group_tmp = gl;
+		gl = g_slist_next(gl);
 	}
 	if (group != NULL && group_tmp != NULL)
 		*group = group_tmp->data;
-	return user_list ? (XMPP_ROSTER_USER_REC *)user_list->data : NULL;
+	return ul ? (XMPP_ROSTER_USER_REC *)ul->data : NULL;
 }
 
 XMPP_ROSTER_RESOURCE_REC *
@@ -178,6 +178,26 @@ rosters_resolve_name(XMPP_SERVER_REC *server, const char *name)
 		str = g_strconcat(user->jid, "/", res, NULL);
 		g_free(res);
 		return str;
+	}
+	return NULL;
+}
+
+char *
+rosters_get_name(XMPP_SERVER_REC *server, const char *jid)
+{
+	GSList *gl, *ul;
+	XMPP_ROSTER_GROUP_REC *group;
+	XMPP_ROSTER_USER_REC *user;
+
+	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
+	g_return_val_if_fail(jid != NULL, NULL);
+	for (gl = server->roster; gl != NULL; gl = gl->next) {
+		group = gl->data;
+		for (ul = group->users; ul != NULL; ul = ul->next) {
+			user = ul->data;
+			if (strcmp(jid, user->jid) == 0)
+				return user->name;
+		}
 	}
 	return NULL;
 }
