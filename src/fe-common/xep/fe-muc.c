@@ -27,13 +27,14 @@
 #include "fe-common/irc/module-formats.h"
 
 #include "xmpp-servers.h"
+#include "rosters-tools.h"
 #include "xep/muc.h"
 #include "xep/muc-nicklist.h"
 
 static void
 sig_invite(XMPP_SERVER_REC *server, const char *from, const char *channame)
 {
-	char *name;
+	const char *name;
 
 	name = rosters_get_name(server, from);
 	if (name == NULL)
