@@ -73,10 +73,10 @@ nick_changed(MUC_REC *channel, const char *oldnick, const char *newnick)
 		return;
 	xmpp_nicklist_rename(channel, nick, oldnick, newnick);
 	if (channel->ownnick == NICK(nick))
-		signal_emit("message xmpp channel own_nick", 3,
+		signal_emit("message xmpp muc own_nick", 3,
 		    channel, nick, oldnick);
 	else
-		signal_emit("message xmpp channel nick", 3,
+		signal_emit("message xmpp muc nick", 3,
 		    channel, nick, oldnick);
 }
 
@@ -101,7 +101,7 @@ own_join(MUC_REC *channel, const char *nickname,
 	channel->joined = TRUE;
 	signal_emit("message join", 4, channel->server, channel->name,
 	    nick->nick, nick->host);
-	signal_emit("message xmpp channel mode", 4, channel,
+	signal_emit("message xmpp muc mode", 4, channel,
 	    nick->nick, nick->affiliation, nick->role);
 	signal_emit("channel joined", 1, channel);
 	signal_emit("channel sync", 1, channel);
@@ -125,7 +125,7 @@ nick_join(MUC_REC *channel, const char *nickname, const char *full_jid,
 	if (channel->names_got) {
 		signal_emit("message join", 4, channel->server, channel->name,
 		    nick->nick, nick->host);
-		signal_emit("message xmpp channel mode", 4, channel,
+		signal_emit("message xmpp muc mode", 4, channel,
 		    nick->nick, nick->affiliation, nick->role);
 	}
 }
@@ -140,7 +140,7 @@ nick_mode(MUC_REC *channel, XMPP_NICK_REC *nick, const char *affiliation_str,
 	role = xmpp_nicklist_get_role(role_str);
 	if (xmpp_nicklist_modes_changed(nick, affiliation, role)) {
 		xmpp_nicklist_set_modes(nick, affiliation, role);
-		signal_emit("message xmpp channel mode", 4, channel,
+		signal_emit("message xmpp muc mode", 4, channel,
 		    nick->nick, affiliation, role);
 	}
 }
@@ -228,7 +228,7 @@ error_message(MUC_REC *channel, const char *code)
 {
 	switch (atoi(code)) {
 	case 401:
-		signal_emit("xmpp channel error", 2, channel, "not allowed");
+		signal_emit("xmpp muc error", 2, channel, "not allowed");
 		break;
 	}
 }
@@ -240,7 +240,7 @@ error_join(MUC_REC *channel, const char *code)
 	int error;
 
 	error = atoi(code);
-	signal_emit("xmpp channel joinerror", 2, channel, GINT_TO_POINTER(error));
+	signal_emit("xmpp muc joinerror", 2, channel, GINT_TO_POINTER(error));
 	/* rejoin with alternate nick */
 	if (error == MUC_ERROR_USE_RESERVED_ROOM_NICK
 	    || error == MUC_ERROR_NICK_IN_USE) {
@@ -265,7 +265,7 @@ error_presence(MUC_REC *channel, const char *code, const char *nick)
 {
 	switch (atoi(code)) {
 	case 409:
-		signal_emit("message xmpp channel nick in use", 2, channel, nick);
+		signal_emit("message xmpp muc nick in use", 2, channel, nick);
 		break;
 	}
 }
@@ -307,7 +307,7 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 
 		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
 		data = g_strconcat("_ ", channel->name, " ", str, NULL);
-		/* channel created */
+		/* muc created */
 		signal_emit("event 329", 2, channel->server, data);
 		g_free(data);
 	}
@@ -387,8 +387,41 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 }
 
 static void
-invite(const char *name, LmMessageNode *invite)
+invite(XMPP_SERVER_REC *server, const char *from, LmMessageNode *node)
 {
+	LmMessageNode *inv, *pass;
+	CHANNEL_SETUP_REC *setup;
+	const char *to;
+	char *channame, *password, *data;
+
+	for (inv = node->children; inv != NULL; inv = inv->next) {
+		if (strcmp(inv->name, "invite") != 0
+		    || (to = lm_message_node_get_attribute(inv, "to")) == NULL)
+			continue;
+		channame = xmpp_recode_in(to);
+		pass = lm_message_node_get_child(inv, "password");
+		password = pass != NULL ? xmpp_recode_in(pass->value) : NULL;
+		if (muc_find(server, to) == NULL) {
+			signal_emit("xmpp invite", 4, server, from,
+			    channame, password);
+			/* check if we're supposed to autojoin this muc */
+			setup = channel_setup_find(channame,
+			     server->connrec->chatnet);
+			if (setup != NULL && setup->autojoin
+			    && settings_get_bool("join_auto_chans_on_invite")) {
+				data = password == NULL ?
+				    g_strconcat("\"", channame, "\"", NULL)
+				    : g_strconcat("\"", channame, "\" ",
+					password, NULL);
+				muc_join(server, data, TRUE);
+				g_free(data);
+			}
+		}
+		g_free(channame);
+		g_free(password);
+		g_free_not_null(server->last_invite);
+		server->last_invite = g_strdup(to);
+	}
 }
 
 static MUC_REC *
@@ -418,9 +451,8 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	if (node != NULL) {
 		switch (type) {
 		case LM_MESSAGE_SUB_TYPE_NOT_SET:
-			node = lm_message_node_get_child(node, "invite");
-			if (node != NULL)
-				invite(from, node);
+			if (lm_message_node_get_child(node, "invite") != NULL)
+				invite(server, from, node);
 			break;	
 		}
 	}

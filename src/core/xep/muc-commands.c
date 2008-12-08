@@ -63,7 +63,7 @@ cmd_invite(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	lmsg = lm_message_new(recoded, LM_MESSAGE_TYPE_MESSAGE);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "x", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC);
+	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC_USER);
 	invite_node = lm_message_node_add_child(node, "invite", NULL);
 	recoded = xmpp_recode_out(channame);
 	lm_message_node_set_attribute(invite_node, "to", recoded);
