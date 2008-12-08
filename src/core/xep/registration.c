@@ -33,17 +33,10 @@
 #include "xmpp-commands.h"
 #include "loudmouth-tools.h"
 #include "disco.h"
+#include "registration.h"
 
 #define XMLNS_REGISTRATION "http://jabber.org/features/iq-register"
 #define XMLNS_REGISTER "jabber:iq:register"
-
-#define REGISTER_FAIL_UNAUTHORIZED	"Registration unauthorized"
-#define REGISTER_FAIL_UNAVAILABLE	"Service unavailable"
-#define REGISTER_FAIL_CONFLICT		"Account already exists"
-#define REGISTER_FAIL_TIMEOUT		"Connection times out"
-#define REGISTER_FAIL_ERROR		"Cannot register account"
-#define REGISTER_ERROR_INFOS		"Cannot send informations"
-#define REGISTER_ERROR_CONNECTION	"Cannot open connection"
 
 gboolean set_ssl(LmConnection *, GError **, gpointer);
 gboolean set_proxy(LmConnection *, GError **);
@@ -89,38 +82,20 @@ handle_register(LmMessageHandler *handler, LmConnection *connection,
 	LmMessageNode *node;
 	struct register_data *rd;
 	const char *id;
-	char *reason, *cmd;
+	char *cmd;
+	int error;
 
-	g_debug(xmpp_recode_in(lm_message_node_to_string(lmsg->node)));
 	rd = user_data;
 	id = lm_message_node_get_attribute(lmsg->node, "id");
 	if (id == NULL || (id != NULL && strcmp(id, rd->id) != 0))
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 	if ((node = lm_message_node_get_child(lmsg->node, "error")) != NULL) {
-		switch (atoi(lm_message_node_get_attribute(node, "code"))) {
-		case 401: /* Not Authorized */
-		case 407: /* Registration Required */
-			reason = REGISTER_FAIL_UNAUTHORIZED;
-			break;
-		case 501: /* Not Implemented */
-		case 503: /* Service Unavailable */
-			reason = REGISTER_FAIL_UNAVAILABLE;
-			break;
-		case 409: /* Conflict */
-			reason = REGISTER_FAIL_CONFLICT;
-			break;
-		case 408: /* Request Timeout */
-		case 504: /* Remote Server Timeout */
-			reason = REGISTER_FAIL_TIMEOUT;
-			break;
-		default:
-			reason = REGISTER_FAIL_ERROR;
-		}
-		signal_emit("xmpp register failed", 3, rd->username, rd->domain,
-		    reason);
-		g_debug(reason);
+		error = atoi(lm_message_node_get_attribute(node, "code"));
+		signal_emit("xmpp registration failed", 3, rd->username,
+		    rd->domain, GINT_TO_POINTER(error));
 	} else {
-		signal_emit("xmpp register succed", 2, rd->username, rd->domain);
+		signal_emit("xmpp registration succeed", 2, rd->username,
+		    rd->domain);
 		cmd = g_strdup_printf(
 		    "%sXMPPCONNECT %s -host %s -port %d %s@%s %s",
 		    settings_get_str("cmdchars"),
@@ -138,7 +113,6 @@ send_register(struct register_data *rd)
 {
 	LmMessage *lmsg;
 	LmMessageNode *node;
-	GError *error = NULL;
 	char *recoded;
 
 	lmsg = lm_message_new_with_sub_type(rd->domain,
@@ -153,13 +127,11 @@ send_register(struct register_data *rd)
 	g_free(recoded);
 	rd->id = g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
 	if (!lm_connection_send_with_reply(rd->lmconn, lmsg, rd->handler,
-	    &error)) {
-		signal_emit("xmpp register error", 3, rd->username, rd->domain,
-		    error != NULL ? error->message : REGISTER_ERROR_INFOS);
-		if (error != NULL)
-			g_error_free(error);
+	    NULL)) {
+		signal_emit("xmpp registration failed", 3, rd->username,
+		    rd->domain, REGISTRATION_ERROR_INFOS);
+		rd_cleanup(rd);
 	}
-	g_debug(xmpp_recode_in(lm_message_node_to_string(lmsg->node)));
 	lm_message_unref(lmsg);
 }
 
@@ -172,7 +144,8 @@ register_lm_close_cb(LmConnection *connection, LmDisconnectReason reason,
 	if (reason == LM_DISCONNECT_REASON_OK)
 		return;
 	rd = user_data;
-	signal_emit("xmpp register error", 3, rd->username, rd->domain, NULL);
+	signal_emit("xmpp registration failed", 3, rd->username, rd->domain,
+	    REGISTRATION_ERROR_UNKNOWN);
 	rd_cleanup(rd);
 }
 
@@ -190,8 +163,8 @@ register_lm_open_cb(LmConnection *connection, gboolean success,
 	return;
 
 err:
-	signal_emit("xmpp register error", 3, rd->username, rd->domain, 
-	    REGISTER_ERROR_CONNECTION);
+	signal_emit("xmpp registration failed", 3, rd->username, rd->domain,
+	    REGISTRATION_ERROR_CONNECTION);
 	rd_cleanup(rd);
 }
 
@@ -261,6 +234,7 @@ cmd_xmppregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	rd->address = g_strdup(address);
 	rd->port = (str = g_hash_table_lookup(optlist, "port")) ? atoi(str) : 0;
 	rd->use_ssl = g_hash_table_lookup(optlist, "ssl") != NULL;
+	signal_emit("xmpp registration started", 2, rd->username, rd->domain);
 	start_registration(rd);
 	cmd_params_free(free_arg);
 }

@@ -14,6 +14,7 @@ SRCS=	fe-xmpp-messages.c \
 	xep/fe-composing.c \
 	xep/fe-muc.c \
 	xep/fe-ping.c \
+	xep/fe-registration.c \
 	xep/fe-vcard.c \
 	xep/fe-version.c \
 	xep/fe-xep.c

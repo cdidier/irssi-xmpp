@@ -90,5 +90,11 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "default_event", "$1 $2", 3, { 0, 0, 0 } },
 	{ "default_error", "ERROR $1 $2", 3, { 0, 0, 0 } },
 
+	{ NULL, "Regisration", 0, { 0 } },
+
+	{ "xmpp_registration_started", "Registering {nick $0@$1}...", 2, { 0, 0 } },
+	{ "xmpp_registration_succeed", "Registration of {nick $0@$1} succeeded", 2, { 0, 0 } },
+	{ "xmpp_registration_failed", "Registration of {nick $0@$1} failed {comment $2}", 3, { 0, 0, 0 } },
+
 	{ NULL, NULL, 0, { 0 } }
 };
