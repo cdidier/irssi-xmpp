@@ -1,5 +1,3 @@
-!!! WARNING: This file isn't up-to-date so don't trust it !!!
-
 MUC commands:
 =============
 
@@ -7,7 +5,7 @@ MUC commands:
     Join a room. If your nick is not specified, the value of the setting "nick"
     will be used as your nick in this room.
     Unlike irssi default behaviour (that you can pass a list of channels
-    separated with a comma), only one room can be passed to this command !
+    separated with a comma), only one room can be passed to this command!
 
 /PART [<room@server>] [<reason>]
     Leaves a room.
