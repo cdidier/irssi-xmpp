@@ -32,5 +32,6 @@ if you want to automatically connect to the server at startup
 Register:
 =========
 
-Currently, you cannot register an account with irssi-xmpp. You must do that
-with another client.
+You can register an account directly with irssi-xmpp using the command
+/XMPPREGISTER. But it will not register an accound on a virtual doamin.
+So don't use this feature yet, and wait until it is ready.
