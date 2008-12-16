@@ -20,6 +20,9 @@ Its main features are:
     o SSL and HTTP proxy support
     o ...
 
+To deal with the XMPP protocol, it uses of the Loudmouth library.
+Written in C and released under the GNU General Public License version 2.
+
 Installation:
 =============
 
@@ -57,10 +60,17 @@ specific commands, which can be viewed in irssi with the command /HELP.
 Bugs/Suggestions:
 =================
 
-Mailing-list: irssi-xmpp-list@cybione.org
-Commits-list: irssi-xmpp-commits@cybione.org
-MUC room: irssi-xmpp@chat.jabberfr.org
-Bug tracker: https://gna.org/bugs/?group=irssi-xmpp
+Mailing-list:           irssi-xmpp-list@cybione.org
+    to subscribe:       irssi-xmpp-list+subscribe@cybione.org
+    to unsuscibre:      irssi-xmpp-list+unsubscribe@cybione.org
+
+Commits-list:           irssi-xmpp-commits@cybione.org
+    to subscribe:       irssi-xmpp-commits+subscribe@cybione.org
+    to unsuscibre:      irssi-xmpp-commits+unsubscribe@cybione.org
+
+MUC room:               irssi-xmpp@chat.jabberfr.org
+
+Bug tracker:		https://gna.org/bugs/?group=irssi-xmpp
 
 If irssi crashes, please build irssi with debug symbols and the module
 irssi-xmpp in debug mode (take a look at "config.mk" to activate it).
