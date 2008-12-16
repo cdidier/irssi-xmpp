@@ -29,9 +29,15 @@ specify the host with the parameter "-host".
 You can also use /XMPPSERVER to replace the current connection. See the FAQ
 if you want to automatically connect to the server at startup
 
+Automation:
+===========
+
+If you want to automatically load the module and connect to an account,
+take a look at the FAQ. Everything is explained in it.
+
 Register:
 =========
 
 You can register an account directly with irssi-xmpp using the command
-/XMPPREGISTER. But it will not register an accound on a virtual doamin.
+/XMPPREGISTER. But it will not register an account on a virtual domain.
 So don't use this feature yet, and wait until it is ready.
