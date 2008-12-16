@@ -129,6 +129,7 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	LmMessage *lmsg;
 	char *channame, *topic, *recoded;
 	void *free_arg;
+	gboolean delete;
 
 	CMD_XMPP_SERVER(server);
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN |
@@ -138,12 +139,13 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	if (muc_find(server, channame) == NULL)
 		cmd_param_error(CMDERR_NOT_JOINED);
 	g_strstrip(topic);
-	if (*topic != '\0' || g_hash_table_lookup(optlist, "delete") != NULL) {
+	delete = g_hash_table_lookup(optlist, "delete") != NULL;
+	if (*topic != '\0' || delete) {
 		recoded = xmpp_recode_out(channame);
-		lmsg = lm_message_new_with_sub_type(channame,
+		lmsg = lm_message_new_with_sub_type(recoded,
 		    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_GROUPCHAT);
-		g_free(channame);
-		if (g_hash_table_lookup(optlist, "delete") != NULL)
+		g_free(recoded);
+		if (delete)
 			lm_message_node_add_child(lmsg->node, "subject", NULL);
 		else {
 			recoded = xmpp_recode_out(topic);
