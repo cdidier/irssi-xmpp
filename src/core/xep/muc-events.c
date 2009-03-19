@@ -475,7 +475,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			g_free(str);
 		}
 		node = lm_message_node_get_child(lmsg->node, "body");
-		if (node != NULL && nick != NULL) {
+		if (node != NULL && node->value != NULL && nick != NULL) {
 			str = xmpp_recode_in(node->value);
 			own = strcmp(nick, channel->nick) == 0;
 			action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
