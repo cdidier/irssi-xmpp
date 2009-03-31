@@ -69,14 +69,7 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 		    && window_item_window((WI_ITEM_REC *)chanrec)->items->next
 		    != NULL)
 			print_channel = TRUE;
-		/* in versions of irssi prior to 0.8.12 (20071006),
-		 * channel_get_nickmode() doesn't return a dynamically
-		 * allocated string */
-#if IRSSI_VERSION_DATE >= 20071006
 		nickmode = channel_get_nickmode(chanrec, nick);
-#else
-		nickmode = g_strdup(channel_get_nickmode(chanrec, nick));
-#endif
 		text = !print_channel ?
 		    format_get_text(CORE_MODULE_NAME, NULL, server,
 			target, TXT_PUBMSG, nick, msg, nickmode) :
@@ -225,11 +218,7 @@ sig_message_own_public(SERVER_REC *server, char *msg, char *target)
 	if (channel == NULL || channel->ownnick == NULL)
 		return;
 	nick = channel->ownnick->nick;
-#if IRSSI_VERSION_DATE >= 20071006
 	nickmode = channel_get_nickmode(CHANNEL(channel), nick);
-#else
-	nickmode = g_strdup(channel_get_nickmode(CHANNEL(channel), nick));
-#endif
 	window = (channel == NULL) ?
 	    NULL : window_item_window((WI_ITEM_REC *)channel);
 	print_channel = (window == NULL ||
