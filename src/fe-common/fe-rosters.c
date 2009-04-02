@@ -101,7 +101,8 @@ get_resources(XMPP_SERVER_REC *server, GSList *list)
 		        XMPPTXT_FORMAT_RESOURCE_SHOW,
 		        xmpp_presence_show[resource->show]);
 		status_str = g_strdup(resource->status);
-		stroneline(status_str);
+		if (status_str != NULL)
+			stroneline(status_str);
 		status = (resource->status == NULL) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
 		        XMPPTXT_FORMAT_RESOURCE_STATUS, status_str);
