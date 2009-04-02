@@ -30,6 +30,28 @@
 #include "rosters-tools.h"
 #include "fe-xmpp-status.h"
 
+static void
+stroneline(char *s)
+{
+	size_t len, i, spaces;
+	char *p1, *p2;
+              
+	for (p1 = s; *p1 != '\0'; ++p1) {
+		if (isspace(*p1)) {
+			*p1 = ' ';
+			p2 = p1;
+			spaces = 0;
+			while (*(p2++) != '\0' && isspace(*p2))
+			++spaces;
+			if (spaces > 0) {
+				len = strlen(p1);
+				for (i = 0; i < len-spaces+1; ++i)
+					p1[i-spaces] = p1[i];
+			}
+		}
+	}
+}
+
 static gboolean
 user_is_shown(XMPP_ROSTER_USER_REC *user)
 {
@@ -67,7 +89,7 @@ get_resources(XMPP_SERVER_REC *server, GSList *list)
 	GSList *tmp;
 	GString *resources;
 	XMPP_ROSTER_RESOURCE_REC *resource;
-	char *show, *status, *priority, *text;
+	char *show, *status, *status_str, *priority, *text;
 
 	if (list == NULL)
 		return NULL;
@@ -78,9 +100,12 @@ get_resources(XMPP_SERVER_REC *server, GSList *list)
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
 		        XMPPTXT_FORMAT_RESOURCE_SHOW,
 		        xmpp_presence_show[resource->show]);
+		status_str = g_strdup(resource->status);
+		stroneline(status_str);
 		status = (resource->status == NULL) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
-		        XMPPTXT_FORMAT_RESOURCE_STATUS, resource->status);
+		        XMPPTXT_FORMAT_RESOURCE_STATUS, status_str);
+		g_free(status_str);
 		priority = g_strdup_printf("%d", resource->priority);
 		text = format_get_text(MODULE_NAME, NULL, server, NULL,
 		    XMPPTXT_FORMAT_RESOURCE, show, resource->name, priority,
