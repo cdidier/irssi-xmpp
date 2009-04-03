@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -54,7 +54,7 @@ send_composing_event(XMPP_SERVER_REC *server, const char *dest, const char *id,
 	    LM_MESSAGE_TYPE_MESSAGE, LM_MESSAGE_SUB_TYPE_CHAT);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "x", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_EVENT);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_EVENT);
 	if (composing)
 		lm_message_node_add_child(node, "composing", NULL);
 	if (id != NULL)
@@ -115,7 +115,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	    && type != LM_MESSAGE_SUB_TYPE_CHAT)
 	    || server->ischannel(SERVER(server), from))
 		return;
-	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_EVENT);
+	node = lm_find_node(lmsg->node, "x", XMLNS, XMLNS_EVENT);
 	if (node == NULL) {
 		signal_emit("xmpp composing hide", 2, server, from);
 		return;
@@ -151,7 +151,7 @@ sig_send_message(XMPP_SERVER_REC *server, LmMessage *lmsg)
 		return;
 	/* request composing events */
 	node = lm_message_node_add_child(lmsg->node, "x", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_EVENT);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_EVENT);
 	lm_message_node_add_child(node, "composing", NULL);
 }
 

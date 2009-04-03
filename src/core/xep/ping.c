@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -60,7 +60,7 @@ request_ping(XMPP_SERVER_REC *server, const char *dest)
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "ping", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_PING);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_PING);
 	if (strcmp(dest, server->domain) == 0) {
 		g_free(server->ping_id);
 		server->ping_id =
@@ -123,7 +123,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			}
 		}
 	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
-		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_PING);
+		node = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_PING);
 		if (node != NULL)
 			send_ping(server, from,
 			    lm_message_node_get_attribute(lmsg->node, "id"));

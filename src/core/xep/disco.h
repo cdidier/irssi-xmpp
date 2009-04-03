@@ -12,4 +12,6 @@ void disco_init(void);
 void disco_deinit(void);
 __END_DECLS
 
+#define XMLNS "xmlns"
+
 #endif

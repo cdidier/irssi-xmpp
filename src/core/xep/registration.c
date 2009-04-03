@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -118,7 +118,7 @@ send_register(struct register_data *rd)
 	lmsg = lm_message_new_with_sub_type(rd->domain,
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_REGISTER);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
 	recoded = xmpp_recode_out(rd->username);
 	lm_message_node_add_child(node, "username", recoded);
 	g_free(recoded);
@@ -257,7 +257,7 @@ cmd_xmppunregister(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	lmsg = lm_message_new_with_sub_type(NULL,
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_REGISTER);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
 	lm_message_node_add_child(node, "remove", NULL);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
@@ -285,7 +285,7 @@ cmd_xmpppasswd(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	lmsg = lm_message_new_with_sub_type(XMPP_SERVER(server)->domain,
 	     LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_REGISTER);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
 	recoded = xmpp_recode_out(XMPP_SERVER(server)->user);
 	lm_message_node_add_child(node, "username", recoded);
 	g_free(recoded);

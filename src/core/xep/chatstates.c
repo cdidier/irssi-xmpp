@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -41,12 +41,12 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	    && type != LM_MESSAGE_SUB_TYPE_CHAT)
 	    || server->ischannel(SERVER(server), from))
 		return;
-	if (lm_find_node(lmsg->node, "composing", "xmlns",
+	if (lm_find_node(lmsg->node, "composing", XMLNS,
 	    XMLNS_CHATSTATES) != NULL) {
 		signal_emit("xmpp composing show", 2, server, from);
-	} else if (lm_find_node(lmsg->node, "active", "xmlns",
+	} else if (lm_find_node(lmsg->node, "active", XMLNS,
 	    XMLNS_CHATSTATES) != NULL
-	    || lm_find_node(lmsg->node, "paused", "xmlns",
+	    || lm_find_node(lmsg->node, "paused", XMLNS,
 	    XMLNS_CHATSTATES) != NULL)
 		signal_emit("xmpp composing hide", 2, server, from);
 }

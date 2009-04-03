@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -40,7 +40,7 @@ request_vcard(XMPP_SERVER_REC *server, const char *dest)
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "vCard", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_VCARD);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_VCARD);
 	signal_emit("xmpp send iq", 2, server, lmsg);		
 	lm_message_unref(lmsg);
 }
@@ -118,7 +118,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 
 	if (type != LM_MESSAGE_SUB_TYPE_RESULT)
 		return;
-	node = lm_find_node(lmsg->node, "vCard", "xmlns", XMLNS_VCARD);
+	node = lm_find_node(lmsg->node, "vCard", XMLNS, XMLNS_VCARD);
 	if (node != NULL)
 		vcard_handle(server, from, node);
 }

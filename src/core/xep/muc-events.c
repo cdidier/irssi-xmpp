@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -282,7 +282,7 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	item_jid = item_nick = NULL;
 	own = forced = created = FALSE;
 	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
-	if ((node = lm_find_node(lmsg->node, "x", "xmlns",
+	if ((node = lm_find_node(lmsg->node, "x", XMLNS,
 	    XMLNS_MUC_USER)) == NULL)
 		return;
 	/* <status code='110'/> */
@@ -338,7 +338,7 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 	status_code = NULL;
 	reason = actor = item_nick = status = NULL;
 	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
-	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
+	node = lm_find_node(lmsg->node, "x", XMLNS, XMLNS_MUC_USER);
 	if (node != NULL) {
 		/* <status code='status_code'/> */
 		child = lm_message_node_get_child(node, "status");
@@ -447,7 +447,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 
 	nick = muc_extract_nick(from);
 	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
-	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_MUC_USER);
+	node = lm_find_node(lmsg->node, "x", XMLNS, XMLNS_MUC_USER);
 	if (node != NULL) {
 		switch (type) {
 		case LM_MESSAGE_SUB_TYPE_NOT_SET:

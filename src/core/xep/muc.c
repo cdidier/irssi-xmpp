@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -71,7 +71,7 @@ muc_nick(MUC_REC *channel, const char *nick)
 	lmsg = lm_message_new(recoded, LM_MESSAGE_TYPE_PRESENCE);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "x", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_MUC);
 	if (!channel->joined) {
 		if (channel->key != NULL) {
 			recoded = xmpp_recode_out(channel->key);
@@ -154,7 +154,7 @@ send_part(MUC_REC *channel, const char *reason)
 	    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_UNAVAILABLE);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "x", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_MUC);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_MUC);
 	if (reason != NULL) {
 		recoded = xmpp_recode_out(reason);
 		lm_message_node_add_child(lmsg->node, "status", recoded);

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -39,7 +39,7 @@ sig_recv_x(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	const char *url, *desc;
 	char *url_recoded, *desc_recoded, *str;
 
-	node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_OOB_X);
+	node = lm_find_node(lmsg->node, "x", XMLNS, XMLNS_OOB_X);
 	if (node != NULL) {
 		child = lm_message_node_get_child(node, "url");
 		if (child == NULL || child->value == NULL)

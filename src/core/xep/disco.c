@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -26,6 +26,7 @@
 
 #include "xmpp-servers.h"
 #include "tools.h"
+#include "disco.h"
 
 #define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
 
@@ -76,7 +77,7 @@ disco_request(XMPP_SERVER_REC *server, const char *dest)
 	    LM_MESSAGE_SUB_TYPE_GET);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_DISCO);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_DISCO);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
 }
@@ -94,7 +95,7 @@ send_disco(XMPP_SERVER_REC *server, const char *dest)
 	    LM_MESSAGE_SUB_TYPE_RESULT);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_DISCO);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_DISCO);
 	child = lm_message_node_add_child(node, "identity", NULL);
 	lm_message_node_set_attribute(child, "category", "client");
 	lm_message_node_set_attribute(child, "type", "console");
@@ -115,7 +116,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	GSList *features;
 
 	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
-		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_DISCO);
+		node = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_DISCO);
 		if (node == NULL)
 			return;
 		features = NULL;
@@ -134,7 +135,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		} else
 			cleanup_features(features);
 	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
-		node = lm_find_node(lmsg->node, "query", "xmlns", XMLNS_DISCO);
+		node = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_DISCO);
 		if (node != NULL)
 			send_disco(server, from);
 	}

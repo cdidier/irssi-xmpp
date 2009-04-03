@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -52,7 +52,7 @@ send_version(XMPP_SERVER_REC *server, const char *dest,
 	if (id != NULL)
 		lm_message_node_set_attribute(lmsg->node, "id", id);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_VERSION);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_VERSION);
 	if (settings_get_bool("xmpp_send_version")) {
 		lm_message_node_add_child(node, "name",
 		    IRSSI_XMPP_PACKAGE);
@@ -77,7 +77,7 @@ request_version(XMPP_SERVER_REC *server, const char *dest)
 	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_GET);
 	g_free(recoded);
 	node = lm_message_node_add_child(lmsg->node, "query", NULL);
-	lm_message_node_set_attribute(node, "xmlns", XMLNS_VERSION);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_VERSION);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
 }
@@ -106,7 +106,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	char *name, *version, *os;
 
 	if (type == LM_MESSAGE_SUB_TYPE_RESULT
-	    && (node = lm_find_node(lmsg->node,"query", "xmlns",
+	    && (node = lm_find_node(lmsg->node,"query", XMLNS,
 	    XMLNS_VERSION)) != NULL) {
 		name = version = os = NULL;
 		for (child = node->children; child != NULL; child = child->next) {
@@ -125,7 +125,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		g_free(version);
 		g_free(os);
 	} else if (type == LM_MESSAGE_SUB_TYPE_GET
-	    && (node = lm_find_node(lmsg->node,"query", "xmlns",
+	    && (node = lm_find_node(lmsg->node,"query", XMLNS,
 	    XMLNS_VERSION)) != NULL)
 		send_version(server, from, id);
 }
