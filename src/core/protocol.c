@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -73,7 +73,6 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	    && type != LM_MESSAGE_SUB_TYPE_CHAT)
 	    || server->ischannel(SERVER(server), from))
 		return;
-	/* TODO: get timestamp */
 	node = lm_message_node_get_child(lmsg->node, "subject");
 	if (node != NULL && node->value != NULL && *node->value != '\0') {
 		str = xmpp_recode_in(node->value);

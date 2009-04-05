@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,6 +21,7 @@
 
 #include "chatstates.h"
 #include "composing.h"
+#include "delay.h"
 #include "disco.h"
 #include "muc.h"
 #include "oob.h"
@@ -35,6 +36,7 @@ xep_init(void)
 	disco_init(); /* init sevice discovery first */
 	chatstates_init();
 	composing_init();
+	delay_init();
 	muc_init();
 	oob_init();
 	ping_init();
@@ -49,6 +51,7 @@ xep_deinit(void)
 	disco_deinit();
 	chatstates_deinit();
 	composing_deinit();
+	delay_deinit();
 	muc_deinit();
 	oob_deinit();
 	ping_deinit();

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,6 +20,7 @@
 #include "module.h"
 
 #include "fe-composing.h"
+#include "fe-delay.h"
 #include "fe-muc.h"
 #include "fe-ping.h"
 #include "fe-registration.h"
@@ -30,6 +31,7 @@ void
 fe_xep_init(void)
 {
 	fe_composing_init();
+	fe_delay_init();
 	fe_muc_init();
 	fe_ping_init();
 	fe_registration_init();
@@ -41,6 +43,7 @@ void
 fe_xep_deinit(void)
 {
 	fe_composing_deinit();
+	fe_delay_deinit();
 	fe_muc_deinit();
 	fe_ping_deinit();
 	fe_registration_deinit();

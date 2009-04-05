@@ -424,18 +424,6 @@ invite(XMPP_SERVER_REC *server, const char *from, LmMessageNode *node)
 	}
 }
 
-static MUC_REC *
-get_muc(XMPP_SERVER_REC *server, const char *data)
-{
-	MUC_REC *channel;
-	char *str;
-
-	str = muc_extract_channel(data);
-	channel = muc_find(server, str);
-	g_free(str);
-	return channel;
-}
-
 static void
 sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)

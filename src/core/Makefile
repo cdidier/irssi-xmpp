@@ -15,6 +15,8 @@ SRCS=	xmpp-commands.c \
 	tools.c \
 	xep/chatstates.c \
 	xep/composing.c \
+	xep/datetime.c \
+	xep/delay.c \
 	xep/disco.c \
 	xep/muc-commands.c \
 	xep/muc-events.c \

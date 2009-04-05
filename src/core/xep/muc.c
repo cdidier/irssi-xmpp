@@ -278,6 +278,18 @@ ischannel_func(SERVER_REC *server, const char *data)
 	return r;
 }
 
+MUC_REC *
+get_muc(XMPP_SERVER_REC *server, const char *data)
+{
+	MUC_REC *channel;
+	char *str;
+
+	str = muc_extract_channel(data);
+	channel = muc_find(server, str);
+	g_free(str);
+	return channel;
+}
+
 static void
 sig_connected(SERVER_REC *server)
 {
