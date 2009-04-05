@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 Colin DIDIER
+ * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -33,7 +33,7 @@
 static void
 sig_get_active_channel(const char **name)
 {
-	*name = IS_XMPP_SERVER(active_win->connect_server)
+	*name = IS_XMPP_SERVER(active_win->active_server)
 	    && IS_CHANNEL(active_win->active) ?
 	    ((CHANNEL_REC *)active_win->active)->name : NULL;
 }
@@ -41,13 +41,12 @@ sig_get_active_channel(const char **name)
 void
 fe_xmpp_windows_init(void)
 {
-	signal_add("xmpp windows get active channel",
-	    (SIGNAL_FUNC)sig_get_active_channel);
+	signal_add("xmpp windows get active channel", sig_get_active_channel);
 }
 
 void
 fe_xmpp_windows_deinit(void)
 {
 	signal_remove("xmpp windows get active channel",
-	    (SIGNAL_FUNC)sig_get_active_channel);
+	    sig_get_active_channel);
 }
