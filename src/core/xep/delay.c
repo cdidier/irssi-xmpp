@@ -84,24 +84,8 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			    str+4, from, from, &t,
 			    GINT_TO_POINTER(SEND_TARGET_NICK));
 		g_free(str);
-	}
-	signal_stop();
-}
-
-static void
-sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
-    const char *id, const char *from, const char *to)
-{
-	LmMessageNode *node;
-
-	node = lm_find_node(lmsg->node, "delay", "xmlns", XMLNS_DELAY);
-	if (node == NULL) {
-		/* XEP-0091: Delayed Delivery (deprecated) */
-		node = lm_find_node(lmsg->node, "x", "xmlns", XMLNS_OLD_DELAY);
-		if (node == NULL)
-			return;
-	}
-	/* ignore delayed presence messages */
+	} else
+		return;
 	signal_stop();
 }
 
@@ -110,12 +94,10 @@ delay_init(void)
 {
 	disco_add_feature(XMLNS_DELAY);
 	signal_add_first("xmpp recv message", sig_recv_message);
-	signal_add_first("xmpp recv presence", sig_recv_presence);
 }
 
 void
 delay_deinit(void)
 {
 	signal_remove("xmpp recv message", sig_recv_message);
-	signal_remove("xmpp recv presence", sig_recv_presence);
 }
