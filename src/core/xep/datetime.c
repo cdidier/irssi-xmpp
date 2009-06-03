@@ -21,6 +21,10 @@
  * XEP-0082: XMPP Date and Time Profiles
  */
 
+#ifdef __linux__
+#define _XOPEN_SOURCE 
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
