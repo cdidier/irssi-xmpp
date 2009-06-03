@@ -50,7 +50,7 @@ sig_recv_x(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		url_recoded = xmpp_recode_in(url);
 		if (desc != NULL) {
 			desc_recoded = xmpp_recode_in(desc);
-			str = g_strconcat(desc_recoded, ": ", url_recoded);
+			str = g_strconcat(desc_recoded, ": ", url_recoded, NULL);
 			g_free(url_recoded);
 			g_free(desc_recoded);
 		} else
