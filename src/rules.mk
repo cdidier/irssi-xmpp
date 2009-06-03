@@ -7,10 +7,10 @@ OBJS = ${SRCS:.c=.o}
 all: ${LIB}
 
 .c.o:
-	${CC} -c $< -o $@ ${CFLAGS}
+	${CC} ${CFLAGS} -o $@ -c $<
 
 ${LIB}: ${OBJS}
-	${CC} -o lib$@.so ${OBJS} ${LDFLAGS}
+	${CC} ${LDFLAGS} -o lib$@.so ${OBJS}
 
 clean:
 	rm -f lib${LIB}.so ${OBJS}
