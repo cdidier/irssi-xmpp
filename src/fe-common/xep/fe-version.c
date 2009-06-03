@@ -34,7 +34,7 @@ sig_version(XMPP_SERVER_REC *server, const char *jid, const char *client,
 	char *name, *str;
 
 	g_return_if_fail(jid != NULL);
-	if (name == NULL && version == NULL && os == NULL)
+	if (client == NULL && version == NULL && os == NULL)
 		return;
 	str = g_strconcat("is running ",
 	    client != NULL ? client : "",
