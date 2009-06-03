@@ -33,8 +33,6 @@ static void
 sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
     const char *id, const char *from, const char *to)
 {
-	LmMessageNode *node;
-
 	if ((type != LM_MESSAGE_SUB_TYPE_NOT_SET
 	    && type != LM_MESSAGE_SUB_TYPE_HEADLINE
 	    && type != LM_MESSAGE_SUB_TYPE_NORMAL

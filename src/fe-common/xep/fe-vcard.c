@@ -39,6 +39,8 @@ func_vcard_value(const char *key, const char *value, struct vcard_user_data *ud)
 	    XMPPTXT_VCARD_VALUE, key, value);
 }
 
+#if 0
+
 static void
 func_vcard_subvalue(const char *key, const char *value,
     struct vcard_user_data *ud)
@@ -46,6 +48,8 @@ func_vcard_subvalue(const char *key, const char *value,
 	printformat_module(MODULE_NAME, ud->server, ud->jid, MSGLEVEL_CRAP,
 	    XMPPTXT_VCARD_SUBVALUE, key, value);
 }
+
+#endif
 
 static void
 sig_vcard(XMPP_SERVER_REC *server, const char *jid, GHashTable *ht)
