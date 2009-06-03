@@ -22,16 +22,14 @@
 #include "module.h"
 #include "module-formats.h"
 #include "signals.h"
+#include "statusbar-item.h"
 #include "window-items.h"
-
-/* in include/irssi/src/fe-text */
-#include "statusbar.h"
 
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"
 
 static void
-item_xmpp_composing(SBAR_ITEM_REC *item, int get_size_only)
+item_xmpp_composing(struct SBAR_ITEM_REC *item, int get_size_only)
 {
 	XMPP_SERVER_REC *server;
 	XMPP_QUERY_REC *query;
@@ -49,7 +47,7 @@ item_xmpp_composing(SBAR_ITEM_REC *item, int get_size_only)
 out:
 	if (str == NULL) {
 		if (get_size_only)
-			item->min_size = item->max_size = 0;
+			statusbar_item_set_size(item, 0, 0);
 		return;
 	}
 	statusbar_item_default_handler(item, get_size_only,
