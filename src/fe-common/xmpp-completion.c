@@ -89,14 +89,17 @@ get_jids(XMPP_SERVER_REC *server, const char *jid)
 			user = (XMPP_ROSTER_USER_REC *)ul->data;
 			if (strncmp(user->jid, jid, len) == 0) {
 				if (user->resources != NULL)
-					g_list_append(list, user->jid);
+					list = g_list_append(list, user->jid);
 				else 
-					g_list_append(offlist, user->jid);
+					offlist = g_list_append(offlist,
+					    user->jid);
 			} else if (g_strncasecmp(user->jid, jid, len) == 0) {
 				if (user->resources != NULL)
-					g_list_append(list_case, user->jid);
+					list_case = g_list_append(list_case,
+					    user->jid);
 				else
-					g_list_append(offlist_case, user->jid);
+					offlist_case = g_list_append(offlist_case,
+					    user->jid);
 			}
 		}
 	}
