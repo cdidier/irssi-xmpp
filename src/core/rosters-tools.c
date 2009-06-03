@@ -21,7 +21,6 @@
 #include <stdlib.h>
 
 #include "module.h"
-#include "settings.h"
 
 #include "xmpp-servers.h"
 #include "rosters-tools.h"

@@ -215,12 +215,12 @@ cmd_roster_full(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	gboolean oldvalue;
 
 	CMD_XMPP_SERVER(server);
-	oldvalue = settings_get_bool("roster_show_offline");
+	oldvalue = settings_get_bool("xmpp_roster_show_offline");
 	if (!oldvalue)
-		settings_set_bool("roster_show_offline", TRUE);
+		settings_set_bool("xmpp_roster_show_offline", TRUE);
 	signal_emit("xmpp roster show", 1, server);
 	if (!oldvalue)
-		settings_set_bool("roster_show_offline", oldvalue);
+		settings_set_bool("xmpp_roster_show_offline", oldvalue);
 }
 
 /* SYNTAX: ROSTER ADD <jid> */
@@ -247,7 +247,7 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 	lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
-	if (settings_get_bool("roster_add_send_subscribe")) {
+	if (settings_get_bool("xmpp_roster_add_send_subscribe")) {
 		lmsg = lm_message_new_with_sub_type(jid_recoded,
 		    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBE);
 		signal_emit("xmpp send presence", 2, server, lmsg);
@@ -573,7 +573,7 @@ xmpp_commands_init(void)
 	    (SIGNAL_FUNC)cmd_presence_unsubscribe);
 	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
-	settings_add_bool("xmpp_roster", "roster_add_send_subscribe", TRUE);
+	settings_add_bool("xmpp_roster", "xmpp_roster_add_send_subscribe", TRUE);
 }
 
 void

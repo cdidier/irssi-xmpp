@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "module.h"
-#include "settings.h"
 #include "signals.h"
 
 #include "xmpp-servers.h"
