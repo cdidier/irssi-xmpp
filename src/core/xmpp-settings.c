@@ -56,6 +56,8 @@ read_settings(void)
 	}
 	/* check validity */
 	str = settings_get_str("xmpp_proxy_type");
+#if 0
+	/* TODO print error message */
 	if (settings_get_bool("xmpp_use_proxy")
 	    && (str == NULL || g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) != 0))
 		;
@@ -67,6 +69,7 @@ read_settings(void)
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_XA]) != 0
 	    || g_ascii_strcasecmp(str, xmpp_presence_show[XMPP_PRESENCE_ONLINE]) != 0)
 		;
+#endif
 }
 
 void
