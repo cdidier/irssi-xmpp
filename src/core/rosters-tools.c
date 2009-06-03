@@ -85,7 +85,7 @@ rosters_find_user(GSList *groups, const char *jid,
 
 	if ((pos = xmpp_find_resource_sep(jid)) != NULL)
 		*pos = '\0';
-	ul = NULL;
+	group_tmp = ul = NULL;
 	for (gl = groups; ul == NULL && gl != NULL;
 	    gl = gl->next) {
 		ul = g_slist_find_custom(
