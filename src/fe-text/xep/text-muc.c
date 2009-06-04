@@ -30,10 +30,15 @@ static void
 update_nick_statusbar(XMPP_SERVER_REC *server, MUC_REC *channel,
     gboolean redraw)
 {
-	g_free(server->nick);
-	server->nick = g_strdup(IS_MUC(channel) ? channel->nick
+	char *newnick;
+
+	newnick = IS_MUC(channel) ? channel->nick
 	    : settings_get_bool("xmpp_set_nick_as_username") ?
-	    server->user : server->jid);
+	    server->user : server->jid;
+	if (strcmp(server->nick, newnick) == 0)
+		return;
+	g_free(server->nick);
+	server->nick = g_strdup(newnick);
 	if (redraw)
 		statusbar_items_redraw("user");
 }
@@ -47,10 +52,7 @@ sig_window_changed(WINDOW_REC *window, WINDOW_REC *oldwindow)
 	g_return_if_fail(window != NULL);
 	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
-	channel = MUC(window->active);
-	if (channel != NULL
-	    || (oldwindow != NULL && IS_MUC(oldwindow->active)))
-		update_nick_statusbar(server, channel, FALSE);
+	update_nick_statusbar(server, MUC(window->active), FALSE);
 }
 
 static void
