@@ -49,6 +49,15 @@ If your server support the XMPP Ping, maybe you didn't add the composing
 item in the statusbar. Take a look at the file GENERAL (section
 "Composing in the statusbar:).
 
+2.2 How can I be away on all servers (both IRC servers and XMPP
+servers) ?
+
+Simply use this command:
+	/foreach server /away -one <reason>
+
+Or set up an alias like this
+	/alias aaway /foreach server /away -one
+
 3. Scripting:
 =============
 
@@ -60,7 +69,7 @@ item in the statusbar. Take a look at the file GENERAL (section
 such as: Can't locate object method "xxx" via package "Irssi::Xmpp::Server".
 How can I get rid of that ?
 
-Basicly, it's because the script is IRC-specific and won't work with an
+Basically, it's because the script is IRC-specific and won't work with an
 XMPP server. Try to add a condition in the functions of your script to
 verify if the server is an IRC server and simply return if it is not.
 
