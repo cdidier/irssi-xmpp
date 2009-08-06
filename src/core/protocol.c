@@ -33,8 +33,10 @@ sig_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	if (!xmpp_presence_changed(show, server->show, status,
-	    server->away_reason, priority, server->priority))
+	    server->away_reason, priority, server->priority)) {
+		signal_stop();
 		return;
+	}
 	server->show = show;
 	g_free(server->away_reason);
 	server->away_reason = g_strdup(status);
@@ -98,7 +100,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 void
 protocol_init(void)
 {
-	signal_add("xmpp set presence", sig_set_presence);
+	signal_add_first("xmpp set presence", sig_set_presence);
 	signal_add("xmpp recv message", sig_recv_message);
 }
 

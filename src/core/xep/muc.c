@@ -315,6 +315,45 @@ sig_connected(SERVER_REC *server)
 	}
 }
 
+static void
+send_muc_presence(MUC_REC *channel, const int show, const char *status)
+{
+	LmMessage *lmsg;
+	char *channame, *str;
+
+	channame = g_strconcat(channel->name, "/", channel->nick, NULL);
+	str = xmpp_recode_out(channame);
+	g_free(channame);
+	lmsg = lm_message_new(str, LM_MESSAGE_TYPE_PRESENCE);
+	g_free(str);
+	if (show != XMPP_PRESENCE_AVAILABLE)
+		lm_message_node_add_child(lmsg->node, "show",
+		    xmpp_presence_show[show]);
+	if (status != NULL) {
+		str = xmpp_recode_out(status);
+		lm_message_node_add_child(lmsg->node, "status", str);
+		g_free(str);
+	}
+	signal_emit("xmpp send presence", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+static void
+sig_set_presence(XMPP_SERVER_REC *server, const int show, const char *status,
+    const int priority)
+{
+	GSList *tmp;
+	MUC_REC *channel;
+
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!server->connected)
+		return;
+	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+		channel = MUC(tmp->data);
+		send_muc_presence(channel, show, status);
+	}
+}
+
 void
 muc_init(void)
 {
@@ -334,6 +373,7 @@ muc_init(void)
 	signal_add("channel created", sig_channel_created);
 	signal_add("channel destroyed", sig_channel_destroyed);
 	signal_add("server connected", sig_connected);
+	signal_add("xmpp set presence", sig_set_presence);
 
 	settings_add_int("xmpp_lookandfeel", "xmpp_history_maxstanzas", 30);
 }
@@ -345,6 +385,7 @@ muc_deinit(void)
 	signal_remove("channel created", sig_channel_created);
 	signal_remove("channel destroyed",sig_channel_destroyed);
 	signal_remove("server connected", sig_connected);
+	signal_remove("xmpp set presence", sig_set_presence);
 
 	muc_commands_deinit();
 	muc_events_deinit();
