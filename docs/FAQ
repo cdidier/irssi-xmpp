@@ -3,8 +3,8 @@
 
 1.1 How can I automatically load irssi-xmpp at irssi startup ?
 
-Simply put "irssi-xmpp" in your startup file (~/.irssi/startup):
-    echo "irssi-xmpp" >> ~/.irssi/startup
+Simply put "load xmpp" in your startup file (~/.irssi/startup):
+    echo "load xmpp" >> ~/.irssi/startup
 
 1.2 How can I automatically connect to my account at irssi startup ?
 
