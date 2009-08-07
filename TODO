@@ -3,7 +3,9 @@ Known bugs:
   seems to appears when the connection is lost and the client automatically
   reconnects. (bug spotted by davux)
 
-Next major release(s):
+Next release(s):
+- Write the documentation in help/ for the commmands:
+    ROSTER, PRESENCE, XMPPREGISTER, XMPPUNREGISTER, XMPPPASSWD
 - Handle errors and print errors messages (many errors are not handled
   yet, specially in MUC)
 - Rewrite completion (src/fe-common/xmpp-completion.c)
