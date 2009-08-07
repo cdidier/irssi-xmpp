@@ -26,7 +26,7 @@ CFLAGS = -fPIC -std=c99 -DUOFF_T_LONG ${INCS}
 LDFLAGS = -shared ${LIBS}
 
 # debug
-#CFLAGS += -W -ggdb -Wall -Wno-unused-parameter
+CFLAGS += -W -ggdb -Wall -Wno-unused-parameter
 
 # compiler and linker
 CC = cc
