@@ -3,7 +3,7 @@ XMPPCONNECT %|[-ssl] [-host <host>] [-port <port>] <jid>[/<resource] <password>
 
      -ssl: use SSL when connecting
      -host: the host
-     -port: the port
+     -port: the port (if not specified, 5222 is used for a normal connection or 5223 for an SSL connection)
 
 This command makes irssi to connect to specified XMPP account. Current connections are kept and a new one is created.
 
