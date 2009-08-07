@@ -39,5 +39,5 @@ Register:
 =========
 
 You can register an account directly with irssi-xmpp using the command
-/XMPPREGISTER. But it will not register an account on a virtual domain.
-So don't use this feature yet, and wait until it is ready.
+/XMPPREGISTER.
+
