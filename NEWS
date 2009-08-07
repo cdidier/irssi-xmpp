@@ -1,9 +1,11 @@
-1.0 - ??/??/2008
+0.50 - 07/08/2009
 
 	+ Complete rewrite with a modular architecture
 	+ Better integration in irssi, many bug fixes and a big code cleanup
 	+ Better support of XMPP
 	+ Multi-User Chat (XEP-0045), Entity Use Cases and Occupant Use Cases
+	+ In-Band Registration (XEP-0077) support using the command
+	  /XMPPREGISTER
 	+ Message Events (XEP-0022) and Chat State Notifications (XEP-0085)
 	  showed in the status-bar (status-bar "xmpp_composing"), you can
 	  disable events sending (setting "xmpp_send_composing")
@@ -11,6 +13,7 @@
 	  the lag-meter to work
 	+ Software Version (XEP-0092) support using /VER and vCard (XEP-0054)
 	  using /WHOIS (partial retrieve)
+	+ Delayed Delivery (XEP-0203) support
 	+ Better UTF-8 support
 	+ HTTP proxy support
 	+ commands /XMPPCONNECT and /XMPPSERVER to connect easily to an
