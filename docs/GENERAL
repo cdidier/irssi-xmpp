@@ -37,8 +37,9 @@ contact in your roster.
 /ROSTER FULL
     Shows all your contacts in a list, even those who are offline.
 
-/ROSTER ADD <jid>
-    Adds a JID to your contact list.
+/ROSTER ADD [-nosub] <jid>
+    Adds a JID to your contact list. (Use the parameter "-nosub" if you
+    don't want to send a subscribe request.)
 
 /ROSTER REMOVE <jid>
     Removes a JID from your contact list. The subscriptions will be removed too.
@@ -160,10 +161,6 @@ In "xmpp_roster" section:
 /SET roster_default_group <group>
     Sets the default group where the contacts will be displayed if the group name
     is unspecified. (default: General)
-
-/SET roster_add_send_subscribe ON/OFF
-    Sends a subscribe request to the contact when adding his/her to the roster.
-    (default: ON)
 
 /SET roster_service_name <group>
     Sets the default group where the services and the transports will be

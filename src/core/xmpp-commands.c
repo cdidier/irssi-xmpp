@@ -229,12 +229,14 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 {
 	LmMessage *lmsg;
 	LmMessageNode *query_node, *item_node;
+	GHashTable *optlist;
 	const char *jid;
 	char *jid_recoded;
 	void *free_arg;
 
 	CMD_XMPP_SERVER(server);
-	if (!cmd_get_params(data, &free_arg, 1, &jid))
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
+	    "roster add", &optlist, &jid))
 		return;
 	if (*jid == '\0') 
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
@@ -247,7 +249,7 @@ cmd_roster_add(const char *data, XMPP_SERVER_REC *server)
 	lm_message_node_set_attribute(item_node, "jid", jid_recoded);
 	signal_emit("xmpp send iq", 2, server, lmsg);
 	lm_message_unref(lmsg);
-	if (settings_get_bool("xmpp_roster_add_send_subscribe")) {
+	if (g_hash_table_lookup(optlist, "nosub") == NULL) {
 		lmsg = lm_message_new_with_sub_type(jid_recoded,
 		    LM_MESSAGE_TYPE_PRESENCE, LM_MESSAGE_SUB_TYPE_SUBSCRIBE);
 		signal_emit("xmpp send presence", 2, server, lmsg);
@@ -558,6 +560,7 @@ xmpp_commands_init(void)
 	command_bind_xmpp("roster", NULL, (SIGNAL_FUNC)cmd_roster);
 	command_bind_xmpp("roster full", NULL, (SIGNAL_FUNC)cmd_roster_full);
 	command_bind_xmpp("roster add", NULL, (SIGNAL_FUNC)cmd_roster_add);
+	command_set_options("roster add", "nosub");
 	command_bind_xmpp("roster remove", NULL,
 	    (SIGNAL_FUNC)cmd_roster_remove);
 	command_bind_xmpp("roster name", NULL, (SIGNAL_FUNC)cmd_roster_name);
@@ -573,7 +576,6 @@ xmpp_commands_init(void)
 	    (SIGNAL_FUNC)cmd_presence_unsubscribe);
 	command_bind_xmpp("me", NULL, (SIGNAL_FUNC)cmd_me);
 	settings_add_str("xmpp", "xmpp_default_away_mode", "away");
-	settings_add_bool("xmpp_roster", "xmpp_roster_add_send_subscribe", TRUE);
 }
 
 void
