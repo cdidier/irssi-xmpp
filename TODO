@@ -1,0 +1,29 @@
+Known bugs:
+- There is a problem with alternate nick and nick changing in MUC which
+  seems to appears when the connection is lost and the client automatically
+  reconnects. (bug spotted by davux)
+
+Next major release(s):
+- Handle errors and print errors messages (many errors are not handled
+  yet, specially in MUC)
+- Rewrite completion (src/fe-common/xmpp-completion.c)
+- Add the commands /KICK and /BAN in MUCs
+- Implement the commands /SERVICES DISCOVER/LOGON/LOGOFF to
+  print info/activate/deactivate a service (like a gateway)
+        <presence to="<<service>>" id="1"></presence>
+	<presence to="<<service>>" type="unavailable" id="2"></presence>
+
+Delayed tasks:
+- Print name instead of jid in queries messages:
+    One way to do it is to create new signals (like "message xmpp private"
+instead of "message private") and handle these new signals to print the
+nickname. The major problem is that you have to stop the signal "message
+private" to replace it with "message xmpp private", but many things in
+irssi handle the original signal so you have to recreate the same
+behaviors inside irssi-xmpp (which is complicated and boring). For
+inspiration you can see how the signal "message own_public" is handled
+in src/fe-common/fe-xmpp-messages.c
+    The other (and better) way to do it, is to modify some signal emitted
+by irssi (at least "message private", to add a new parameter which will
+be the nick to display) and to modify the way irssi handle these new
+signals.
