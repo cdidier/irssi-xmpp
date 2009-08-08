@@ -1,8 +1,3 @@
-Known bugs:
-- There is a problem with alternate nick and nick changing in MUC which
-  seems to appears when the connection is lost and the client automatically
-  reconnects. (bug spotted by davux)
-
 Next release(s):
 - Write the documentation in help/ for the commmands:
     ROSTER, PRESENCE, XMPPREGISTER, XMPPUNREGISTER, XMPPPASSWD

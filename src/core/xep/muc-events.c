@@ -234,11 +234,13 @@ error_message(MUC_REC *channel, const char *code)
 }
 
 static void
-error_join(MUC_REC *channel, const char *code)
+error_join(MUC_REC *channel, const char *code, const char *nick)
 {
 	char *altnick;
 	int error;
 
+	if (strcmp(nick, channel->nick) != 0)
+		return;
 	error = atoi(code);
 	signal_emit("xmpp muc joinerror", 2, channel, GINT_TO_POINTER(error));
 	/* rejoin with alternate nick */
@@ -509,7 +511,7 @@ sig_recv_presence(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		/* TODO: extract error type and name -> XMLNS_STANZAS */
 		code = lm_message_node_get_attribute(node, "code");
 		if (!channel->joined)
-			error_join(channel, code);
+			error_join(channel, code, nick);
 		else
 			error_presence(channel, code, nick);
 		break;
