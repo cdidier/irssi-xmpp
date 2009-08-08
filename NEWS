@@ -1,11 +1,9 @@
-0.50 - 07/08/2009
+0.50 - 07/08/2008
 
 	+ Complete rewrite with a modular architecture
 	+ Better integration in irssi, many bug fixes and a big code cleanup
 	+ Better support of XMPP
 	+ Multi-User Chat (XEP-0045), Entity Use Cases and Occupant Use Cases
-	+ In-Band Registration (XEP-0077) support using the command
-	  /XMPPREGISTER
 	+ Message Events (XEP-0022) and Chat State Notifications (XEP-0085)
 	  showed in the status-bar (status-bar "xmpp_composing"), you can
 	  disable events sending (setting "xmpp_send_composing")
