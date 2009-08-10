@@ -391,16 +391,6 @@ err:
 static void
 sig_connected(XMPP_SERVER_REC *server)
 {
-	if (!IS_XMPP_SERVER(server))
-		return;
-	server->connected = TRUE;
-	server->connect_tag = -1;
-	server->show = XMPP_PRESENCE_AVAILABLE;
-}
-
-static void
-sig_connected_last(XMPP_SERVER_REC *server)
-{
 	LmMessage *lmsg;
 	char *str;
 
@@ -474,16 +464,19 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		 * <iq><session xmlns="urn:ietf:params:xml:ns:xmpp-session"></iq>
 		 */
 		lookup_servers = g_slist_remove(lookup_servers, server);
+		g_source_remove(server->connect_tag);
+		server->connect_tag = -1;
+		server->show = XMPP_PRESENCE_AVAILABLE;
+		server->connected = TRUE;
 		server_connect_finished(SERVER(server));
-		signal_emit("event connected", 1, server);
+		server->real_connect_time = time(NULL);
 	}
 }
 
 void
 xmpp_servers_init(void)
 {
-	signal_add_first("server connected", sig_connected);
-	signal_add_last("server connected", sig_connected_last);
+	signal_add_last("server connected", sig_connected);
 	signal_add_last("server disconnected", server_cleanup);
 	signal_add_last("server connect failed", server_cleanup);
 	signal_add("server quit", sig_server_quit);
@@ -508,7 +501,6 @@ xmpp_servers_deinit(void)
 	disconnect_all();
 
 	signal_remove("server connected", sig_connected);
-	signal_remove("server connected", sig_connected_last);
 	signal_remove("server disconnected", server_cleanup);
 	signal_remove("server connect failed", server_cleanup);
 	signal_remove("server quit", sig_server_quit);
