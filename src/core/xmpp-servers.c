@@ -258,6 +258,12 @@ lm_open_cb(LmConnection *connection, gboolean success,
 		g_free(host);
 	} else
 		signal_emit("server connecting", 1, server);
+	if (server->connrec->use_ssl)
+		signal_emit("xmpp server status", 2, server, 
+		    "Using SSL encryption.");
+	else if (lm_ssl_get_use_starttls(lm_connection_get_ssl(server->lmconn)))
+		signal_emit("xmpp server status", 2, server,
+		    "Using STARTTLS encryption.");
 	recoded_user = xmpp_recode_out(server->user);
 	recoded_password = xmpp_recode_out(server->connrec->password);
 	recoded_resource = xmpp_recode_out(server->resource);
@@ -270,7 +276,8 @@ lm_open_cb(LmConnection *connection, gboolean success,
 }
 
 gboolean
-set_ssl(LmConnection *lmconn, GError **error, gpointer user_data)
+set_ssl(LmConnection *lmconn, GError **error, gpointer user_data,
+    gboolean use_starttls)
 {
 	LmSSL *ssl;
 
@@ -282,6 +289,8 @@ set_ssl(LmConnection *lmconn, GError **error, gpointer user_data)
 	}
 	ssl = lm_ssl_new(NULL, lm_ssl_cb, user_data, NULL);
 	lm_connection_set_ssl(lmconn, ssl);
+	if (use_starttls)
+		lm_ssl_use_starttls(ssl, TRUE, FALSE);
 	lm_ssl_unref(ssl);
 	return TRUE;
 }
@@ -350,11 +359,13 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 		return;
 	error = NULL;
 	err_msg = NULL;
-	if (server->connrec->use_ssl
-	    && !set_ssl(server->lmconn, &error, server)) {
-		err_msg = "Cannot init ssl";
-		goto err;
-	}
+	if (server->connrec->use_ssl) {
+		if (!set_ssl(server->lmconn, &error, server, FALSE)) {
+			err_msg = "Cannot init ssl";
+			goto err;
+		}
+	} else
+		set_ssl(server->lmconn, &error, server, TRUE);
 	if (settings_get_bool("xmpp_use_proxy")
 	    && !set_proxy(server->lmconn, &error)) {
 		err_msg = "Cannot set proxy";

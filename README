@@ -27,7 +27,7 @@ Installation:
 =============
 
 Requirement:
-    o Loudmouth (>= 1.2.x): http://www.loudmouth-project.org/
+    o Loudmouth (>= 1.4.x): http://www.loudmouth-project.org/
     o Irssi (>= 0.8.13) and its sources unpacked and configured:
       http://irssi.org/
 
