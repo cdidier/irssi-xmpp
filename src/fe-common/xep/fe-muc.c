@@ -23,10 +23,12 @@
 #include "module-formats.h"
 #include "printtext.h"
 #include "signals.h"
+#include "window-items.h"
 #include "fe-common/core/module-formats.h"
 #include "fe-common/irc/module-formats.h"
 
 #include "xmpp-servers.h"
+#include "xmpp-commands.h"
 #include "rosters-tools.h"
 #include "xep/muc.h"
 #include "xep/muc-nicklist.h"
@@ -166,6 +168,34 @@ sig_mode(MUC_REC *channel, const char *nick, int affiliation,
 	g_free(mode);
 }
 
+/* SYNTAX: CYCLE [<channel] [<message>] */
+static void
+cmd_cycle(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *reason, *joindata;
+	void *free_arg;
+
+	g_return_if_fail(data != NULL);
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN,
+	    item, &channame, &reason))
+		return;
+	if (*channame == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	joindata = g_strconcat(channel->get_join_data(CHANNEL(channel)),
+	    "/", channel->nick, NULL);
+	window_bind_add(window_item_window(channel),
+	    channel->server->tag, channel->name);
+	muc_part(channel, reason);
+	muc_join(XMPP_SERVER(server), joindata, FALSE);
+	g_free(joindata);
+	cmd_params_free(free_arg);
+	signal_stop();
+}
+
 void
 fe_muc_init(void)
 {
@@ -175,6 +205,7 @@ fe_muc_init(void)
 	signal_add("message xmpp muc own_nick", sig_own_nick);
 	signal_add("message xmpp muc nick in use", sig_nick_in_use);
 	signal_add("message xmpp muc mode", sig_mode);
+	signal_add_first("command cycle", cmd_cycle);
 }
 
 void
@@ -186,5 +217,6 @@ fe_muc_deinit(void)
 	signal_remove("message xmpp muc own_nick", sig_own_nick);
 	signal_remove("message xmpp muc nick in use", sig_nick_in_use);
 	signal_remove("message xmpp muc mode", sig_mode);
+	signal_remove("command cycle", cmd_cycle);
 }
 
