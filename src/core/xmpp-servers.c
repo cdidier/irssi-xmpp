@@ -234,9 +234,6 @@ lm_auth_cb(LmConnection *connection, gboolean success,
 	}
 	signal_emit("xmpp server status", 2, server,
 	    "Authenticated successfully.");
-	lookup_servers = g_slist_remove(lookup_servers, server);
-	server_connect_finished(SERVER(server));
-	signal_emit("event connected", 1, server);
 }
 
 static void
@@ -462,6 +459,23 @@ sig_session_save(void)
 	disconnect_all();
 }
 
+static void
+sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	if (!server->connected && type != LM_MESSAGE_SUB_TYPE_RESULT)
+		return;
+	if (lm_find_node(lmsg->node, "session", "xmlns",
+	    "urn:ietf:params:xml:ns:xmpp-session")) {
+		/* we are fully connected when we receive the first iq stanza:
+		 * <iq><session xmlns="urn:ietf:params:xml:ns:xmpp-session"></iq>
+		 */
+		lookup_servers = g_slist_remove(lookup_servers, server);
+		server_connect_finished(SERVER(server));
+		signal_emit("event connected", 1, server);
+	}
+}
+
 void
 xmpp_servers_init(void)
 {
@@ -471,6 +485,7 @@ xmpp_servers_init(void)
 	signal_add_last("server connect failed", server_cleanup);
 	signal_add("server quit", sig_server_quit);
 	signal_add_first("session save", sig_session_save);
+	signal_add("xmpp recv iq", sig_recv_iq);
 
 	settings_add_int("xmpp", "xmpp_priority", 0);
 	settings_add_bool("xmpp_lookandfeel", "xmpp_set_nick_as_username",
@@ -495,4 +510,5 @@ xmpp_servers_deinit(void)
 	signal_remove("server connect failed", server_cleanup);
 	signal_remove("server quit", sig_server_quit);
 	signal_remove("session save", sig_session_save);
+	signal_remove("xmpp recv iq", sig_recv_iq);
 }
