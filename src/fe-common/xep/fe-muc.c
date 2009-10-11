@@ -201,8 +201,7 @@ cmd_cycle(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 	if ((channel = muc_find(server, channame)) == NULL)
 		cmd_param_error(CMDERR_NOT_JOINED);
-	joindata = g_strconcat(channel->get_join_data(CHANNEL(channel)),
-	    "/", channel->nick, NULL);
+	joindata = channel->get_join_data(CHANNEL(channel));
 	window_bind_add(window_item_window(channel),
 	    channel->server->tag, channel->name);
 	muc_part(channel, reason);

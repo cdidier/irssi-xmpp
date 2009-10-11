@@ -394,7 +394,7 @@ invite(XMPP_SERVER_REC *server, const char *from, LmMessageNode *node)
 	LmMessageNode *inv, *pass;
 	CHANNEL_SETUP_REC *setup;
 	const char *to;
-	char *channame, *password, *data;
+	char *channame, *password, *joindata;
 
 	for (inv = node->children; inv != NULL; inv = inv->next) {
 		if (strcmp(inv->name, "invite") != 0
@@ -411,12 +411,12 @@ invite(XMPP_SERVER_REC *server, const char *from, LmMessageNode *node)
 			     server->connrec->chatnet);
 			if (setup != NULL && setup->autojoin
 			    && settings_get_bool("join_auto_chans_on_invite")) {
-				data = password == NULL ?
+				joindata = password == NULL ?
 				    g_strconcat("\"", channame, "\"", NULL)
 				    : g_strconcat("\"", channame, "\" ",
 					password, NULL);
-				muc_join(server, data, TRUE);
-				g_free(data);
+				muc_join(server, joindata, TRUE);
+				g_free(joindata);
 			}
 		}
 		g_free(channame);

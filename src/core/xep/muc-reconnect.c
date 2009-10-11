@@ -58,7 +58,7 @@ save_channels(XMPP_SERVER_REC *server, XMPP_SERVER_CONNECT_REC *conn)
 {
 	GSList *tmp;
 	MUC_REC *channel;
-	char *str;
+	char *joindata;
 
 	if (conn->channels_list != NULL) {
 		g_slist_foreach(conn->channels_list, (GFunc)g_free, NULL);
@@ -67,14 +67,9 @@ save_channels(XMPP_SERVER_REC *server, XMPP_SERVER_CONNECT_REC *conn)
 	}
 	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
 		channel = tmp->data;
-		if (channel->key != NULL)
-			str = g_strdup_printf("\"%s/%s\" \"%s\"",
-			    channel->name, channel->nick, channel->key);
-		else
-			str = g_strdup_printf("\"%s/%s\"", channel->name,
-			    channel->nick);
+		joindata = channel->get_join_data(CHANNEL(channel));
 		conn->channels_list = g_slist_append(conn->channels_list,
-		    g_strdup(str));
+		    joindata);
 	}
 }
 
@@ -118,7 +113,7 @@ muc_reconnect_init(void)
 	signal_add_last("server connect copy", sig_conn_copy);
 	signal_add("server reconnect remove", sig_conn_remove);
 	signal_add("server reconnect save status", sig_save_status);
-	signal_add("server connected", sig_connected);
+	signal_add_last("server connected", sig_connected);
 }
 
 void
