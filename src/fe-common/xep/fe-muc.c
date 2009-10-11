@@ -168,12 +168,28 @@ sig_mode(MUC_REC *channel, const char *nick, int affiliation,
 	g_free(mode);
 }
 
+struct cycle_data {
+	XMPP_SERVER_REC	*server;
+	char		*joindata;
+};
+
+static int
+cycle_join(struct cycle_data *cd)
+{
+	if (IS_XMPP_SERVER(cd->server))
+		muc_join(cd->server, cd->joindata, FALSE);
+	g_free(cd->joindata);
+	free(cd);
+	return FALSE;
+}
+
 /* SYNTAX: CYCLE [<channel] [<message>] */
 static void
 cmd_cycle(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	MUC_REC *channel;
 	char *channame, *reason, *joindata;
+	struct cycle_data *cd;
 	void *free_arg;
 
 	g_return_if_fail(data != NULL);
@@ -190,8 +206,14 @@ cmd_cycle(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	window_bind_add(window_item_window(channel),
 	    channel->server->tag, channel->name);
 	muc_part(channel, reason);
-	muc_join(XMPP_SERVER(server), joindata, FALSE);
-	g_free(joindata);
+	if ((cd = malloc(sizeof(struct cycle_data))) != NULL) {
+		cd->server = XMPP_SERVER(server);
+		cd->joindata = joindata;
+		g_timeout_add(1000, (GSourceFunc)cycle_join, cd);
+	} else {
+		muc_join(XMPP_SERVER(server), joindata, FALSE);
+		free(joindata);
+	}
 	cmd_params_free(free_arg);
 	signal_stop();
 }
