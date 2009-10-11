@@ -194,8 +194,8 @@ cmd_cycle(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 
 	g_return_if_fail(data != NULL);
 	CMD_XMPP_SERVER(server);
-	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN,
-	    item, &channame, &reason))
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &reason))
 		return;
 	if (*channame == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
