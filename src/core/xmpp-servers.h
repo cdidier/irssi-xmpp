@@ -49,8 +49,9 @@ struct _XMPP_SERVER_REC {
 	GSList		*my_resources;
 	GSList		*roster;
 
-	LmConnection	 *lmconn;
-	GSList		 *msg_handlers;
+	int		 timeout_tag;
+	LmConnection	*lmconn;
+	GSList		*msg_handlers;
 };
 
 __BEGIN_DECLS

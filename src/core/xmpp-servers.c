@@ -92,6 +92,8 @@ server_cleanup(XMPP_SERVER_REC *server)
 {
 	if (!IS_XMPP_SERVER(server))
 		return;
+	if (server->timeout_tag)
+		g_source_remove(server->timeout_tag);
 	if (lm_connection_get_state(server->lmconn) !=
 	    LM_CONNECTION_STATE_CLOSED)
 		lm_connection_close(server->lmconn, NULL);
@@ -163,6 +165,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	g_free(recoded);
 	lm_connection_set_keep_alive_rate(server->lmconn, 30);
 
+	server->timeout_tag = 0;
 	server_connect_init((SERVER_REC *)server);
 	server->connect_tag = 1;
 	return (SERVER_REC *)server;
@@ -346,6 +349,19 @@ set_proxy(LmConnection *lmconn, GError **error)
 	return TRUE;
 }
 
+static int
+check_connection_timeout(XMPP_SERVER_REC *server)
+{
+	if (g_slist_find(lookup_servers, server) == NULL)
+		return FALSE;
+	if (!server->connected) {
+		server->connection_lost = TRUE;
+		server_disconnect(SERVER(server));
+	}
+	server->timeout_tag = 0;
+	return FALSE;
+}
+
 void
 xmpp_server_connect(XMPP_SERVER_REC *server)
 {
@@ -372,6 +388,9 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 	    lm_close_cb, server, NULL);
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
+	server->timeout_tag = g_timeout_add(
+	    settings_get_time("server_connect_timeout"),
+	    (GSourceFunc)check_connection_timeout, server);
 	if (!lm_connection_open(server->lmconn,  lm_open_cb, server,
 	    NULL, &error)) {
 		err_msg = "Connection failed";
@@ -468,8 +487,12 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		server->connect_tag = -1;
 		server->show = XMPP_PRESENCE_AVAILABLE;
 		server->connected = TRUE;
+		if (server->timeout_tag) {
+			g_source_remove(server->timeout_tag);
+			server->timeout_tag = 0;
+		}
 		server_connect_finished(SERVER(server));
-		server->real_connect_time = time(NULL);
+		server->real_connect_time = server->connect_time;
 	}
 }
 
