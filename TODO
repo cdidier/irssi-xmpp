@@ -1,5 +1,4 @@
 Next release(s):
-- Add a timout at the connection to prevent frozen connections
 - Assign threads to query windows
 - Implement bookmarks (to autojoin rooms)
 - Write the documentation in help/ for the commmands:
