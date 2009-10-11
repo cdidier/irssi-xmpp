@@ -1,4 +1,15 @@
-0.50 - 07/08/2008
+0.51 - ??/??/2009
+
+        + Add STARTTLS support (enabled by default if the parameter -ssl
+          is not specified)
+	- Rework the way the connection is performed
+
+        - Add a connection timeout in case there is no response from the
+          server, so the connection will be reseted after a certain
+          amount of time (setting "server_connect_timeout")
+	- /CYCLE command
+
+0.50 - 07/08/2009
 
 	+ Complete rewrite with a modular architecture
 	+ Better integration in irssi, many bug fixes and a big code cleanup
