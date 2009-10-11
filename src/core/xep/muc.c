@@ -63,7 +63,7 @@ muc_create(XMPP_SERVER_REC *server, const char *name,
 	  settings_get_str("nick") : server->user);
 	channel_init((CHANNEL_REC *)rec, SERVER(server), name, visible_name,
 	    automatic);
-	rec->get_join_data = get_join_data;
+	rec->get_join_data = (char *(*)(CHANNEL_REC *))get_join_data;
 	return (CHANNEL_REC *)rec;
 }
 
