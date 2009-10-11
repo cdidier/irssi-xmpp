@@ -355,6 +355,8 @@ check_connection_timeout(XMPP_SERVER_REC *server)
 	if (g_slist_find(lookup_servers, server) == NULL)
 		return FALSE;
 	if (!server->connected) {
+		g_warning("%s: no response from server",
+		    server->connrec->address);
 		server->connection_lost = TRUE;
 		server_disconnect(SERVER(server));
 	}
