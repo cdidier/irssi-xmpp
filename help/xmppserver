@@ -1,7 +1,7 @@
 
 XMPPSERVER %|[-ssl] [-server <host>] [-port <port>] <jid>[/<resource] <password>
 
-     -ssl: use SSL when connecting
+     -ssl: use SSL when connecting (deprecated, StartTLS will be used by default if this parameter is not specified)
      -host: the host
      -port: the port (if not specified, 5222 is used for a normal connection or 5223 for an SSL connection)
 

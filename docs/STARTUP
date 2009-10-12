@@ -29,6 +29,9 @@ specify the host with the parameter "-host".
 You can also use /XMPPSERVER to replace the current connection. See the FAQ
 if you want to automatically connect to the server at startup
 
+If available, StartTLS will be used by default. Use the "-ssl" switch
+only if you want to use the deprecated SSL encryption.
+
 Automation:
 ===========
 

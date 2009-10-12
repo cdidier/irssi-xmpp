@@ -17,7 +17,7 @@ Its main features are:
     o Message Events ("composing")
     o Support for multiple accounts
     o Unicode support (UTF-8)
-    o SSL and HTTP proxy support
+    o StartTLS, SSL (deprecated) and HTTP proxy support
     o ...
 
 To deal with the XMPP protocol, it uses of the Loudmouth library.
