@@ -40,7 +40,10 @@
 1.3 How can I use my gmail/gtalk account ?
 
   You have to use the server "talk.google.com", so the command is:
-      /XMPPCONNET -host talk.google.com -ssl <jid> <password>
+      /XMPPCONNET -host talk.google.com <jid> <password>
+
+  You don't need to specify the -ssl switch because STARTTLS will be
+  used automatically.
 
 2. General:
 ===========
