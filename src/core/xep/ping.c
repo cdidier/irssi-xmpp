@@ -105,8 +105,9 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 
 	if (type == LM_MESSAGE_SUB_TYPE_RESULT) {
 		/* pong response from server of our ping */
-		if (server->ping_id != NULL && strcmp(from, server->domain) == 0
-	    	&& strcmp(id, server->ping_id) == 0) {
+		if (server->ping_id != NULL &&
+		    from != NULL && strcmp(from, server->domain) == 0 &&
+	    	    id != NULL && strcmp(id, server->ping_id) == 0) {
 			g_get_current_time(&now);
 			server->lag =
 			    (int)get_timeval_diff(&now, &server->lag_sent);
