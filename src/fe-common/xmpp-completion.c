@@ -56,8 +56,7 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	g_return_val_if_fail(nick != NULL, NULL);
-	if (resource_name != NULL)
-		len = strlen(resource_name);
+	len = resource_name != NULL ? strlen(resource_name) : 0;
 	list = NULL;
 	user = rosters_find_user(server->roster, nick, NULL, NULL);
 	if (user == NULL)
