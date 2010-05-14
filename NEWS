@@ -1,13 +1,14 @@
-0.51 - ??/??/2009
+0.51 - ??/??/2010
 
         + Add STARTTLS support (enabled by default if the parameter -ssl
           is not specified)
-	- Rework the way the connection is performed
-
+	- Rework the way connections are performed
+	- Add a password prompt if no password was specified
         - Add a connection timeout in case there is no response from the
           server, so the connection will be reseted after a certain
           amount of time (setting "server_connect_timeout")
 	- /CYCLE command
+	- and many others minor changes and fixes
 
 0.50 - 07/08/2009
 
