@@ -251,7 +251,7 @@ get_password()
 	char input[2048], *ret = NULL;
 	int fd;
 
-#if 1 /* defined(HAVE_TERMIOS_H), let's assume termios.h for now */
+#ifndef DISABLE_TERMIOS
 	struct termios to;
 	struct termios to_old;
 
@@ -294,7 +294,7 @@ get_password()
 
 	ret = strdup(input);
 	memset(input, 0, sizeof(input));
-#endif /* HAVE_TERMIOS_H */
+#endif /* DISABLE_TERMIOS */
 	return ret;
 }
 
