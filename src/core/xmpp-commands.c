@@ -71,7 +71,10 @@ cmd_connect_get_line(const char *data)
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS,
 	    "xmppconnect", &optlist, &jid, &password))
 		return NULL;
-	if (*jid == '\0' || *password == '\0' || !xmpp_have_domain(jid)) {
+	if (*password == '\0')
+		password = g_strdup("\r"); /* we will prompt for password later */
+	if (*jid == '\0' || password == NULL || *password == '\0'
+	    || !xmpp_have_domain(jid)) {
 		cmd_params_free(free_arg);
 		signal_emit("error command", 1,
 		    GINT_TO_POINTER(CMDERR_NOT_ENOUGH_PARAMS));

@@ -1,5 +1,5 @@
 
-XMPPCONNECT %|[-ssl] [-host <host>] [-port <port>] <jid>[/<resource] <password>
+XMPPCONNECT %|[-ssl] [-host <host>] [-port <port>] <jid>[/<resource] [<password>]
 
      -ssl: use SSL when connecting (deprecated, StartTLS will be used by default if this parameter is not specified)
      -host: the host

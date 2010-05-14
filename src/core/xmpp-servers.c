@@ -19,6 +19,8 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <string.h>
+#include <termios.h>
 
 #include "module.h"
 #include "network.h"
@@ -239,6 +241,63 @@ lm_auth_cb(LmConnection *connection, gboolean success,
 	    "Authenticated successfully.");
 }
 
+/*
+ * Displays input prompt on command line and takes input data from user
+ * From irssi-silc (silc-client/lib/silcutil/silcutil.c)
+ */
+static char *
+get_password()
+{
+	char input[2048], *ret = NULL;
+	int fd;
+
+#if 1 /* defined(HAVE_TERMIOS_H), let's assume termios.h for now */
+	struct termios to;
+	struct termios to_old;
+
+	if ((fd = open("/dev/tty", O_RDONLY)) < 0) {
+		g_warning("Cannot open /dev/tty: %s\n",
+		    strerror(errno));
+		return NULL;
+	}
+    	signal(SIGINT, SIG_IGN);
+
+	/* Get terminal info */
+	tcgetattr(fd, &to);
+	to_old = to;
+	/* Echo OFF, and assure we can prompt and get input */
+	to.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+	to.c_lflag |= ICANON;
+	to.c_cc[VMIN] = 255;
+	tcsetattr(fd, TCSANOW, &to);
+
+	printf("\tXMPP Password: ");
+	fflush(stdout);
+
+	memset(input, 0, sizeof(input));
+	if ((read(fd, input, sizeof(input))) < 0) {
+		g_warning("Cannot read from /dev/tty: %s\n",
+		    strerror(errno));
+		tcsetattr(fd, TCSANOW, &to_old);
+		return NULL;
+	}
+	if (strlen(input) <= 1) {
+		tcsetattr(fd, TCSANOW, &to_old);
+		return NULL;
+	}
+	if ((ret = strchr(input, '\n')) != NULL)
+		*ret = '\0';
+
+	/* Restore old terminfo */
+	tcsetattr(fd, TCSANOW, &to_old);
+	signal(SIGINT, SIG_DFL);
+
+	ret = strdup(input);
+	memset(input, 0, sizeof(input));
+#endif /* HAVE_TERMIOS_H */
+	return ret;
+}
+
 static void
 lm_open_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
@@ -265,6 +324,16 @@ lm_open_cb(LmConnection *connection, gboolean success,
 		signal_emit("xmpp server status", 2, server,
 		    "Using STARTTLS encryption.");
 	recoded_user = xmpp_recode_out(server->user);
+
+	if (server->connrec->password == NULL
+	    || *(server->connrec->password) == '\0'
+	    || *(server->connrec->password) == '\r') {
+		if (server->connrec->password != NULL)
+			g_free(server->connrec->password);
+		server->connrec->password = get_password();
+		if (server->connrec->password == NULL)
+			server->connrec->password = g_strdup(" ");
+	}
 	recoded_password = xmpp_recode_out(server->connrec->password);
 	recoded_resource = xmpp_recode_out(server->resource);
 	lm_connection_authenticate(connection, recoded_user,
