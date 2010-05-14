@@ -226,8 +226,11 @@ nick_kicked(MUC_REC *channel, const char *nickname, const char *actor,
 static void
 error_message(MUC_REC *channel, const char *code)
 {
-	switch (atoi(code)) {
-	case 401:
+	int error;
+
+	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
+	switch (error) {
+	case MUC_ERROR_PASSWORD_INVALID_OR_MISSING:
 		signal_emit("xmpp muc error", 2, channel, "not allowed");
 		break;
 	}
@@ -241,11 +244,12 @@ error_join(MUC_REC *channel, const char *code, const char *nick)
 
 	if (strcmp(nick, channel->nick) != 0)
 		return;
-	error = atoi(code);
+	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
 	signal_emit("xmpp muc joinerror", 2, channel, GINT_TO_POINTER(error));
-	/* rejoin with alternate nick */
-	if (error == MUC_ERROR_USE_RESERVED_ROOM_NICK
-	    || error == MUC_ERROR_NICK_IN_USE) {
+	switch(error) {
+	case MUC_ERROR_USE_RESERVED_ROOM_NICK:
+	case MUC_ERROR_NICK_IN_USE:
+		/* rejoin with alternate nick */
 		altnick = (char *)settings_get_str("alternate_nick");
 		if (altnick != NULL && *altnick != '\0'
 		    && strcmp(channel->nick, altnick) != 0) {
@@ -257,7 +261,7 @@ error_join(MUC_REC *channel, const char *code, const char *nick)
 			channel->nick = altnick;
 		}
 		send_join(channel);
-		return;
+		return; /* don't destroy the channel */
 	}
 	channel_destroy(CHANNEL(channel));
 }
@@ -265,8 +269,11 @@ error_join(MUC_REC *channel, const char *code, const char *nick)
 static void
 error_presence(MUC_REC *channel, const char *code, const char *nick)
 {
-	switch (atoi(code)) {
-	case 409:
+	int error;
+
+	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
+	switch (error) {
+	case MUC_ERROR_NICK_IN_USE:
 		signal_emit("message xmpp muc nick in use", 2, channel, nick);
 		break;
 	}
