@@ -292,7 +292,7 @@ get_password()
 	tcsetattr(fd, TCSANOW, &to_old);
 	signal(SIGINT, SIG_DFL);
 
-	ret = strdup(input);
+	ret = g_strdup(input);
 	memset(input, 0, sizeof(input));
 #endif /* DISABLE_TERMIOS */
 	return ret;
