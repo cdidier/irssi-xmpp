@@ -22,8 +22,8 @@ INCS =	${LIB_INCS} \
 LIBS =	${LIB_LIBS}
 
 # flags
-CFLAGS += -fPIC -std=c99 -DUOFF_T_LONG ${INCS}
-LDFLAGS += -shared ${LIBS}
+CFLAGS = -fPIC -std=c99 -DUOFF_T_LONG ${INCS}
+LDFLAGS = -shared ${LIBS}
 
 # debug
 CFLAGS += -W -g -Wall -Wno-unused-parameter
