@@ -46,7 +46,7 @@ get_window_name(XMPP_SERVER_REC *server)
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
 	return g_strconcat("(", (server->connrec->chatnet == NULL ||
 	    *server->connrec->chatnet == '\0') ? server->jid :
-	    server->connrec->chatnet, ")", NULL);
+	    server->connrec->chatnet, ")", (void *)NULL);
 }
 
 char *

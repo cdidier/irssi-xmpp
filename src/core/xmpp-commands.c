@@ -84,7 +84,7 @@ cmd_connect_get_line(const char *data)
 	network = g_hash_table_lookup(optlist, "network");
 	if (network == NULL || *network == '\0') {
 		char *stripped = xmpp_strip_resource(jid);
-		network = network_free = g_strconcat("xmpp:", stripped, NULL);
+		network = network_free = g_strconcat("xmpp:", stripped, (void *)NULL);
 		g_free(stripped);
 	}
 	host = g_hash_table_lookup(optlist, "host");
@@ -112,7 +112,7 @@ cmd_xmppconnect(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	if ((line = cmd_connect_get_line(data)) == NULL)
 		return;
 	cmd_line = g_strconcat(settings_get_str("cmdchars"), "CONNECT ",
-	    line, NULL);
+	    line, (void *)NULL);
 	g_free(line);
 	signal_emit("send command", 3, cmd_line, server, item);
 	g_free(cmd_line);
@@ -128,7 +128,7 @@ cmd_xmppserver(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	if ((line = cmd_connect_get_line(data)) == NULL)
 		return;
 	cmd_line = g_strconcat(settings_get_str("cmdchars"), "SERVER ",
-	    line, NULL);
+	    line, (void *)NULL);
 	g_free(line);
 	signal_emit("send command", 3, cmd_line, server, item);
 	g_free(cmd_line);
@@ -529,7 +529,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	if (type == SEND_TARGET_NICK)
 		signal_emit("message xmpp own_action", 4, server, data, target,
 		    SEND_TARGET_NICK);
-	str = g_strconcat("/me ", data, NULL);
+	str = g_strconcat("/me ", data, (void *)NULL);
 	recoded = recode_out(SERVER(server), str, target);
 	g_free(str);
 	server->send_message(SERVER(server), target, recoded, type);
@@ -544,7 +544,7 @@ xmpp_get_dest(const char *cmd_dest, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 
 	if (cmd_dest == NULL || *cmd_dest == '\0')
 		return IS_QUERY(item) ? g_strdup(QUERY(item)->name)
-		    : g_strconcat(server->jid, "/", server->resource, NULL);
+		    : g_strconcat(server->jid, "/", server->resource, (void *)NULL);
 	if (IS_CHANNEL(item)
 	    && (nick = nicklist_find(CHANNEL(item), cmd_dest)) != NULL)
 		return g_strdup(nick->host);

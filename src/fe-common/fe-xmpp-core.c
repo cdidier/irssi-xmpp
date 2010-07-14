@@ -79,7 +79,7 @@ fe_xmpp_init(void)
 	/* load irssi-xmpp's fe-text submodule */
 	if (irssi_gui == IRSSI_GUI_TEXT) {
 		char *cmd_line = g_strconcat(settings_get_str("cmdchars"),
-		    "load xmpp text", NULL);
+		    "load xmpp text", (void *)NULL);
 		signal_emit("send command", 1, cmd_line);
 		g_free(cmd_line);
 	}

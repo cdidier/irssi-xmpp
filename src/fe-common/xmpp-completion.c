@@ -37,11 +37,11 @@ quoted_if_space(const char *name, const char *res)
 {
 	if (res != NULL)
 		return g_utf8_strchr(res, -1, ' ') == NULL ?
-		    g_strconcat(name, "/", res, NULL) :
-		    g_strconcat("\"", name, "/", res, "\"", NULL);
+		    g_strconcat(name, "/", res, (void *)NULL) :
+		    g_strconcat("\"", name, "/", res, "\"", (void *)NULL);
 	else
 		return g_utf8_strchr(name, -1, ' ') == NULL ?
-		    g_strdup(name) : g_strconcat("\"", name, "\"", NULL);
+		    g_strdup(name) : g_strconcat("\"", name, "\"", (void *)NULL);
 }
 
 static GList *
@@ -67,7 +67,7 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 		    || g_strncasecmp(resource->name, resource_name, len) == 0)
 			list = g_list_append(list, quoted ?
 			    quoted_if_space(nick, resource->name) :
-			    g_strconcat(nick, "/", resource->name, NULL));
+			    g_strconcat(nick, "/", resource->name, (void *)NULL));
 	}
 	return list;
 }

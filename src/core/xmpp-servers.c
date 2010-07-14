@@ -127,7 +127,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *conn)
 	    xmpp_extract_domain(conn->nick) : g_strdup(conn->address);
 	server->jid = xmpp_have_domain(conn->nick) ?
 	    xmpp_strip_resource(conn->nick)
-	    : g_strconcat(server->user, "@", server->domain, NULL);
+	    : g_strconcat(server->user, "@", server->domain, (void *)NULL);
 	server->resource = xmpp_extract_resource(conn->nick);
 	if (server->resource == NULL)
 		server->resource = g_strdup("irssi-xmpp");

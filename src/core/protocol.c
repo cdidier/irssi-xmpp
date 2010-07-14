@@ -78,7 +78,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	node = lm_message_node_get_child(lmsg->node, "subject");
 	if (node != NULL && node->value != NULL && *node->value != '\0') {
 		str = xmpp_recode_in(node->value);
-		subject = g_strconcat("Subject: ", str, NULL);
+		subject = g_strconcat("Subject: ", str, (void *)NULL);
 		g_free(str);
 		signal_emit("message private", 4, server, subject, from, from);
 		g_free(subject);

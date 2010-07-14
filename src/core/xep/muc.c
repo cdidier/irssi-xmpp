@@ -77,7 +77,7 @@ muc_nick(MUC_REC *channel, const char *nick)
 	g_return_if_fail(IS_MUC(channel));
 	if (!channel->server->connected)
 		return;
-	str = g_strconcat(channel->name, "/", nick, NULL);
+	str = g_strconcat(channel->name, "/", nick, (void *)NULL);
 	recoded = xmpp_recode_out(str);
 	g_free(str);
 	lmsg = lm_message_new(recoded, LM_MESSAGE_TYPE_PRESENCE);
@@ -159,7 +159,7 @@ send_part(MUC_REC *channel, const char *reason)
 
 	if (!channel->server->connected)
 		return;
-	channame = g_strconcat(channel->name, "/", channel->nick, NULL);
+	channame = g_strconcat(channel->name, "/", channel->nick, (void *)NULL);
 	recoded = xmpp_recode_out(channame);
 	g_free(channame);
 	lmsg = lm_message_new_with_sub_type(recoded,
@@ -333,7 +333,7 @@ send_muc_presence(MUC_REC *channel, const int show, const char *status)
 	LmMessage *lmsg;
 	char *channame, *str;
 
-	channame = g_strconcat(channel->name, "/", channel->nick, NULL);
+	channame = g_strconcat(channel->name, "/", channel->nick, (void *)NULL);
 	str = xmpp_recode_out(channame);
 	g_free(channame);
 	lmsg = lm_message_new(str, LM_MESSAGE_TYPE_PRESENCE);

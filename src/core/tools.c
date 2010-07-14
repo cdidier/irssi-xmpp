@@ -70,7 +70,7 @@ xmpp_recode_in(const char *str)
 		return g_strdup(str);
 	if (settings_get_bool("recode_transliterate") &&
 	    g_ascii_strcasecmp(charset, "//TRANSLIT") != 0)
-		charset = to = g_strconcat(charset ,"//TRANSLIT", NULL);
+		charset = to = g_strconcat(charset ,"//TRANSLIT", (void *)NULL);
 	recoded = g_convert_with_fallback(str, -1, charset, utf8_charset, NULL,
 	    NULL, NULL, NULL);
 	g_free(to);
