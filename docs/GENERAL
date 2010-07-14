@@ -152,17 +152,17 @@ In "xmpp_proxy" section:
 
 In "xmpp_roster" section:
 
-/SET roster_show_offline ON/OFF
+/SET xmpp_roster_show_offline ON/OFF
     Shows offline contacts in the roster. (default: ON)
 
-/SET roster_show_unsuscribed ON/OFF
+/SET xmpp_roster_show_unsuscribed ON/OFF
     Shows unsuscribed contacts in the roster when they are offline. (default: ON)
     
-/SET roster_default_group <group>
+/SET xmpp_roster_default_group <group>
     Sets the default group where the contacts will be displayed if the group name
     is unspecified. (default: General)
 
-/SET roster_service_name <group>
+/SET xmpp_roster_service_name <group>
     Sets the default group where the services and the transports will be
     displayed. (default: Agents/Transports)
     (Not used yet!)
