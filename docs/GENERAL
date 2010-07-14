@@ -110,6 +110,9 @@ In "xmpp" section:
     Priority changements will take effect immediatly for all your connected
     accounts. (default: 0)
 
+/SET xmpp_priority_away <number>
+    Sets the priority of your connection when your are away. (default: -1)
+
 /SET xmpp_send_version ON/OFF
     Sends informations of your client: name (irssi-xmpp), version and operating
     system. (default: ON)

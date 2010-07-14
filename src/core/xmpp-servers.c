@@ -576,6 +576,7 @@ xmpp_servers_init(void)
 	signal_add("xmpp recv iq", sig_recv_iq);
 
 	settings_add_int("xmpp", "xmpp_priority", 0);
+	settings_add_int("xmpp", "xmpp_priority_away", -1);
 	settings_add_bool("xmpp_lookandfeel", "xmpp_set_nick_as_username",
 	    FALSE);
 	settings_add_bool("xmpp_proxy", "xmpp_use_proxy", FALSE);
