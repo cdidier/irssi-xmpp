@@ -53,8 +53,8 @@ sig_failed(const char *username, const char *domain, gpointer error)
 	case REGISTRATION_ERROR_CONNECTION:
 		reason = "Cannot open connection";
 		break;
-	case REGISTRATION_ERROR_INFOS:
-		reason = "Cannot send informations";
+	case REGISTRATION_ERROR_INFO:
+		reason = "Cannot send registration information";
 		break;
 	default:
 		reason = "Cannot register account";

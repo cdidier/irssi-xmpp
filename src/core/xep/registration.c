@@ -129,7 +129,7 @@ send_register(struct register_data *rd)
 	if (!lm_connection_send_with_reply(rd->lmconn, lmsg, rd->handler,
 	    NULL)) {
 		signal_emit("xmpp registration failed", 3, rd->username,
-		    rd->domain, REGISTRATION_ERROR_INFOS);
+		    rd->domain, REGISTRATION_ERROR_INFO);
 		rd_cleanup(rd);
 	}
 	lm_message_unref(lmsg);
