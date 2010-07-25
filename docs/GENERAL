@@ -17,7 +17,7 @@ contact in your roster.
     Starts a private conversation with the JID. If the user is online and 
     the resource isn't specified, the conversation window will be on the
     resource with the highest priority.
-    
+
 /MSG <jid>[/<resource>] <message>
     Sends a message to a jid. There is no name resolution through the roster so
     the jid must be valid. (Prefer /QUERY if you want a normal discussion in
@@ -27,7 +27,7 @@ contact in your roster.
     Sends an "ACTION", useable in a query or in a room.
 
 /AWAY [away|chat|dnd|xa] <reason>
-    This command marks you as being "away". If the away mode is'nt specified,
+    This command marks you as being "away". If the away mode isn't specified,
     the "xmpp_default_away_mode" setting will be used. You can remove your away
     status by using AWAY with no arguments.
 
@@ -66,7 +66,7 @@ contact in your roster.
              <jid>[/<resource>] <password>
 /XMPPSERVER [-ssl] [-host <host>] [-port <port>]
             <jid>[/<resource>] <password>
-    See the "Connection" section of the file STARTUP.
+    See the "Connection" section of the STARTUP file.
 
 Subscription commands:
 ======================
@@ -88,11 +88,11 @@ contacts.
 /PRESENCE UNSUBSCRIBE <jid>
     Unsubscribes to the contact's presence, so you won't see his/her presence
     anymore.
-    
-Subscriptions status:
-=====================
 
-These are the subscriptions status displayed in the roster list with their
+Subscription status:
+====================
+
+These are the subscription status displayed in the roster list with their
 description:
 
 both: The contact and you can see each other's presence. (not displayed)
@@ -107,14 +107,14 @@ In "xmpp" section:
 
 /SET xmpp_priority <number>
     Sets the priority of your connection. It's a number between -128 and 127.
-    Priority changements will take effect immediatly for all your connected
+    Priority changes will take effect immediatly for all your connected
     accounts. (default: 0)
 
 /SET xmpp_priority_away <number>
     Sets the priority of your connection when your are away. (default: -1)
 
 /SET xmpp_send_version ON/OFF
-    Sends informations of your client: name (irssi-xmpp), version and operating
+    Sends information about your client: name (irssi-xmpp), version and operating
     system. (default: ON)
 
 /SET xmpp_default_away_mode {away|chat|dnd|xa}
@@ -128,14 +128,14 @@ In "xmpp" section:
 In "xmpp_lookandfeel" section:
 
 /SET xmpp_set_nick_as_username ON/OFF
-    Sets your own nickname that should be displayed in query window. If this
-    setting is OFF, your nick will be your jid. If ON, your name will be the
-    username of your jid. (default: OFF)
+    Sets whether your JID's username should be used as nick in query
+    windows. If this setting is OFF, your nick will be your JID. If it's
+    ON, your nick will be the username of your JID. (default: OFF)
 
 /SET xmpp_status_window ON/OFF
-    Creates a new window that displays every status changes of your contacts.
+    Creates a new window that displays every status change of your contacts.
     (default: OFF)
-    
+
 /SET xmpp_timestamp_format <format>
     Sets the timestamp format that should be used to display the delayed
     messages. (default: %Y-%m-%d %H:%M)
@@ -158,9 +158,10 @@ In "xmpp_roster" section:
 /SET xmpp_roster_show_offline ON/OFF
     Shows offline contacts in the roster. (default: ON)
 
-/SET xmpp_roster_show_unsuscribed ON/OFF
-    Shows unsuscribed contacts in the roster when they are offline. (default: ON)
-    
+/SET xmpp_roster_show_unsubscribed ON/OFF
+    Shows unsubscribed contacts in the roster when they are offline.
+    (default: ON)
+
 /SET xmpp_roster_default_group <group>
     Sets the default group where the contacts will be displayed if the group name
     is unspecified. (default: General)
@@ -184,9 +185,10 @@ xa: Not available
 Proxy usage:
 ============
 
-To connect to an account through a proxy, you must modify these settings to
-fit to your proxy configuration. Please note that these settings are general
-so the affects every jabber accounts of irssi.
+To connect to an account through a proxy, you must set these settings
+according to your proxy configuration. Please note that these settings
+are general so they affect all the jabber accounts you configured in
+irssi.
 
 /SET xmpp_use_proxy ON/OFF
     Enables or disables the proxy. (default: OFF)
