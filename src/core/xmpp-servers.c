@@ -295,7 +295,6 @@ get_password()
 
 	ret = g_strdup(input);
 	memset(input, 0, sizeof(input));
-	signal_emit("send command", 1, "redraw");
 #endif /* DISABLE_TERMIOS */
 	return ret;
 }
@@ -337,6 +336,7 @@ lm_open_cb(LmConnection *connection, gboolean success,
 	    || *(server->connrec->password) == '\r') {
 		g_free_not_null(server->connrec->password);
 		server->connrec->prompted_password = get_password();
+		signal_emit("send command", 1, "redraw");
 		if (server->connrec->prompted_password != NULL)
 			server->connrec->password =
 			    g_strdup(server->connrec->prompted_password);
