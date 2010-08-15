@@ -31,6 +31,7 @@ struct _XMPP_SERVER_CONNECT_REC {
 	GSList		*channels_list;
 	int		 show;
 	int		 priority;
+	char		*prompted_password;
 };
 
 #define STRUCT_SERVER_CONNECT_REC XMPP_SERVER_CONNECT_REC

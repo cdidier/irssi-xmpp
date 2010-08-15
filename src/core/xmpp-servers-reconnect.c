@@ -34,6 +34,7 @@ sig_server_connect_copy(SERVER_CONNECT_REC **dest, XMPP_SERVER_CONNECT_REC *src)
 	conn->chat_type = XMPP_PROTOCOL;
 	conn->show = src->show;
 	conn->priority = src->priority;
+	conn->prompted_password = g_strdup(src->prompted_password);
 	*dest = (SERVER_CONNECT_REC *)conn;
 }
 
