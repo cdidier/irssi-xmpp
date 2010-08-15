@@ -1,3 +1,10 @@
+0.52 - ??/??/2010
+
+	- Add a way to dynamicly change the priority while away
+	  (setting "xmpp_priority_away")
+	- No more password prompt on reconnection
+	- and some minor bug, typo and spelling mistakes fixes
+
 0.51 - 14/05/2010
 
         + Add STARTTLS support (enabled by default if the parameter -ssl
