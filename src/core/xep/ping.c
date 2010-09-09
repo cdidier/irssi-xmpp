@@ -124,7 +124,10 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			}
 		}
 	} else if (type == LM_MESSAGE_SUB_TYPE_GET) {
-		node = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_PING);
+		node = lm_find_node(lmsg->node, "ping", XMLNS, XMLNS_PING);
+		if (node == NULL)
+			node = lm_find_node(lmsg->node, "query", XMLNS,
+			    XMLNS_PING);
 		if (node != NULL)
 			send_ping(server, from,
 			    lm_message_node_get_attribute(lmsg->node, "id"));
