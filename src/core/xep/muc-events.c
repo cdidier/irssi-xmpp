@@ -242,7 +242,7 @@ error_join(MUC_REC *channel, const char *code, const char *nick)
 	char *altnick;
 	int error;
 
-	if (strcmp(nick, channel->nick) != 0)
+	if (nick != NULL && strcmp(nick, channel->nick) != 0)
 		return;
 	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
 	signal_emit("xmpp muc joinerror", 2, channel, GINT_TO_POINTER(error));
@@ -300,6 +300,15 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	forced = lm_find_node(node, "status", "code", "210") != NULL;
 	/* <status code='201'/> */
 	own = created = lm_find_node(node, "status", "code", "201") != NULL;
+	if (created) {
+		char str[MAX_LONG_STRLEN], *data;
+
+		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
+		data = g_strconcat("_ ", channel->name, " ", str, (void *)NULL);
+		/* muc created */
+		signal_emit("event 329", 2, channel->server, data);
+		g_free(data);
+	}
 	if ((node = lm_message_node_get_child(node, "item")) == NULL)
 		return;
 	/* <item affiliation='item_affiliation'
@@ -311,15 +320,8 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	item_jid = xmpp_recode_in( lm_message_node_get_attribute(node, "jid"));
 	item_nick = xmpp_recode_in( lm_message_node_get_attribute(node, "nick"));
 	nick = item_nick != NULL ? item_nick : from;
-	if (created) {
-		char str[MAX_LONG_STRLEN], *data;
-
-		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
-		data = g_strconcat("_ ", channel->name, " ", str, (void *)NULL);
-		/* muc created */
-		signal_emit("event 329", 2, channel->server, data);
-		g_free(data);
-	}
+	if (nick == NULL)
+		goto err;
 	if (own || strcmp(nick, channel->nick) == 0)
 		own_event(channel, nick, item_jid, item_affiliation, item_role,
 		    forced);
@@ -332,9 +334,9 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	/* <show>show</show> */
 	node = lm_message_node_get_child(lmsg->node, "show");
 	nick_presence(channel, nick, node != NULL ? node->value : NULL, status);
-	g_free(item_jid);
-	g_free(item_nick);
 	g_free(status);
+err:	g_free(item_jid);
+	g_free(item_nick);
 }
 
 static void
