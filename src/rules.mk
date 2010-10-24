@@ -4,25 +4,27 @@ include ../../config.mk
 
 OBJS = ${SRCS:.c=.o}
 
-all: ${LIB}
+LIBSO=lib${LIB}.so
+
+all: ${LIBSO}
 
 .c.o:
-	${CC} ${CFLAGS} -o $@ -c $<
+	${CC} ${CFLAGS} ${INCS} -o $@ -c $<
 
-${LIB}: ${OBJS}
-	${CC} ${LDFLAGS} -o lib$@.so ${OBJS}
+${LIBSO}: ${OBJS}
+	${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 
 clean:
-	rm -f lib${LIB}.so ${OBJS}
+	rm -f ${LIBSO} ${OBJS}
 
 install: all
-	@echo installing the module lib${LIB}.so to ${DESTDIR}${IRSSI_LIB}/modules
+	@echo installing the module ${LIBSO} to ${DESTDIR}${IRSSI_LIB}/modules
 	install -d ${DESTDIR}${IRSSI_LIB}/modules
-	install lib${LIB}.so ${DESTDIR}${IRSSI_LIB}/modules
+	install ${LIBSO} ${DESTDIR}${IRSSI_LIB}/modules
 
 uninstall:
-	@echo deinstalling the module lib${LIB}.so from ${DESTDIR}${IRSSI_LIB}/modules
-	rm -f ${DESTDIR}${IRSSI_LIB}/modules/lib${LIB}.so
+	@echo deinstalling the module ${LIBSO} from ${DESTDIR}${IRSSI_LIB}/modules
+	rm -f ${DESTDIR}${IRSSI_LIB}/modules/${LIBSO}
 
 user-install:
 	env DESTDIR= IRSSI_LIB=~/.irssi ${MAKE} install
