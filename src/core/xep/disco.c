@@ -171,7 +171,7 @@ void
 disco_deinit(void)
 {
 	signal_remove("server connected", sig_connected);
-	signal_add("server disconnected", sig_disconnected);
+	signal_remove("server disconnected", sig_disconnected);
 	signal_remove("xmpp recv iq", sig_recv_iq);
 	g_slist_free(my_features);
 }
