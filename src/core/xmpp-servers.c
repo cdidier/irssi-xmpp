@@ -442,8 +442,8 @@ check_connection_timeout(XMPP_SERVER_REC *server)
 		    server->connrec->address);
 		server->connection_lost = TRUE;
 		server_disconnect(SERVER(server));
-	}
-	server->timeout_tag = 0;
+	} else
+		server->timeout_tag = 0;
 	return FALSE;
 }
 
