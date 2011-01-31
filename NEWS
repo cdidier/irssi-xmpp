@@ -3,6 +3,7 @@
 	- Add a way to dynamicly change the priority while away
 	  (setting "xmpp_priority_away")
 	- No more password prompt on reconnection
+	- Don't forget the resource part of the jid on reconnection
 	- and some minor bug, typo and spelling mistakes fixes
 
 0.51 - 14/05/2010
