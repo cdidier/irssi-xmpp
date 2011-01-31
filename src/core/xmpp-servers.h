@@ -31,6 +31,7 @@ struct _XMPP_SERVER_CONNECT_REC {
 	GSList		*channels_list;
 	int		 show;
 	int		 priority;
+	char		*real_jid;
 	char		*prompted_password;
 };
 

@@ -55,6 +55,7 @@ create_server_connect(void)
 
 	conn = g_new0(XMPP_SERVER_CONNECT_REC, 1);
 	conn->channels_list = NULL;
+	conn->real_jid = NULL;
 	conn->prompted_password = NULL;
 	return (SERVER_CONNECT_REC *)conn;
 }
@@ -68,6 +69,7 @@ create_channel_setup(void)
 static void
 destroy_server_connect(XMPP_SERVER_CONNECT_REC *conn)
 {
+	g_free_not_null(conn->real_jid);
 	g_free_not_null(conn->prompted_password);
 }
 

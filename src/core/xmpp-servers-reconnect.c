@@ -35,6 +35,9 @@ sig_server_connect_copy(SERVER_CONNECT_REC **dest, XMPP_SERVER_CONNECT_REC *src)
 	conn->show = src->show;
 	conn->priority = src->priority;
 	conn->prompted_password = g_strdup(src->prompted_password);
+	g_free(src->nick);
+	src->nick = src->real_jid;
+	src->real_jid = NULL;
 	*dest = (SERVER_CONNECT_REC *)conn;
 }
 
