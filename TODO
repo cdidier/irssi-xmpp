@@ -1,4 +1,5 @@
 Next release(s):
+- Fix IPv6 support
 - Assign threads to query windows
 - Implement bookmarks (to autojoin rooms)
 - Write the documentation in help/ for the commmands:
