@@ -22,11 +22,11 @@ INCS =	${LIB_INCS} \
 LIBS =	${LIB_LIBS}
 
 # flags
-CFLAGS = -fPIC -std=c99 -DUOFF_T_LONG
-LDFLAGS = -shared
+CFLAGS += -fPIC -DUOFF_T_LONG
+LDFLAGS += -shared
 
 # debug
-CFLAGS += -W -g -Wall -Wno-unused-parameter
+#CFLAGS += -std=c99 -W -g -Wall -Wno-unused-parameter
 
 # compiler and linker
-CC = cc
+CC ?= cc
