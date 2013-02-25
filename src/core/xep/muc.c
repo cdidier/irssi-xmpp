@@ -263,7 +263,7 @@ channel_find_func(SERVER_REC *server, const char *channel_name)
 		channel = tmp->data;
 		if (channel->chat_type != server->chat_type)
 			continue;
-		if (g_strcasecmp(channel_name, channel->name) == 0)
+		if (g_ascii_strcasecmp(channel_name, channel->name) == 0)
 			return channel;
 	}
 	return NULL;

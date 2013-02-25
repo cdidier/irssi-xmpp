@@ -64,7 +64,7 @@ get_resources(XMPP_SERVER_REC *server, const char *nick,
 	for(rl = user->resources; rl != NULL; rl = rl->next) {
 		resource = rl->data;
 		if (resource_name == NULL
-		    || g_strncasecmp(resource->name, resource_name, len) == 0)
+		    || g_ascii_strncasecmp(resource->name, resource_name, len) == 0)
 			list = g_list_append(list, quoted ?
 			    quoted_if_space(nick, resource->name) :
 			    g_strconcat(nick, "/", resource->name, (void *)NULL));
@@ -93,7 +93,7 @@ get_jids(XMPP_SERVER_REC *server, const char *jid)
 				else 
 					offlist = g_list_append(offlist,
 					    g_strdup(user->jid));
-			} else if (g_strncasecmp(user->jid, jid, len) == 0) {
+			} else if (g_ascii_strncasecmp(user->jid, jid, len) == 0) {
 				if (user->resources != NULL)
 					list_case = g_list_append(list_case,
 					     g_strdup(user->jid));
@@ -144,11 +144,11 @@ again:
 			    || (pass2 && user->resources != NULL))
 			    	continue;
 			if (complete_names && user->name != NULL
-			    && g_strncasecmp(user->name, nick, len) == 0)
+			    && g_ascii_strncasecmp(user->name, nick, len) == 0)
 				list = g_list_prepend(list, quoted ?
 				    quoted_if_space(user->name, NULL) :
 				    g_strdup(user->name));
-			if (g_strncasecmp(user->jid, nick, len) == 0)
+			if (g_ascii_strncasecmp(user->jid, nick, len) == 0)
 				list = g_list_prepend(list, quoted ?
 				    quoted_if_space(user->jid, NULL) :
 				    g_strdup(user->jid));
@@ -284,7 +284,7 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
 		channel = CHANNEL(tmp->data);
 		if (channel != NULL &&
-		    g_strncasecmp(channel->name, word, len) == 0)
+		    g_ascii_strncasecmp(channel->name, word, len) == 0)
 			list = g_list_append(list, g_strdup(channel->name));
 	}
 	for (tmp = setupchannels; tmp != NULL; tmp = tmp->next) {
@@ -292,7 +292,7 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 		if ((PROTO_CHECK_CAST(channel_setup, CHANNEL_SETUP_REC,
 		    chat_type, XMPP_PROTOCOL_NAME)
 		    || *channel_setup->name != '#')
-		    && g_strncasecmp(channel_setup->name, word, len) == 0
+		    && g_ascii_strncasecmp(channel_setup->name, word, len) == 0
 		    && glist_find_string(list, channel_setup->name) == NULL)
 			list = g_list_append(list,
 			    g_strdup(channel_setup->name));
@@ -353,23 +353,23 @@ sig_complete_command_away(GList **list, WINDOW_REC *window,
 	if (server == NULL)
 		return;
 	len = strlen(word);
-	if (g_strncasecmp(word,
+	if (g_ascii_strncasecmp(word,
 	    xmpp_presence_show[XMPP_PRESENCE_AWAY], len) == 0)
 		*list = g_list_append(*list,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_AWAY]));
-	if (g_strncasecmp(word,
+	if (g_ascii_strncasecmp(word,
 	    xmpp_presence_show[XMPP_PRESENCE_XA], len) == 0)
 		*list = g_list_append(*list,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_XA]));
-	if (g_strncasecmp(word,
+	if (g_ascii_strncasecmp(word,
 	    xmpp_presence_show[XMPP_PRESENCE_DND], len) == 0)
 		*list = g_list_append(*list,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_DND]));
-	if (g_strncasecmp(word,
+	if (g_ascii_strncasecmp(word,
 	    xmpp_presence_show[XMPP_PRESENCE_CHAT], len) == 0)
 		*list = g_list_append(*list,
 		    g_strdup(xmpp_presence_show[XMPP_PRESENCE_CHAT]));
-	if (g_strncasecmp(word,
+	if (g_ascii_strncasecmp(word,
 	    xmpp_presence_show[XMPP_PRESENCE_ONLINE], len) == 0)
 		*list = g_list_append(*list, g_strdup("online"));
 	signal_stop();
