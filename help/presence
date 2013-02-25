@@ -3,3 +3,5 @@ PRESENCE <accept|deny|subscribe|unsubscribe> <jid>
 
 Handle presence subscription.
 
+See also: ROSTER
+

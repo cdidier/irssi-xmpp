@@ -7,3 +7,5 @@ ROSTER group <jid> <group>
 
 This command includes various subcommands for handling your contact list.
 
+See also: PRESENCE
+
