@@ -134,7 +134,7 @@ create_resource(const char *name)
 	XMPP_ROSTER_RESOURCE_REC *resource;
 
 	resource = g_new(XMPP_ROSTER_RESOURCE_REC, 1);
-	resource->name = g_strdup(name);
+	resource->name = g_strdup(name == NULL ? "" : name);
 	resource->priority = 0;
 	resource->show= XMPP_PRESENCE_UNAVAILABLE;
 	resource->status = NULL;
