@@ -1,0 +1,9 @@
+
+ROSTER [full]
+ROSTER add <jid>
+ROSTER remove <jid>
+ROSTER name <jid> <name>
+ROSTER group <jid> <group>
+
+This command includes various subcommands for handling your contact list.
+

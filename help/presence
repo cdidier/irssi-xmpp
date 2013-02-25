@@ -1,0 +1,5 @@
+
+PRESENCE <accept|deny|subscribe|unsubscribe> <jid>
+
+Handle presence subscription.
+
