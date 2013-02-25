@@ -15,7 +15,7 @@ uninstall: doc-uninstall help-uninstall
 doc-install:
 	@echo installing documentation files to ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
 	@install -d ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
-	@cd docs/ && install FAQ GENERAL MUC STARTUP XEP ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
+	@cd docs/ && install -m 644 FAQ GENERAL MUC STARTUP XEP ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
 
 doc-uninstall:
 	@echo uninstalling documentation files from ${DESTDIR}${IRSSI_DOC}/irssi-xmpp
