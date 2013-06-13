@@ -59,7 +59,7 @@ parse_timezone(const char *tz)
 		{ "W", NULL },
 		{ "X", NULL },
 		{ "Y", NULL },			/* UTC+12 */
-		{ NULL }
+		NULL
 	};
 	long i, j;
 
@@ -86,7 +86,7 @@ xep82_datetime(const char *stamp)
 		return (time_t)-1;
 	/* ignore fractional second addendum */
 	if (*s++ == '.')
-		while (isdigit(*s++));
+		while (isdigit(*s)) s++;
 	tm.tm_isdst = -1;
 	offset = *s != '\0' ? parse_timezone(s) : 0;
 	return mktime(&tm) - offset;
