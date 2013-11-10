@@ -461,7 +461,7 @@ user_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
 	user = rosters_find_user(server->roster, jid, &group, NULL);
-	if (user == NULL && !(own = strcmp(jid, server->jid) == 0))
+	if (user == NULL || !(own = strcmp(jid, server->jid) == 0))
 		goto out;
 	resource = rosters_find_resource(!own ?
 	    user->resources : server->my_resources, res);
