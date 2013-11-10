@@ -519,7 +519,7 @@ cmd_me(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	int type;
 
 	CMD_XMPP_SERVER(server);
-	if (*data == '\0')
+	if (item == NULL || *data == '\0')
 		return;
 	g_strstrip((char *)data);
 	if (*data == '\0')
