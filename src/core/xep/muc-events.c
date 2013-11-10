@@ -298,7 +298,7 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	/* <status code='210'/> */
 	forced = lm_find_node(node, "status", "code", "210") != NULL;
 	/* <status code='201'/> */
-	own = created = lm_find_node(node, "status", "code", "201") != NULL;
+	created = lm_find_node(node, "status", "code", "201") != NULL;
 	if (created) {
 		char str[MAX_LONG_STRLEN], *data;
 
