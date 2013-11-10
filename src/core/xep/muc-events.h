@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __MUC_EVENTS_H
 #define __MUC_EVENTS_H
 

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __TOOL_DATALIST_H
 #define __TOOL_DATALIST_H
 

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __ROSTER_H
 #define __ROSTER_H
 

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __DATETIME_H
 #define __DATETIME_H
 

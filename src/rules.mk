@@ -1,5 +1,3 @@
-# $Id$
-
 include ../../config.mk
 
 OBJS = ${SRCS:.c=.o}

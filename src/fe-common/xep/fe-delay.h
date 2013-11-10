@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_DELAY_H
 #define __FE_DELAY_H
 

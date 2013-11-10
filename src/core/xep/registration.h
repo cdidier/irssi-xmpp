@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __REGISTRATION_H
 #define __REGISTRATION_H
 

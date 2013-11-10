@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __TEXT_COMPOSING_H
 #define __TEXT_COMPOSING_H
 

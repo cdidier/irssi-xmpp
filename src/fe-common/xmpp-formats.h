@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __XMPP_FORMATS_H
 #define __XMPP_FORMATS_H
 

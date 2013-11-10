@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __CHATSTATES_H
 #define __CHATSTATES_H
 

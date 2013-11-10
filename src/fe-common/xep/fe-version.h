@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_VERSION_H
 #define __FE_VERSION_H
 

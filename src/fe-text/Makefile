@@ -1,5 +1,3 @@
-# $Id$
-
 LIB= text_xmpp
 SRCS=	text-xmpp-core.c \
 	xep/text-composing.c \

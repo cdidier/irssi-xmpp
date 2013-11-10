@@ -1,5 +1,3 @@
-# $Id$
-
 LIB= fe_xmpp
 SRCS=	fe-xmpp-messages.c \
 	fe-xmpp-queries.c \

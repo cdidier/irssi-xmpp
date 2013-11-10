@@ -1,5 +1,3 @@
-# $Id$
-
 LIB= xmpp_core
 SRCS=	xmpp-commands.c \
 	xmpp-core.c \

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __DISCO_H
 #define __DISCO_H
 

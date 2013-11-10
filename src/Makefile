@@ -1,5 +1,3 @@
-# $Id$
-
 all clean user-install install:
 	@echo "core module:"
 	@cd core/ && ${MAKE} $@

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007,2008,2009 Colin DIDIER
  *
  * This program is free software; you can redistribute it and/or modify

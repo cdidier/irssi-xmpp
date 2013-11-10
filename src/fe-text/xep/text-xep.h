@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __TEXT_XEP_H
 #define __TEXT_XEP_H
 

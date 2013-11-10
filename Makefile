@@ -1,5 +1,3 @@
-# $Id$
-
 include config.mk
 
 all clean user-install user-uninstall:

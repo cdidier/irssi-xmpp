@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __OOB_H
 #define __OOB_H
 

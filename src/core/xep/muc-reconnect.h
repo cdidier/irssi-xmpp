@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __MUC_RECONNECT_H
 #define __MUC_RECONNECT_H
 

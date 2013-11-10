@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_PING_H
 #define __FE_PING_H
 

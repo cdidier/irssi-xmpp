@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_XEP_H
 #define __FE_XEP_H
 

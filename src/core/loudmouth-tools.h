@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __LOUDMOUTH_TOOLS_H
 #define __LOUDMOUTH_TOOLS_H
 

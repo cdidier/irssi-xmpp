@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __MUC_NICKLIST_H
 #define __MUC_NICKLIST_H
 

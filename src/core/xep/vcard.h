@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __VCARD_H
 #define __VCARD_H
 

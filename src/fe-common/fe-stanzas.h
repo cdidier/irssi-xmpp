@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_STANZAS_H
 #define __FE_STANZAS_H
 

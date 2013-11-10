@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __XMPP_COMPLETION_H
 #define __XMPP_COMPLETION_H
 

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __FE_XMPP_WINDOWS_H
 #define __FE_XMPP_WINDOWS_H
 

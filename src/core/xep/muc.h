@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef __MUC_H
 #define __MUC_H
 
