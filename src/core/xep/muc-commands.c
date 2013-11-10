@@ -47,7 +47,7 @@ cmd_invite(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 		return;
 	if (*dest == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	if (*channame == '\0' || g_strcasecmp(channame, "*") == 0) {
+	if (*channame == '\0' || g_ascii_strcasecmp(channame, "*") == 0) {
 		if (!IS_MUC(item))
 			cmd_param_error(CMDERR_NOT_JOINED);
 		channame = MUC(item)->name;
