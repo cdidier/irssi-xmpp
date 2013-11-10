@@ -182,28 +182,28 @@ rosters_resolve_name(XMPP_SERVER_REC *server, const char *name)
 }
 
 char *
-rosters_get_name(XMPP_SERVER_REC *server, const char *jid)
+rosters_get_name(XMPP_SERVER_REC *server, const char *full_jid)
 {
 	GSList *gl, *ul;
 	XMPP_ROSTER_GROUP_REC *group;
 	XMPP_ROSTER_USER_REC *user;
-	char *pos;
+	char *jid;
 
 	g_return_val_if_fail(IS_XMPP_SERVER(server), NULL);
-	g_return_val_if_fail(jid != NULL, NULL);
-	if ((pos = xmpp_find_resource_sep(jid)) != NULL)
-		*pos = '\0';
+	g_return_val_if_fail(full_jid != NULL, NULL);
+	if ((jid = xmpp_strip_resource(full_jid)) == NULL)
+		return NULL;
 	for (gl = server->roster; gl != NULL; gl = gl->next) {
 		group = gl->data;
 		for (ul = group->users; ul != NULL; ul = ul->next) {
 			user = ul->data;
 			if (strcmp(jid, user->jid) == 0) {
-				*pos = '/';
+				g_free(jid);
 				return user->name;
 			}
 		}
 	}
-	*pos = '/';
+	g_free(jid);
 	return NULL;
 }
 
