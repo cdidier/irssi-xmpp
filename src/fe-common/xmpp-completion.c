@@ -223,7 +223,6 @@ sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
 	XMPP_SERVER_REC *server;
-	int len;
 	char **tmp;
 
 	g_return_if_fail(list != NULL);
@@ -232,7 +231,6 @@ sig_complete_command_roster_others(GList **list, WINDOW_REC *window,
 	g_return_if_fail(args != NULL);
 	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
-	len = strlen(word);
 	tmp = g_strsplit(args, " ", 2);
 	/* complete nicks */
 	if (tmp[0] == NULL)
@@ -248,7 +246,6 @@ sig_complete_command_presence(GList **list, WINDOW_REC *window,
     const char *word, const char *args, int *want_space)
 {
 	XMPP_SERVER_REC *server;
-	int len;
 	char **tmp;
 
 	g_return_if_fail(list != NULL);
@@ -257,7 +254,6 @@ sig_complete_command_presence(GList **list, WINDOW_REC *window,
 	g_return_if_fail(args != NULL);
 	if ((server = XMPP_SERVER(window->active_server)) == NULL)
 		return;
-	len = strlen(word);
 	tmp = g_strsplit(args, " ", 2);
 	/* complete nicks */
 	if (tmp[0] == NULL)

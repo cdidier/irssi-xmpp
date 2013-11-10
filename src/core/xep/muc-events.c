@@ -289,7 +289,6 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 
 	item_affiliation = item_role = status = NULL;
 	item_jid = item_nick = NULL;
-	own = forced = created = FALSE;
 	/* <x xmlns='http://jabber.org/protocol/muc#user'> */
 	if ((node = lm_find_node(lmsg->node, "x", XMLNS,
 	    XMLNS_MUC_USER)) == NULL)

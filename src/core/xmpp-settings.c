@@ -31,7 +31,6 @@ read_settings(void)
 {
 	GSList *tmp;
 	XMPP_SERVER_REC *server;
-	const char *str;
 	
 	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
 		if ((server = XMPP_SERVER(tmp->data)) == NULL)
@@ -61,9 +60,12 @@ read_settings(void)
 			}
 		}
 	}
+
+#if 0
+	const char *str;
+
 	/* check validity */
 	str = settings_get_str("xmpp_proxy_type");
-#if 0
 	/* TODO print error message */
 	if (settings_get_bool("xmpp_use_proxy")
 	    && (str == NULL || g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) != 0))
