@@ -455,6 +455,7 @@ user_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(full_jid != NULL);
+	own = FALSE;
 	jid = xmpp_strip_resource(full_jid);
 	res = xmpp_extract_resource(full_jid);
 	user = rosters_find_user(server->roster, jid, &group, NULL);
@@ -469,7 +470,7 @@ user_presence_error(XMPP_SERVER_REC *server, const char *full_jid)
 			    func_sort_user);
 		signal_emit("xmpp presence changed", 4, server, full_jid,
 		    XMPP_PRESENCE_ERROR, NULL);
-	} else
+	} else if (user != NULL)
 		user->error = TRUE;
 
 out:
