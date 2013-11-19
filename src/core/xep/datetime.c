@@ -30,10 +30,12 @@
 
 #define FORMAT  "%Y-%m-%dT%T"
 
+#define nitems(_a) (sizeof((_a)) / sizeof((_a)[0]))
+
 static long
 parse_timezone(const char *tz)
 {
-	const char *rfc822_timezones[26][4] = {
+	const char *rfc822_timezones[][4] = {
 		{ "M", NULL },			/* UTC-12 */
 		{ "L", NULL },
 		{ "K", NULL },
@@ -59,15 +61,15 @@ parse_timezone(const char *tz)
 		{ "W", NULL },
 		{ "X", NULL },
 		{ "Y", NULL },			/* UTC+12 */
-		NULL
+		{ NULL },
 	};
-	long i, j;
+	unsigned int i, j;
 
 	if ((*tz == '+' || *tz == '-') && strlen(tz) == 5) {
 		i = atoi(tz);
 		return ((i/100)*60 + i%100) * 60;
 	}
-	for (i = 0; rfc822_timezones[i] != NULL; ++i)
+	for (i = 0; i < nitems(rfc822_timezones); ++i)
 		for (j = 0; rfc822_timezones[i][j] != NULL; ++j)
 			if (strcmp(rfc822_timezones[i][j], tz) == 0)
 				return (i - 12) * 3600;
