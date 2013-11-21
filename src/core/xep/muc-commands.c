@@ -149,6 +149,29 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: DESTROY [<channel>] [<alternate>] [<reason>]*/
+static void
+cmd_destroy(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	LmMessage *lmsg;
+	char *channame, *reason, *alternate;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 3 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &alternate, &reason))
+		return;
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*alternate == '\0')
+		alternate = NULL;
+	if (*reason == '\0')
+		reason = NULL;
+	muc_destroy(server, channel, alternate, reason);
+	cmd_params_free(free_arg);
+}
+
 void
 muc_commands_init(void)
 {
@@ -157,6 +180,7 @@ muc_commands_init(void)
 	command_bind_xmpp("part", NULL, (SIGNAL_FUNC)cmd_part);
 	command_bind_xmpp("nick", NULL, (SIGNAL_FUNC)cmd_nick);
 	command_bind_xmpp("topic", NULL, (SIGNAL_FUNC)cmd_topic);
+	command_bind_xmpp("destroy", NULL, (SIGNAL_FUNC)cmd_destroy);
 }
 
 void
@@ -166,4 +190,5 @@ muc_commands_deinit(void)
 	command_unbind("part", (SIGNAL_FUNC)cmd_part);
 	command_unbind("nick", (SIGNAL_FUNC)cmd_nick);
 	command_unbind("topic", (SIGNAL_FUNC)cmd_topic);
+	command_unbind("destroy", (SIGNAL_FUNC)cmd_destroy);
 }

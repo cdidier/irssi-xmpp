@@ -8,6 +8,7 @@
 
 #define XMLNS_MUC	"http://jabber.org/protocol/muc"
 #define XMLNS_MUC_USER	"http://jabber.org/protocol/muc#user"
+#define XMLNS_MUC_OWNER	"http://jabber.org/protocol/muc#owner"
 
 #define muc_extract_nick(jid)						\
 	xmpp_extract_resource(jid)

@@ -186,6 +186,42 @@ muc_part(MUC_REC *channel, const char *reason)
 	channel_destroy(CHANNEL(channel));
 }
 
+void
+muc_destroy(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *alternate,
+		const char *reason)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *destroy;
+	char *recoded, *str;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+	destroy = lm_message_node_add_child(query, "destroy", NULL);
+	if (alternate != NULL) {
+		recoded = xmpp_recode_out(alternate);
+		lm_message_node_set_attribute(destroy, "jid", recoded);
+		g_free(recoded);
+	}
+	if (reason != NULL) {
+		recoded = xmpp_recode_out(reason);
+		lm_message_node_add_child(destroy, "reason", recoded);
+		g_free(recoded);
+	}
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+
+}
+
 static void
 sig_features(XMPP_SERVER_REC *server, const char *name, GSList *list)
 {
