@@ -82,6 +82,14 @@ sig_joinerror(MUC_REC *channel, gpointer error)
 }
 
 static void
+sig_destroyerror(MUC_REC *channel, const char *reason)
+{
+	printformat_module(MODULE_NAME, channel->server, NULL,
+	    MSGLEVEL_CRAP, XMPPTXT_CHANNEL_DESTROYERROR,
+	    channel->name, reason);
+}
+
+static void
 sig_nick(MUC_REC *channel, NICK_REC *nick, const char *oldnick)
 {
 	g_return_if_fail(IS_MUC(channel));
@@ -227,6 +235,7 @@ fe_muc_init(void)
 {
 	signal_add("xmpp invite", sig_invite);
 	signal_add("xmpp muc joinerror", sig_joinerror);
+	signal_add("xmpp muc destroyerror", sig_destroyerror);
 	signal_add("message xmpp muc nick", sig_nick);
 	signal_add("message xmpp muc own_nick", sig_own_nick);
 	signal_add("message xmpp muc nick in use", sig_nick_in_use);
@@ -239,6 +248,7 @@ fe_muc_deinit(void)
 {
 	signal_remove("xmpp invite", sig_invite);
 	signal_remove("xmpp muc joinerror", sig_joinerror);
+	signal_remove("xmpp muc destroyerror", sig_destroyerror);
 	signal_remove("message xmpp muc nick", sig_nick);
 	signal_remove("message xmpp muc own_nick", sig_own_nick);
 	signal_remove("message xmpp muc nick in use", sig_nick_in_use);

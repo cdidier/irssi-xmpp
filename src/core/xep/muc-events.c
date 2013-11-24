@@ -278,6 +278,19 @@ error_presence(MUC_REC *channel, const char *code, const char *nick)
 }
 
 static void
+error_destroy(MUC_REC *channel, const char *code, const char *reason)
+{
+	int error;
+
+	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
+	switch (error) {
+	case 403:
+		signal_emit("xmpp muc destroyerror", 2, channel, reason);
+		break;
+	}
+}
+
+static void
 available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 {
 	LmMessageNode *node;
@@ -530,11 +543,48 @@ out:
 	g_free(nick);
 }
 
+static void
+sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	MUC_REC *channel;
+	LmMessageNode *node, *error, *text, *query;
+	const char *code;
+	char *reason = NULL;
+
+	if ((channel = get_muc(server, from)) == NULL)
+		goto out;
+
+	switch (type) {
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		error = lm_message_node_get_child(lmsg->node, "error");
+		if (error == NULL)
+			goto out;
+		code = lm_message_node_get_attribute(error, "code");
+
+		query = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_MUC_OWNER);
+		if (query == NULL)
+			goto out;
+		for (node = query->children; node != NULL; node = node->next) {
+			if (strcmp(node->name, "destroy") == 0) {
+				text = lm_message_node_get_child(error, "text");
+				reason = xmpp_recode_in(text->value);
+				error_destroy(channel, code, reason);
+			}
+		}
+		break;
+	}
+
+out:
+	g_free(reason);
+}
+
 void
 muc_events_init(void)
 {
 	signal_add("xmpp recv message", sig_recv_message);
 	signal_add("xmpp recv presence", sig_recv_presence);
+	signal_add("xmpp recv iq", sig_recv_iq);
 }
 
 void
@@ -542,4 +592,5 @@ muc_events_deinit(void)
 {
 	signal_remove("xmpp recv message", sig_recv_message);
 	signal_remove("xmpp recv presence", sig_recv_presence);
+	signal_remove("xmpp recv iq", sig_recv_iq);
 }

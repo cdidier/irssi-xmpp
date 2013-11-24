@@ -64,6 +64,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ NULL, "Channel", 0, { 0 } },
 
 	{ "joinerror", "Cannot join to room {channel $0} {comment $1}", 2, { 0, 0 } },
+	{ "destroyerror", "Cannot destroy room {channel $0} {comment $1}", 2, { 0, 0 } },
 
 	/* ---- */
 	{ NULL, "Presence", 0, { 0 } },
