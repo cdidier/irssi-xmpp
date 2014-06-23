@@ -84,7 +84,8 @@ func_sort_resource(gconstpointer resource1_ptr, gconstpointer resource2_ptr)
 	resource1 = (XMPP_ROSTER_RESOURCE_REC *)resource1_ptr;
 	resource2 = (XMPP_ROSTER_RESOURCE_REC *)resource2_ptr;
 	if ((cmp = resource2->priority - resource1->priority) == 0
-	    && (cmp = resource2->show - resource1->show) == 0)
+	    && (cmp = resource2->show - resource1->show) == 0
+	    && resource1->name && resource2->name)
 		return strcmp(resource1->name, resource2->name);
 	return cmp;
 }
