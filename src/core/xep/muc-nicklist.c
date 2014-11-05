@@ -21,24 +21,9 @@
 #include "signals.h"
 
 #include "rosters.h"
+#include "muc-affiliation.h"
 #include "muc-nicklist.h"
-
-const char *xmpp_nicklist_affiliation[] = {
-	"none",
-	"owner",
-	"admin",
-	"member",
-	"outcast",
-	NULL
-};
-
-const char *xmpp_nicklist_role[] = {
-	"none",
-	"moderator",
-	"participant",
-	"visitor",
-	NULL
-};
+#include "muc-role.h"
 
 XMPP_NICK_REC *
 xmpp_nicklist_insert(MUC_REC *channel, const char *nickname,
@@ -54,8 +39,8 @@ xmpp_nicklist_insert(MUC_REC *channel, const char *nickname,
 	    g_strdup(full_jid) : g_strconcat(channel->name, "/", rec->nick, (void *)NULL);
 	rec->show = XMPP_PRESENCE_AVAILABLE;
 	rec->status = NULL;
-	rec->affiliation = XMPP_NICKLIST_AFFILIATION_NONE;
-	rec->role = XMPP_NICKLIST_ROLE_NONE;
+	rec->affiliation = XMPP_AFFILIATION_NONE;
+	rec->role = XMPP_ROLE_NONE;
 	nicklist_insert(CHANNEL(channel), (NICK_REC *)rec);
 	return rec;
 }
@@ -123,43 +108,6 @@ xmpp_nicklist_rename(MUC_REC *channel, XMPP_NICK_REC *nick,
 	}
 }
 
-int
-xmpp_nicklist_get_affiliation(const char *affiliation)
-{
-	if (affiliation != NULL) {
-		if (g_ascii_strcasecmp(affiliation,
-		    xmpp_nicklist_affiliation[XMPP_NICKLIST_AFFILIATION_OWNER]) == 0)
-			return XMPP_NICKLIST_AFFILIATION_OWNER;
-		else if (g_ascii_strcasecmp(affiliation,
-		    xmpp_nicklist_affiliation[XMPP_NICKLIST_AFFILIATION_ADMIN]) == 0)
-			return XMPP_NICKLIST_AFFILIATION_ADMIN;
-		else if (g_ascii_strcasecmp(affiliation,
-		    xmpp_nicklist_affiliation[XMPP_NICKLIST_AFFILIATION_MEMBER]) == 0)
-			return XMPP_NICKLIST_AFFILIATION_MEMBER;
-		else if (g_ascii_strcasecmp(affiliation,
-		    xmpp_nicklist_affiliation[XMPP_NICKLIST_AFFILIATION_OUTCAST]) == 0)
-			return XMPP_NICKLIST_AFFILIATION_OUTCAST;
-	}
-	return XMPP_NICKLIST_AFFILIATION_NONE;
-}
-
-int
-xmpp_nicklist_get_role(const char *role)
-{
-	if (role != NULL) {
-		if (g_ascii_strcasecmp(role,
-		    xmpp_nicklist_role[XMPP_NICKLIST_ROLE_MODERATOR]) == 0)
-			return XMPP_NICKLIST_ROLE_MODERATOR;
-		else if (g_ascii_strcasecmp(role,
-		    xmpp_nicklist_role[XMPP_NICKLIST_ROLE_PARTICIPANT]) == 0)
-			return XMPP_NICKLIST_ROLE_PARTICIPANT;
-		else if (g_ascii_strcasecmp(role,
-		    xmpp_nicklist_role[XMPP_NICKLIST_ROLE_VISITOR]) == 0)
-			return XMPP_NICKLIST_ROLE_VISITOR;
-	}
-	return XMPP_NICKLIST_ROLE_NONE;
-}
-
 gboolean
 xmpp_nicklist_modes_changed(XMPP_NICK_REC *nick, int affiliation, int role)
 {
@@ -175,12 +123,12 @@ xmpp_nicklist_set_modes(XMPP_NICK_REC *nick, int affiliation, int role)
 	nick->affiliation = affiliation;
 	nick->role = role;
 	switch (affiliation) {
-	case XMPP_NICKLIST_AFFILIATION_OWNER:
+	case XMPP_AFFILIATION_OWNER:
 		nick->prefixes[0] = '&';
 		nick->prefixes[1] = '\0';
 		nick->op = TRUE;
 		break;
-	case XMPP_NICKLIST_AFFILIATION_ADMIN:
+	case XMPP_AFFILIATION_ADMIN:
 		nick->prefixes[0] = '\0';
 		nick->op = TRUE;
 		break;
@@ -189,11 +137,11 @@ xmpp_nicklist_set_modes(XMPP_NICK_REC *nick, int affiliation, int role)
 		nick->op = FALSE;
 	}
 	switch (role) {
-	case XMPP_NICKLIST_ROLE_MODERATOR:
+	case XMPP_ROLE_MODERATOR:
 		nick->voice = TRUE;
 		nick->halfop = TRUE;
 		break;
-	case XMPP_NICKLIST_ROLE_PARTICIPANT:
+	case XMPP_ROLE_PARTICIPANT:
 		nick->halfop = FALSE;
 		nick->voice = TRUE;
 		break;
