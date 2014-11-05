@@ -33,6 +33,8 @@
 #include "disco.h"
 #include "muc.h"
 #include "muc-nicklist.h"
+#include "muc-affiliation.h"
+#include "muc-role.h"
 
 #define MAX_LONG_STRLEN ((sizeof(long) * CHAR_BIT + 2) / 3 + 1)
 
@@ -164,7 +166,7 @@ nick_event(MUC_REC *channel, const char *nickname, const char *full_jid,
 
 	if ((nick = xmpp_nicklist_find(channel, nickname)) == NULL)
 		nick_join(channel, nickname, full_jid, affiliation, role);
-	else 
+	else
 		nick_mode(channel, nick, affiliation, role);
 }
 
@@ -335,7 +337,7 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	if (own || strcmp(nick, channel->nick) == 0)
 		own_event(channel, nick, item_jid, item_affiliation, item_role,
 		    forced);
-	else 
+	else
 		nick_event(channel, nick, item_jid, item_affiliation, item_role);
 	/* <status>text</status> */
 	node = lm_message_node_get_child(lmsg->node, "status");
@@ -405,6 +407,42 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 	g_free(item_nick);
 	g_free(reason);
 	g_free(actor);
+}
+
+static void
+admin(MUC_REC *channel, LmMessage *lmsg)
+{
+	LmMessageNode *node, *query;
+	const char *item_affiliation, *item_role, *item_jid, *item_nick;
+	int affiliation, role;
+
+	if ((query = lm_find_node(lmsg->node, "query", XMLNS,
+	    XMLNS_MUC_ADMIN)) == NULL)
+		return;
+
+	for (node = query->children; node != NULL; node = node->next) {
+		/* <item affiliation='item_affiliation'
+		 *     role='item_role'
+		 *     jid='item_jid'
+		 *     nick='item_nick'/> */
+		item_jid = xmpp_recode_in(lm_message_node_get_attribute(node,
+		    "jid"));
+		item_affiliation = lm_message_node_get_attribute(node,
+		    "affiliation");
+		item_nick = xmpp_recode_in(lm_message_node_get_attribute(node,
+		    "nick"));
+		item_role = lm_message_node_get_attribute(node, "role");
+		affiliation = xmpp_nicklist_get_affiliation(item_affiliation);
+		if (item_role == NULL) {
+			/* affiliation query */
+			signal_emit("message xmpp muc affiliation", 4, channel,
+			    item_jid, item_nick, affiliation);
+		} else {
+			role = xmpp_nicklist_get_role(item_role);
+			signal_emit("message xmpp muc mode", 4, channel,
+			    item_nick, affiliation, role);
+		}
+	}
 }
 
 static void
@@ -572,6 +610,9 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 				error_destroy(channel, code, reason);
 			}
 		}
+		break;
+	case LM_MESSAGE_SUB_TYPE_RESULT:
+		admin(channel, lmsg);
 		break;
 	}
 

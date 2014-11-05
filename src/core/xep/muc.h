@@ -9,6 +9,7 @@
 #define XMLNS_MUC	"http://jabber.org/protocol/muc"
 #define XMLNS_MUC_USER	"http://jabber.org/protocol/muc#user"
 #define XMLNS_MUC_OWNER	"http://jabber.org/protocol/muc#owner"
+#define XMLNS_MUC_ADMIN	"http://jabber.org/protocol/muc#admin"
 
 #define muc_extract_nick(jid)						\
 	xmpp_extract_resource(jid)
@@ -51,9 +52,17 @@ enum {
 };
 
 __BEGIN_DECLS
+
+void muc_destroy(XMPP_SERVER_REC *, MUC_REC *, const char *, const char *);
 void muc_join(XMPP_SERVER_REC *, const char *, gboolean);
 void muc_part(MUC_REC *, const char *);
 void muc_nick(MUC_REC *, const char *);
+void muc_get_affiliation(XMPP_SERVER_REC *, MUC_REC *, const char *);
+void muc_set_affiliation(XMPP_SERVER_REC *, MUC_REC *, const char *,
+		const char *, const char *);
+void muc_get_role(XMPP_SERVER_REC *, MUC_REC *, const char *);
+void muc_set_role(XMPP_SERVER_REC *, MUC_REC *, const char *,
+		const char *, const char *);
 MUC_REC	*get_muc(XMPP_SERVER_REC *, const char *);
 
 void muc_init(void);

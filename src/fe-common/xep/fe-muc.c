@@ -30,6 +30,8 @@
 #include "rosters-tools.h"
 #include "xep/muc.h"
 #include "xep/muc-nicklist.h"
+#include "xep/muc-affiliation.h"
+#include "xep/muc-role.h"
 
 static void
 sig_invite(XMPP_SERVER_REC *server, const char *from, const char *channame)
@@ -140,29 +142,29 @@ sig_mode(MUC_REC *channel, const char *nickname, int affiliation,
 	if ((nick = xmpp_nicklist_find(channel, nickname)) == NULL)
 		return;
 	switch (affiliation) {
-	case XMPP_NICKLIST_AFFILIATION_OWNER:
+	case XMPP_AFFILIATION_OWNER:
 		affiliation_str = "O";
 		break;
-	case XMPP_NICKLIST_AFFILIATION_ADMIN:
+	case XMPP_AFFILIATION_ADMIN:
 		affiliation_str = "A";
 		break;
-	case XMPP_NICKLIST_AFFILIATION_MEMBER:
+	case XMPP_AFFILIATION_MEMBER:
 		affiliation_str = "M";
 		break;
-	case XMPP_NICKLIST_AFFILIATION_OUTCAST:
+	case XMPP_AFFILIATION_OUTCAST:
 		affiliation_str = "U";
 		break;
 	default:
 		affiliation_str = "";
 	}
 	switch (role) {
-	case XMPP_NICKLIST_ROLE_MODERATOR:
+	case XMPP_ROLE_MODERATOR:
 		role_str = "m";
 		break;
-	case XMPP_NICKLIST_ROLE_PARTICIPANT:
+	case XMPP_ROLE_PARTICIPANT:
 		role_str = "p";
 		break;
-	case XMPP_NICKLIST_ROLE_VISITOR:
+	case XMPP_ROLE_VISITOR:
 		role_str = "v";
 		break;
 	default:
@@ -175,6 +177,40 @@ sig_mode(MUC_REC *channel, const char *nickname, int affiliation,
 	if (ignore_check(SERVER(channel->server), nickname, nick->host,
 	    channel->name, mode, MSGLEVEL_MODES))
 		goto out;
+	printformat_module(IRC_MODULE_NAME, channel->server, channel->name,
+	    MSGLEVEL_MODES, IRCTXT_CHANMODE_CHANGE, channel->name, mode,
+	    channel->name);
+out:	g_free(mode);
+}
+
+static void
+sig_affiliation(MUC_REC *channel, const char *jid, const char *nickname, int affiliation)
+{
+	XMPP_NICK_REC *nick;
+	char *mode, *affiliation_str;
+
+	g_return_if_fail(IS_MUC(channel));
+
+	switch (affiliation) {
+	case XMPP_AFFILIATION_OWNER:
+		affiliation_str = "O";
+		break;
+	case XMPP_AFFILIATION_ADMIN:
+		affiliation_str = "A";
+		break;
+	case XMPP_AFFILIATION_MEMBER:
+		affiliation_str = "M";
+		break;
+	case XMPP_AFFILIATION_OUTCAST:
+		affiliation_str = "U";
+		break;
+	default:
+		affiliation_str = "";
+	}
+	if (*affiliation_str == '\0')
+		return;
+	mode = g_strconcat("+", affiliation_str, " ", jid,
+	    (void *)NULL);
 	printformat_module(IRC_MODULE_NAME, channel->server, channel->name,
 	    MSGLEVEL_MODES, IRCTXT_CHANMODE_CHANGE, channel->name, mode,
 	    channel->name);
@@ -240,6 +276,7 @@ fe_muc_init(void)
 	signal_add("message xmpp muc own_nick", sig_own_nick);
 	signal_add("message xmpp muc nick in use", sig_nick_in_use);
 	signal_add("message xmpp muc mode", sig_mode);
+	signal_add("message xmpp muc affiliation", sig_affiliation);
 	signal_add_first("command cycle", cmd_cycle);
 }
 
