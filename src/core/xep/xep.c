@@ -17,6 +17,7 @@
 
 #include "module.h"
 
+#include "carbons.h"
 #include "chatstates.h"
 #include "composing.h"
 #include "delay.h"
@@ -32,6 +33,7 @@ void
 xep_init(void)
 {
 	disco_init(); /* init sevice discovery first */
+	carbons_init();
 	chatstates_init();
 	composing_init();
 	delay_init();
@@ -47,6 +49,7 @@ void
 xep_deinit(void)
 {
 	disco_deinit();
+	carbons_deinit();
 	chatstates_deinit();
 	composing_deinit();
 	delay_deinit();

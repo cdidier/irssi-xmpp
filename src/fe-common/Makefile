@@ -9,6 +9,7 @@ SRCS=	fe-xmpp-messages.c \
 	module-formats.c \
 	xmpp-completion.c \
 	xmpp-formats.c \
+	xep/fe-carbons.c \
 	xep/fe-composing.c \
 	xep/fe-delay.c \
 	xep/fe-muc.c \
