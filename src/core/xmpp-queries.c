@@ -20,6 +20,7 @@
 #include "module.h"
 #include "channels.h"
 #include "nicklist.h"
+#include "settings.h"
 #include "signals.h"
 
 #include "xmpp-queries.h"
@@ -33,6 +34,7 @@ xmpp_query_create(const char *server_tag, const char *data, int automatic)
 	XMPP_SERVER_REC *server;
 	CHANNEL_REC *channel;
 	NICK_REC *nick;
+	char *str;
 	const char *channel_name;
 
 	g_return_val_if_fail(server_tag != NULL, NULL);
@@ -52,8 +54,23 @@ xmpp_query_create(const char *server_tag, const char *data, int automatic)
 				rec->name = g_strdup(nick->host);
 		}
 	}
+
 	if (rec->name == NULL)
 		rec->name = rosters_resolve_name(server, data);
+	if (settings_get_bool("xmpp_strip_resource")) {
+		if (rec->name != NULL) {
+			str = xmpp_strip_resource(rec->name);
+			g_free(rec->name);
+			rec->name = NULL;
+		} else {
+			str = xmpp_strip_resource(data);
+		}
+		/* if this not a private message from channel we are
+		   on, strip the resource */
+		if (channel_find(SERVER(server), str) == NULL)
+			rec->name = g_strdup(str);
+		g_free(str);
+	}
 	if (rec->name != NULL) {
 		/* test if the query already exist */
 		if ((rec_tmp = xmpp_query_find(server, rec->name)) != NULL) {

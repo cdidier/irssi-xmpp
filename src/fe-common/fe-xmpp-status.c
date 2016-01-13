@@ -27,6 +27,7 @@
 
 #include "xmpp-servers.h"
 #include "rosters-tools.h"
+#include "tools.h"
 
 const char *fe_xmpp_presence_show[] = {
 	"Offline",
@@ -84,20 +85,23 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 {
 	XMPP_ROSTER_USER_REC *user;
 	WINDOW_REC *window;
-	const char *msg;
+	const char *msg, *stripped_jid;
 	char *name;
 
+	stripped_jid = (settings_get_bool("xmpp_strip_resource")) ?
+		xmpp_strip_resource(full_jid) : g_strdup(full_jid);
+
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(full_jid != NULL);
+	g_return_if_fail(stripped_jid != NULL);
 	g_return_if_fail(0 <= show && show < XMPP_PRESENCE_SHOW_LEN);	
 	window = fe_xmpp_status_get_window(server);
 	msg = fe_xmpp_presence_show[show];
-	user = rosters_find_user(server->roster, full_jid, NULL, NULL);
+	user = rosters_find_user(server->roster, stripped_jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-		XMPPTXT_FORMAT_NAME, user->name, full_jid) :
+		XMPPTXT_FORMAT_NAME, user->name, stripped_jid) :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-		XMPPTXT_FORMAT_JID, full_jid);
+		XMPPTXT_FORMAT_JID, stripped_jid);
 	if (status != NULL)
 		printformat_module_window(MODULE_NAME, window, MSGLEVEL_CRAP,
 		    XMPPTXT_PRESENCE_CHANGE_REASON, name, msg, status);
@@ -131,6 +135,8 @@ fe_xmpp_status_init(void)
 	signal_add("setup changed", (SIGNAL_FUNC)sig_setup_changed);
 
 	settings_add_bool("xmpp_lookandfeel", "xmpp_status_window", FALSE);
+
+	settings_add_bool("xmpp_lookandfeel", "xmpp_strip_resource", FALSE);
 
 	if (settings_get_bool("xmpp_status_window"))
 		signal_add("xmpp presence changed", sig_presence_changed);
