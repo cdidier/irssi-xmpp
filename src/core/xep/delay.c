@@ -79,7 +79,7 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			    GINT_TO_POINTER(SEND_TARGET_NICK));
 		else
 			signal_emit("message xmpp delay", 6, server,
-			    str+4, from, from, &t,
+			    str, from, from, &t,
 			    GINT_TO_POINTER(SEND_TARGET_NICK));
 		g_free(str);
 	} else
