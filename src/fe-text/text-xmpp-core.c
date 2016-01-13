@@ -33,3 +33,11 @@ text_xmpp_deinit(void)
 {
 	text_xep_deinit();
 }
+
+#ifdef IRSSI_ABI_VERSION
+void
+text_xmpp_abicheck(int * version)
+{
+	*version = IRSSI_ABI_VERSION;
+}
+#endif

@@ -101,3 +101,11 @@ fe_xmpp_deinit(void)
 
 	theme_unregister();
 }
+
+#ifdef IRSSI_ABI_VERSION
+void
+fe_xmpp_abicheck(int * version)
+{
+	*version = IRSSI_ABI_VERSION;
+}
+#endif

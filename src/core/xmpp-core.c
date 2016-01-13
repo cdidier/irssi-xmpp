@@ -129,3 +129,11 @@ xmpp_core_deinit(void)
 	signal_emit("chat protocol deinit", 1, chat_protocol_find("XMPP"));
 	chat_protocol_unregister("XMPP");
 }
+
+#ifdef IRSSI_ABI_VERSION
+void
+xmpp_core_abicheck(int * version)
+{
+	*version = IRSSI_ABI_VERSION;
+}
+#endif
