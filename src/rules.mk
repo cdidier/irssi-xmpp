@@ -7,7 +7,7 @@ LIBSO=lib${LIB}.so
 all: ${LIBSO}
 
 .c.o:
-	${CC} ${CFLAGS} ${INCS} -o $@ -c $<
+	${CC} ${CPPFLAGS} ${CFLAGS} ${INCS} -o $@ -c $<
 
 ${LIBSO}: ${OBJS}
 	${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
