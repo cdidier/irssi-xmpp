@@ -74,7 +74,7 @@ sig_joinerror(MUC_REC *channel, gpointer error)
 	case MUC_ERROR_MAXIMUM_USERS_REACHED:
 		reason = "Maximum number of users has been reached";
 	default:
-		reason = "Unknow reason";
+		reason = "Unknown reason";
 	}
 	printformat_module(MODULE_NAME, channel->server, NULL,
 	    MSGLEVEL_CRAP, XMPPTXT_CHANNEL_JOINERROR,

@@ -36,7 +36,7 @@
 #define XMLNS_REGISTRATION "http://jabber.org/features/iq-register"
 #define XMLNS_REGISTER "jabber:iq:register"
 
-gboolean set_ssl(LmConnection *, GError **, gpointer);
+gboolean set_ssl(LmConnection *, GError **, gpointer, gboolean);
 gboolean set_proxy(LmConnection *, GError **);
 
 struct register_data {
@@ -173,8 +173,13 @@ start_registration(struct register_data *rd)
 	GError *error = NULL;
 
 	lmconn = lm_connection_new(NULL);
-	if (rd->use_ssl && !set_ssl(lmconn, &error, NULL))
-		goto err;
+	if (rd->use_ssl) {
+		if (!set_ssl(lmconn, &error, NULL, FALSE))
+			goto err;
+	} else {
+		if (!set_ssl(lmconn, &error, NULL, TRUE))
+			goto err;
+	}
 	if (settings_get_bool("xmpp_use_proxy") && !set_proxy(lmconn, &error))
 		goto err;
 	if (rd->port <= 0)

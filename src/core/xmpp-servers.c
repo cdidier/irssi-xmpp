@@ -384,7 +384,7 @@ set_ssl(LmConnection *lmconn, GError **error, gpointer user_data,
 	ssl = lm_ssl_new(NULL, lm_ssl_cb, user_data, NULL);
 	lm_connection_set_ssl(lmconn, ssl);
 	if (use_starttls)
-		lm_ssl_use_starttls(ssl, TRUE, FALSE);
+		lm_ssl_use_starttls(ssl, TRUE, TRUE);
 	lm_ssl_unref(ssl);
 	return TRUE;
 }

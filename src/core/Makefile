@@ -29,6 +29,6 @@ SRCS=	xmpp-commands.c \
 	xep/version.c \
 	xep/xep.c
 
-LIB_LIBS = `pkg-config --libs loudmouth-1.0`
+LIB_LIBS = `pkg-config --libs loudmouth-1.0 | sed -e's/-lidn//'`
 
 include ../rules.mk
