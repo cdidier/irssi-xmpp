@@ -284,6 +284,8 @@ get_password()
 	/* Echo OFF, and assure we can prompt and get input */
 	to.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
 	to.c_lflag |= ICANON;
+	to.c_iflag &= ~IGNCR;
+	to.c_iflag |= ICRNL;
 	to.c_cc[VMIN] = 255;
 	tcsetattr(fd, TCSANOW, &to);
 
