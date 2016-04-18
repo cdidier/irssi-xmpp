@@ -169,7 +169,7 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *connrec)
 	lm_connection_set_jid(server->lmconn, recoded);
 	g_free(recoded);
 	lm_connection_set_keep_alive_rate(server->lmconn,
-	    settings_get_time("server_connect_timeout")/1000);
+	    settings_get_time("lag_check_time")/1000);
 
 	server->timeout_tag = 0;
 	server_connect_init((SERVER_REC *)server);
