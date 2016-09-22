@@ -48,10 +48,10 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 		XMPPTXT_FORMAT_JID, full_jid);
 	if (status != NULL)
-		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP,
+		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP | MSGLEVEL_MODES,
 		    XMPPTXT_PRESENCE_CHANGE_REASON, name, msg, status);
 	else
-		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP,
+		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP | MSGLEVEL_MODES,
 		    XMPPTXT_PRESENCE_CHANGE, name, msg);
 }
 
