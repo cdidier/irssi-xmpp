@@ -1,0 +1,20 @@
+
+Syntax:
+
+BAN [<channel>] <jid> [<reason>]
+
+Parameters:
+
+    A jid and optionnaly a channel and a reason.
+
+Description:
+
+    Ban a user from a MUC.
+    Equivalent to /AFFILIATION outcast <jid>.
+
+Examples:
+
+    /BAN john
+
+See also: ROLE, AFFILIATION, KICK
+

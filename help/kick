@@ -1,0 +1,19 @@
+
+Syntax:
+
+KICK [<channel>] <nick> [<reason>]
+
+Parameters:
+
+    A nick name and optionnaly a channel and a reason.
+
+Description:
+
+    Kick a user from a MUC.
+    Equivalent to /ROLE none <nick>.
+
+Examples:
+
+    /KICK john
+
+See also: ROLE, AFFILIATION, BAN
