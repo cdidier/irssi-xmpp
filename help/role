@@ -1,0 +1,26 @@
+
+Syntax:
+
+ROLE [<channel>] <type> [<nick>] [<reason>]
+
+Parameters:
+
+    A role type and optionnaly a nick, a reason and a channel.
+
+    Type must be one of:
+        - none
+        - moderator
+        - participant
+        - visitor
+
+Description:
+
+    When called without a nick, list all user having a specific role, if you have the right to do it.
+    Otherwise, give nick a specific role, if you have the right to do it.
+
+Examples:
+
+    /ROLE participant
+    /ROLE moderartor john
+
+See also: AFFILIATION, KICK, BAN

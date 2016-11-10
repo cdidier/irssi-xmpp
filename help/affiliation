@@ -1,0 +1,27 @@
+
+Syntax:
+
+AFFILIATION [<channel>] <type> [<jid>] [<reason>]
+
+Parameters:
+
+    An affiliation type and optionnaly a jid, a reason and a channel.
+
+    Type must be one of:
+        - none
+        - owner
+        - admin
+        - member
+        - outcast
+
+Description:
+
+    When called without a jid, list all user having a specific affiliation, if you have the right to do it.
+    Otherwise, give jid a specific affiliation, if you have the right to do it.
+
+Examples:
+
+    /AFFILIATION outcast
+    /AFFILIATION admin john
+
+See also: ROLE, KICK, BAN
