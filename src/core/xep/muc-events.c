@@ -538,24 +538,29 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			g_free(str);
 		}
 		node = lm_message_node_get_child(lmsg->node, "body");
-		if (node != NULL && node->value != NULL && nick != NULL) {
+		if (node != NULL && node->value != NULL) {
 			str = xmpp_recode_in(node->value);
-			own = strcmp(nick, channel->nick) == 0;
-			action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
-			if (action && own)
-				signal_emit("message xmpp own_action", 4,
-				    server, str+4, channel->name,
-				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else if (action)
-				signal_emit("message xmpp action", 5,
-				    server, str+4, nick, channel->name,
-				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else if (own)
-				signal_emit("message xmpp own_public", 3,
+			if (nick != NULL) {
+				own = strcmp(nick, channel->nick) == 0;
+				action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
+				if (action && own)
+					signal_emit("message xmpp own_action", 4,
+					    server, str+4, channel->name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else if (action)
+					signal_emit("message xmpp action", 5,
+					    server, str+4, nick, channel->name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else if (own)
+					signal_emit("message xmpp own_public", 3,
+					    server, str, channel->name);
+				else
+					signal_emit("message public", 5,
+					    server, str, nick, "", channel->name);
+			} else {
+				signal_emit("message xmpp room", 3,
 				    server, str, channel->name);
-			else
-				signal_emit("message public", 5,
-				    server, str, nick, "", channel->name);
+			}
 			g_free(str);
 		}
 		break;
