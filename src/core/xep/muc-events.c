@@ -38,6 +38,8 @@
 
 #define MAX_LONG_STRLEN ((sizeof(long) * CHAR_BIT + 2) / 3 + 1)
 
+#define XMLNS_DATA_X "jabber:x:data"
+
 void send_join(MUC_REC *);
 
 static void
@@ -313,11 +315,27 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	/* <status code='201'/> */
 	created = lm_find_node(node, "status", "code", "201") != NULL;
 	if (created) {
-		char str[MAX_LONG_STRLEN], *data;
+		char str[MAX_LONG_STRLEN], *data, *recoded;
+		LmMessage *lmsg;
+		LmMessageNode *query, *x;
 
+		/* Require instant room */
+		lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+		    LM_MESSAGE_SUB_TYPE_GET);
+		recoded = xmpp_recode_out(channel->server->jid);
+		lm_message_node_set_attribute(lmsg->node, "from", recoded);
+		g_free(recoded);
+		query = lm_message_node_add_child(lmsg->node, "query", NULL);
+		lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+		x = lm_message_node_add_child(query, "x", NULL);
+		lm_message_node_set_attribute(x, XMLNS, XMLNS_DATA_X);
+		lm_message_node_set_attribute(x, "type", "submit");
+		signal_emit("xmpp send iq", 2, channel->server, lmsg);
+		lm_message_unref(lmsg);
+
+		/* muc created */
 		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
 		data = g_strconcat("_ ", channel->name, " ", str, (void *)NULL);
-		/* muc created */
 		signal_emit("event 329", 2, channel->server, data);
 		g_free(data);
 	}
