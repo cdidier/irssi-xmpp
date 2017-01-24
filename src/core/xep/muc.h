@@ -63,6 +63,7 @@ void muc_set_affiliation(XMPP_SERVER_REC *, MUC_REC *, const char *,
 void muc_get_role(XMPP_SERVER_REC *, MUC_REC *, const char *);
 void muc_set_role(XMPP_SERVER_REC *, MUC_REC *, const char *,
 		const char *, const char *);
+void muc_set_mode(XMPP_SERVER_REC *, MUC_REC *, const char *);
 MUC_REC	*get_muc(XMPP_SERVER_REC *, const char *);
 
 void muc_init(void);

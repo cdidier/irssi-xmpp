@@ -51,3 +51,10 @@ Administration commands:
 /BAN [<channel>] <jid> [<reason>]
     Ban a specific jid, if you have the right to do it.
     Equivalent to /AFFILIATION outcast <jid>.
+
+/MODE [<channel>] <mode>
+    Set channel mode.
+    Available mode are Mmkpu.
+
+/MODE [<channel>] [<mode>]
+    Get channel mode.
