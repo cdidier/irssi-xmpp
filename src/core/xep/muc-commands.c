@@ -27,6 +27,7 @@
 #include "tools.h"
 #include "rosters-tools.h"
 #include "muc.h"
+#include "disco.h"
 
 /* SYNTAX: INVITE <jid>[/<resource>]|<name> [<channame>] */
 static void
@@ -250,6 +251,28 @@ cmd_kick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: MODE [<channel>] [<mode>] */
+static void
+cmd_mode(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	LmMessage *lmsg;
+	char *channame, *mode;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &mode))
+		return;
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*mode == '\0')
+		disco_request(server, channel->name);
+	else
+		muc_set_mode(server, channel, mode);
+	cmd_params_free(free_arg);
+}
+
 /* SYNTAX: DESTROY [<channel>] [<alternate>] [<reason>]*/
 static void
 cmd_destroy(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
@@ -285,6 +308,7 @@ muc_commands_init(void)
 	command_bind_xmpp("ban", NULL, (SIGNAL_FUNC)cmd_ban);
 	command_bind_xmpp("role", NULL, (SIGNAL_FUNC)cmd_role);
 	command_bind_xmpp("kick", NULL, (SIGNAL_FUNC)cmd_kick);
+	command_bind_xmpp("mode", NULL, (SIGNAL_FUNC)cmd_mode);
 	command_bind_xmpp("destroy", NULL, (SIGNAL_FUNC)cmd_destroy);
 }
 
@@ -299,5 +323,6 @@ muc_commands_deinit(void)
 	command_unbind("ban", (SIGNAL_FUNC)cmd_ban);
 	command_unbind("role", (SIGNAL_FUNC)cmd_role);
 	command_unbind("kick", (SIGNAL_FUNC)cmd_kick);
+	command_unbind("mode", (SIGNAL_FUNC)cmd_mode);
 	command_unbind("destroy", (SIGNAL_FUNC)cmd_destroy);
 }

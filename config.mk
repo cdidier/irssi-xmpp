@@ -22,7 +22,7 @@ INCS =	${LIB_INCS} \
 LIBS =	${LIB_LIBS}
 
 # flags
-CFLAGS += -fPIC -DUOFF_T_LONG
+CFLAGS += -fPIC -DUOFF_T_LONG -O0 -g
 LDFLAGS += -shared
 
 # debug

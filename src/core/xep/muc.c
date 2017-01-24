@@ -37,6 +37,9 @@
 #include "muc-role.h"
 #include "muc-reconnect.h"
 
+#define XMLNS_DATA_X "jabber:x:data"
+#define XMLNS_MUC_CONFIG "http://jabber.org/protocol/muc#roomconfig"
+
 static char *
 get_join_data(MUC_REC *channel)
 {
@@ -310,6 +313,59 @@ muc_set_role(XMPP_SERVER_REC *server, MUC_REC *channel, const char *type,
 		lm_message_node_add_child(item, "reason", recoded);
 		g_free(recoded);
 	}
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_set_mode(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *mode)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *x, *field, *value;
+	char *recoded, *new_value, *feature;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(channel->server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+	x = lm_message_node_add_child(query, "x", NULL);
+	lm_message_node_set_attribute(x, XMLNS, XMLNS_DATA_X);
+	lm_message_node_set_attribute(x, "type", "submit");
+
+	field = lm_message_node_add_child(x, "field", NULL);
+	lm_message_node_set_attribute(field, "var", "FORM_TYPE");
+	value = lm_message_node_add_child(field, "value", XMLNS_MUC_CONFIG);
+
+	new_value = mode[0] == '+' ? "1" : "0";
+
+	for (int i = 1; i < strlen(mode); i++) {
+		field = lm_message_node_add_child(x, "field", NULL);
+		switch (mode[i]) {
+		case 'm':
+			feature = "muc#roomconfig_membersonly";
+			break;
+		case 'M':
+			feature = "muc#roomconfig_moderatedroom";
+			break;
+		case 'k':
+			feature = "muc#roomconfig_passwordprotectedroom";
+			break;
+		case 'p':
+			feature = "muc#roomconfig_persistentroom";
+			break;
+		case 'u':
+			feature = "muc#roomconfig_publicroom";
+			break;
+		default:
+			continue;
+		}
+		lm_message_node_set_attribute(field, "var", feature);
+		value = lm_message_node_add_child(field, "value", new_value);
+	}
+
 	signal_emit("xmpp send iq", 2, channel->server, lmsg);
 	lm_message_unref(lmsg);
 }
