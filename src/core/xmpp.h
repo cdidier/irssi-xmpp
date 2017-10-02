@@ -11,6 +11,6 @@ typedef struct _MUC_REC MUC_REC;
 #define XMPP_PROTOCOL (chat_protocol_lookup(XMPP_PROTOCOL_NAME))
 
 #define IRSSI_XMPP_PACKAGE "irssi-xmpp"
-#define IRSSI_XMPP_VERSION "0.53"
+#define IRSSI_XMPP_VERSION "0.54"
 
 #endif
