@@ -69,7 +69,7 @@ disco_request(XMPP_SERVER_REC *server, const char *dest)
 	char *recoded;
 
 	g_return_if_fail(IS_XMPP_SERVER(server));
-	g_return_if_fail(dest != NULL && dest != '\0');
+	g_return_if_fail(dest != NULL && *dest != '\0');
 	recoded = xmpp_recode_out(dest);
 	lmsg = lm_message_new_with_sub_type(recoded, LM_MESSAGE_TYPE_IQ,
 	    LM_MESSAGE_SUB_TYPE_GET);
