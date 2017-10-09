@@ -279,8 +279,7 @@ update_subscription(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user,
 	g_return_if_fail(IS_XMPP_SERVER(server));
 	g_return_if_fail(user != NULL);
 	g_return_if_fail(group != NULL);
-	g_return_if_fail(subscription != NULL);
-	if (g_ascii_strcasecmp(subscription,
+	if (subscription == NULL || g_ascii_strcasecmp(subscription,
 	    xmpp_subscription[XMPP_SUBSCRIPTION_NONE]) == 0)
 		user->subscription = XMPP_SUBSCRIPTION_NONE;
 	else if (g_ascii_strcasecmp(subscription,
