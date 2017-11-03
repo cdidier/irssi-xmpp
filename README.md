@@ -42,6 +42,12 @@ Written in C and released under the GNU General Public License version 2.
    * in the base system:
     ``` # make install ```
 
+### Packages ###
+  * Debian/Ubuntu package: ``` apt-get install irssi-plugin-xmpp ``` ([more info](https://packages.debian.org/sid/irssi-plugin-xmpp))
+  * OpenBSD port: ``` pkg_add irssi-xmpp ``` ([more info](http://openports.se/net/irssi-xmpp))
+  * FreeBSD port: ``` pkg_add -r irssi-xmpp ``` ([more info](http://www.freshports.org/irc/irssi-xmpp/))
+  * MacOS Homebrew: ``` brew install simmel/irssi/irssi-xmpp ``` ([more info](https://github.com/simmel/homebrew-irssi))
+  * and in many package repository of Linux distributions...
 
 ## Documentation ##
 
