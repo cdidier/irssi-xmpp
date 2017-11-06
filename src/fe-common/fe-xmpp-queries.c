@@ -21,10 +21,12 @@
 #include "printtext.h"
 #include "signals.h"
 #include "window-items.h"
+#include "settings.h"
 
 #include "xmpp-queries.h"
 #include "rosters-tools.h"
 #include "fe-xmpp-status.h"
+#include "tools.h"
 
 static void
 sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
@@ -32,26 +34,29 @@ sig_presence_changed(XMPP_SERVER_REC *server, const char *full_jid,
 {
 	XMPP_QUERY_REC *rec;
 	XMPP_ROSTER_USER_REC *user;
-	const char *msg;
+	const char *msg, *stripped_jid;
 	char *name;
 
+	stripped_jid = (settings_get_bool("xmpp_strip_resource")) ?
+		xmpp_strip_resource(full_jid) : g_strdup(full_jid);
+
 	g_return_if_fail(server != NULL);
-	g_return_if_fail(full_jid != NULL);
+	g_return_if_fail(stripped_jid != NULL);
 	g_return_if_fail(0 <= show && show < XMPP_PRESENCE_SHOW_LEN);
-	if ((rec = xmpp_query_find(server, full_jid)) == NULL)
+	if ((rec = xmpp_query_find(server, stripped_jid)) == NULL)
 		return;
 	msg = fe_xmpp_presence_show[show];
-	user = rosters_find_user(server->roster, full_jid, NULL, NULL);
+	user = rosters_find_user(server->roster, stripped_jid, NULL, NULL);
 	name = user != NULL && user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-		XMPPTXT_FORMAT_NAME, user->name, full_jid) :
+		XMPPTXT_FORMAT_NAME, user->name, stripped_jid) :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
-		XMPPTXT_FORMAT_JID, full_jid);
+		XMPPTXT_FORMAT_JID, stripped_jid);
 	if (status != NULL)
-		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP,
+		printformat_module(MODULE_NAME, server, stripped_jid, MSGLEVEL_CRAP,
 		    XMPPTXT_PRESENCE_CHANGE_REASON, name, msg, status);
 	else
-		printformat_module(MODULE_NAME, server, full_jid, MSGLEVEL_CRAP,
+		printformat_module(MODULE_NAME, server, stripped_jid, MSGLEVEL_CRAP,
 		    XMPPTXT_PRESENCE_CHANGE, name, msg);
 }
 
