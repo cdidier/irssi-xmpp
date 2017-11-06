@@ -48,8 +48,8 @@ sig_history(SERVER_REC *server, const char *msg, const char *nick,
 	g_return_if_fail(nick != NULL);
 	g_return_if_fail(target != NULL);
 	type = GPOINTER_TO_INT(gpointer_type);
-	level = MSGLEVEL_NO_ACT | MSGLEVEL_NOHILIGHT
-	    | (type == SEND_TARGET_CHANNEL ? MSGLEVEL_PUBLIC : MSGLEVEL_MSGS);
+	level = (type == SEND_TARGET_CHANNEL ? MSGLEVEL_PUBLIC : MSGLEVEL_MSGS)
+	    | MSGLEVEL_NO_ACT | MSGLEVEL_NOHILIGHT;
 	item = type == SEND_TARGET_CHANNEL ?
 	    (void *)channel_find(server, target) : query_find(server, nick);
 	if (settings_get_bool("emphasis"))
