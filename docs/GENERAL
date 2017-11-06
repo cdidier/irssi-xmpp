@@ -83,10 +83,10 @@ contacts.
 
 /PRESENCE SUBSCRIBE <jid> <reason>
     Sends a subscription request to a JID. If the contact accepts your request,
-    you'll be able to see his/her presence.
+    you'll be able to see their presence.
 
 /PRESENCE UNSUBSCRIBE <jid>
-    Unsubscribes to the contact's presence, so you won't see his/her presence
+    Unsubscribes to the contact's presence, so you won't see their presence
     anymore.
 
 Subscription status:
