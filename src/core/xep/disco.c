@@ -155,6 +155,12 @@ sig_disconnected(XMPP_SERVER_REC *server)
 	server->server_features = NULL;
 }
 
+static void
+sig_disco_add_feature(const char *feature)
+{
+	disco_add_feature(g_strdup(feature));
+}
+
 void
 disco_init(void)
 {
@@ -163,6 +169,7 @@ disco_init(void)
 	signal_add("server connected", sig_connected);
 	signal_add("server disconnected", sig_disconnected);
 	signal_add("xmpp recv iq", sig_recv_iq);
+	signal_add("xmpp register feature", sig_disco_add_feature);
 }
 
 void
