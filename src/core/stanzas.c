@@ -51,12 +51,14 @@ handle_stanza(LmMessageHandler *handler, LmConnection *connection,
 	XMPP_SERVER_REC *server;
 	int type;
 	const char *id;
-	char *from, *to, *raw;
+	char *from, *to, *raw, *xml;
 
 	if ((server = XMPP_SERVER(user_data)) == NULL)
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
-	raw = xmpp_recode_in(lm_message_node_to_string(lmsg->node));
+	xml = lm_message_node_to_string(lmsg->node);
+	raw = xmpp_recode_in(xml);
 	signal_emit("xmpp xml in", 2, server, raw);
+	g_free(xml);
 	g_free(raw);
 	type = lm_message_get_sub_type(lmsg);
 	id = lm_message_node_get_attribute(lmsg->node, "id");
