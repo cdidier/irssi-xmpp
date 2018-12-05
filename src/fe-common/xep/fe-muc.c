@@ -73,6 +73,7 @@ sig_joinerror(MUC_REC *channel, gpointer error)
 		break;
 	case MUC_ERROR_MAXIMUM_USERS_REACHED:
 		reason = "Maximum number of users has been reached";
+		break;
 	default:
 		reason = "Unknown reason";
 	}
