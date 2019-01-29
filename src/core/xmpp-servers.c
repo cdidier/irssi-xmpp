@@ -489,6 +489,7 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 	}
 	lm_connection_set_disconnect_function(server->lmconn,
 	    lm_close_cb, server, NULL);
+	server->connect_time = time(NULL);
 	lookup_servers = g_slist_append(lookup_servers, server);
 	signal_emit("server looking", 1, server);
 	server->timeout_tag = g_timeout_add(
