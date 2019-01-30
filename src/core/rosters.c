@@ -27,6 +27,7 @@
 
 #define XMLNS_ROSTER "jabber:iq:roster"
 
+/* NOTE: DO NOT CHANGE THESE STRINGS */
 const char *xmpp_presence_show[] = {
 	"-",
 	"X",

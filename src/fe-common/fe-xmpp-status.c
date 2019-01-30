@@ -29,13 +29,27 @@
 #include "rosters-tools.h"
 
 const char *fe_xmpp_presence_show[] = {
-	"Offline",
-	"error",
-	"Not Available",
-	"Busy",
+	"Unavailable",
+	"Error",
+	"Extended Away",
+	"Do Not Disturb",
 	"Away",
 	"Available",
-	"Free for Chat"
+	"Free for Chat",
+	"Online",
+	NULL
+};
+
+const int fe_xmpp_presence_show_format[] = {
+	XMPPTXT_PRESENCE_UNAVAILABLE,
+	XMPPTXT_PRESENCE_ERROR,
+	XMPPTXT_PRESENCE_XA,
+	XMPPTXT_PRESENCE_DND,
+	XMPPTXT_PRESENCE_AWAY,
+	XMPPTXT_PRESENCE_AVAILABLE,
+	XMPPTXT_PRESENCE_CHAT,
+	XMPPTXT_PRESENCE_ONLINE,
+	0,
 };
 
 static char *

@@ -50,13 +50,12 @@ show_group(XMPP_SERVER_REC *server, XMPP_ROSTER_GROUP_REC *group)
 	    group->name : settings_get_str("xmpp_roster_default_group"));
 }
 
-static const char *
+static int
 get_first_show(GSList *list)
 {
 	if (list == NULL)
-		return NULL;
-	return xmpp_presence_show[
-	    ((XMPP_ROSTER_RESOURCE_REC *)list->data)->show];
+		return XMPP_PRESENCE_UNAVAILABLE;
+	return ((XMPP_ROSTER_RESOURCE_REC *)list->data)->show;
 }
 
 static char *
@@ -75,7 +74,7 @@ get_resources(XMPP_SERVER_REC *server, GSList *list)
 		show = (resource->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
 		        XMPPTXT_FORMAT_RESOURCE_SHOW,
-		        xmpp_presence_show[resource->show]);
+		        fe_xmpp_presence_show[resource->show]);
 		status_str = g_strdup(resource->status);
 		status = (resource->status == NULL) ? NULL :
 		    format_get_text(MODULE_NAME, NULL, server, NULL,
@@ -101,14 +100,17 @@ show_user(XMPP_SERVER_REC *server, XMPP_ROSTER_USER_REC *user)
 {
 	const char *first_show;
 	char *name, *resources, *subscription;
+	int show;
 
 	g_return_if_fail(IS_SERVER(server));
 	g_return_if_fail(user != NULL);
 	if (user->resources == NULL)
-		first_show = xmpp_presence_show[user->error ?
-		    XMPP_PRESENCE_ERROR : XMPP_PRESENCE_UNAVAILABLE];
+		show = user->error ?
+		    XMPP_PRESENCE_ERROR : XMPP_PRESENCE_UNAVAILABLE;
 	else
-		first_show = get_first_show(user->resources);
+		show = get_first_show(user->resources);
+	first_show = format_get_text(MODULE_NAME, NULL, server, NULL,
+	    fe_xmpp_presence_show_format[show], fe_xmpp_presence_show[show]);
 	name = user->name != NULL ?
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_NAME, user->name, user->jid) :
@@ -136,7 +138,7 @@ show_begin_of_roster(XMPP_SERVER_REC *server)
 	show = (server->show == XMPP_PRESENCE_AVAILABLE) ? NULL :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
 	        XMPPTXT_FORMAT_RESOURCE_SHOW,
-	    xmpp_presence_show[server->show]);
+	        fe_xmpp_presence_show[server->show]);
 	status = (server->away_reason == NULL
 	    || strcmp(server->away_reason, " ") == 0) ? NULL :
 	    format_get_text(MODULE_NAME, NULL, server, NULL,
