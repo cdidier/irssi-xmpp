@@ -30,6 +30,18 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "format_resource_show", "($0)", 1, { 0 } },
 	{ "format_resource_status", ": $0", 1, { 0 } },
 	{ "format_subscription", "(subscription: $0)", 1, { 0 } },
+  
+  /* ---- */
+	{ NULL, "Presence", 0, { 0 } },
+
+  { "presence_unavailable", "%K(◦) $[14]0 ->%n",     1, { 0 } },
+  { "presence_error",       "%r(!) $[14]0 ->%n",     1, { 0 } },
+  { "presence_xa",          "%r(x) $[14]0 ->%n",     1, { 0 } },
+  { "presence_dnd",         "%r(x) $[14]0 ->%n",     1, { 0 } },
+  { "presence_away",        "%y(-) $[14]0 ->%n",     1, { 0 } },
+  { "presence_available",   "%_%g(+) $[14]0%_ ->%n", 1, { 0 } },
+  { "presence_chat",        "%_%g(+) $[14]0%_ ->%n", 1, { 0 } },
+  { "presence_online",      "%_%g(+) $[14]0%_ ->%n", 1, { 0 } },
 
 	/* ---- */
 	{ NULL, "Roster", 0, { 0 } },
@@ -88,7 +100,7 @@ FORMAT_REC fecommon_xmpp_formats[] = {
 	{ "default_event", "$1 $2", 3, { 0, 0, 0 } },
 	{ "default_error", "ERROR $1 $2", 3, { 0, 0, 0 } },
 
-	{ NULL, "Regisration", 0, { 0 } },
+	{ NULL, "Registration", 0, { 0 } },
 
 	{ "xmpp_registration_started", "Registering {nick $0@$1}...", 2, { 0, 0 } },
 	{ "xmpp_registration_succeed", "Registration of {nick $0@$1} succeeded", 2, { 0, 0 } },
