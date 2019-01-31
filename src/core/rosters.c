@@ -28,14 +28,14 @@
 #define XMLNS_ROSTER "jabber:iq:roster"
 
 const char *xmpp_presence_show[] = {
-	"Unavailable",
-	"Error",
-	"Extended Away",
-	"Do Not Disturb",
-	"Away",
-	"%%gAvailable%%n",
-	"Chat",
-	"Online",
+	"o Unavailable",
+	"! Error",
+	"x Extended Away",
+	"x Do Not Disturb",
+	"- Away",
+	"+ Available",
+	"+ Chat",
+	"+ Online",
 	NULL
 };
 
