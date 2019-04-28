@@ -95,7 +95,11 @@ connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
 		lm_message_node_set_attributes(lmsg_starttls->node, "xmlns",
 			XMPP_NS_STARTTLS, NULL);
 
-		lm_connection_send(connection, lmsg_starttls, NULL);
+		if (!lm_connection_send(connection, lmsg_starttls, NULL)) {
+			signal_emit("xmpp registration failed", 3, rd->username,
+				rd->domain, REGISTRATION_ERROR_STARTTLS);
+			rd_cleanup(rd);
+		}
 		lm_message_unref(lmsg_starttls);
 
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
@@ -125,7 +129,6 @@ connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
 				rd->domain, REGISTRATION_ERROR_INFO);
 			rd_cleanup(rd);
 		}
-
 		lm_message_unref(lmsg);
 
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
