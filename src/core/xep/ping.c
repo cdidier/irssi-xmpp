@@ -135,8 +135,11 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 static void
 sig_server_features(XMPP_SERVER_REC *server)
 {
-	if (disco_have_feature(server->server_features, XMLNS_PING))
-		supported_servers = g_slist_prepend(supported_servers, server);
+	if (disco_have_feature(server->server_features, XMLNS_PING)) {
+		if (g_slist_find(supported_servers, server) == NULL) {
+			supported_servers = g_slist_prepend(supported_servers, server);
+		}
+	}
 }
 
 static void
