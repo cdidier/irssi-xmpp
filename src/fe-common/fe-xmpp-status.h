@@ -2,6 +2,7 @@
 #define __FE_XMPP_STATUS_H
 
 extern const char *fe_xmpp_presence_show[];
+extern const int   fe_xmpp_presence_show_format[];
 
 __BEGIN_DECLS
 char		*fe_xmpp_status_get_window_name(XMPP_SERVER_REC *);
