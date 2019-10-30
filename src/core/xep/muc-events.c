@@ -33,8 +33,12 @@
 #include "disco.h"
 #include "muc.h"
 #include "muc-nicklist.h"
+#include "muc-affiliation.h"
+#include "muc-role.h"
 
 #define MAX_LONG_STRLEN ((sizeof(long) * CHAR_BIT + 2) / 3 + 1)
+
+#define XMLNS_DATA_X "jabber:x:data"
 
 void send_join(MUC_REC *);
 
@@ -164,7 +168,7 @@ nick_event(MUC_REC *channel, const char *nickname, const char *full_jid,
 
 	if ((nick = xmpp_nicklist_find(channel, nickname)) == NULL)
 		nick_join(channel, nickname, full_jid, affiliation, role);
-	else 
+	else
 		nick_mode(channel, nick, affiliation, role);
 }
 
@@ -278,6 +282,19 @@ error_presence(MUC_REC *channel, const char *code, const char *nick)
 }
 
 static void
+error_destroy(MUC_REC *channel, const char *code, const char *reason)
+{
+	int error;
+
+	error = code != NULL ? atoi(code) : MUC_ERROR_UNKNOWN;
+	switch (error) {
+	case 403:
+		signal_emit("xmpp muc destroyerror", 2, channel, reason);
+		break;
+	}
+}
+
+static void
 available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 {
 	LmMessageNode *node;
@@ -298,11 +315,27 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	/* <status code='201'/> */
 	created = lm_find_node(node, "status", "code", "201") != NULL;
 	if (created) {
-		char str[MAX_LONG_STRLEN], *data;
+		char str[MAX_LONG_STRLEN], *data, *recoded;
+		LmMessage *lmsg;
+		LmMessageNode *query, *x;
 
+		/* Require instant room */
+		lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+		    LM_MESSAGE_SUB_TYPE_GET);
+		recoded = xmpp_recode_out(channel->server->jid);
+		lm_message_node_set_attribute(lmsg->node, "from", recoded);
+		g_free(recoded);
+		query = lm_message_node_add_child(lmsg->node, "query", NULL);
+		lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+		x = lm_message_node_add_child(query, "x", NULL);
+		lm_message_node_set_attribute(x, XMLNS, XMLNS_DATA_X);
+		lm_message_node_set_attribute(x, "type", "submit");
+		signal_emit("xmpp send iq", 2, channel->server, lmsg);
+		lm_message_unref(lmsg);
+
+		/* muc created */
 		g_snprintf(str, sizeof(str), "%ld", (long)time(NULL));
 		data = g_strconcat("_ ", channel->name, " ", str, (void *)NULL);
-		/* muc created */
 		signal_emit("event 329", 2, channel->server, data);
 		g_free(data);
 	}
@@ -322,7 +355,7 @@ available(MUC_REC *channel, const char *from, LmMessage *lmsg)
 	if (own || strcmp(nick, channel->nick) == 0)
 		own_event(channel, nick, item_jid, item_affiliation, item_role,
 		    forced);
-	else 
+	else
 		nick_event(channel, nick, item_jid, item_affiliation, item_role);
 	/* <status>text</status> */
 	node = lm_message_node_get_child(lmsg->node, "status");
@@ -392,6 +425,42 @@ unavailable(MUC_REC *channel, const char *nick, LmMessage *lmsg)
 	g_free(item_nick);
 	g_free(reason);
 	g_free(actor);
+}
+
+static void
+admin(MUC_REC *channel, LmMessage *lmsg)
+{
+	LmMessageNode *node, *query;
+	const char *item_affiliation, *item_role, *item_jid, *item_nick;
+	int affiliation, role;
+
+	if ((query = lm_find_node(lmsg->node, "query", XMLNS,
+	    XMLNS_MUC_ADMIN)) == NULL)
+		return;
+
+	for (node = query->children; node != NULL; node = node->next) {
+		/* <item affiliation='item_affiliation'
+		 *     role='item_role'
+		 *     jid='item_jid'
+		 *     nick='item_nick'/> */
+		item_jid = xmpp_recode_in(lm_message_node_get_attribute(node,
+		    "jid"));
+		item_affiliation = lm_message_node_get_attribute(node,
+		    "affiliation");
+		item_nick = xmpp_recode_in(lm_message_node_get_attribute(node,
+		    "nick"));
+		item_role = lm_message_node_get_attribute(node, "role");
+		affiliation = xmpp_nicklist_get_affiliation(item_affiliation);
+		if (item_role == NULL) {
+			/* affiliation query */
+			signal_emit("message xmpp muc affiliation", 4, channel,
+			    item_jid, item_nick, affiliation);
+		} else {
+			role = xmpp_nicklist_get_role(item_role);
+			signal_emit("message xmpp muc mode", 4, channel,
+			    item_nick, affiliation, role);
+		}
+	}
 }
 
 static void
@@ -469,24 +538,29 @@ sig_recv_message(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 			g_free(str);
 		}
 		node = lm_message_node_get_child(lmsg->node, "body");
-		if (node != NULL && node->value != NULL && nick != NULL) {
+		if (node != NULL && node->value != NULL) {
 			str = xmpp_recode_in(node->value);
-			own = strcmp(nick, channel->nick) == 0;
-			action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
-			if (action && own)
-				signal_emit("message xmpp own_action", 4,
-				    server, str+4, channel->name,
-				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else if (action)
-				signal_emit("message xmpp action", 5,
-				    server, str+4, nick, channel->name,
-				    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
-			else if (own)
-				signal_emit("message xmpp own_public", 3,
+			if (nick != NULL) {
+				own = strcmp(nick, channel->nick) == 0;
+				action = g_ascii_strncasecmp(str, "/me ", 4) == 0;
+				if (action && own)
+					signal_emit("message xmpp own_action", 4,
+					    server, str+4, channel->name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else if (action)
+					signal_emit("message xmpp action", 5,
+					    server, str+4, nick, channel->name,
+					    GINT_TO_POINTER(SEND_TARGET_CHANNEL));
+				else if (own)
+					signal_emit("message xmpp own_public", 3,
+					    server, str, channel->name);
+				else
+					signal_emit("message public", 5,
+					    server, str, nick, "", channel->name);
+			} else {
+				signal_emit("message xmpp room", 3,
 				    server, str, channel->name);
-			else
-				signal_emit("message public", 5,
-				    server, str, nick, "", channel->name);
+			}
 			g_free(str);
 		}
 		break;
@@ -530,11 +604,52 @@ out:
 	g_free(nick);
 }
 
+static void
+sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
+    const char *id, const char *from, const char *to)
+{
+	MUC_REC *channel;
+	LmMessageNode *node, *error, *text, *query;
+	const char *code;
+	char *reason = NULL;
+
+	if ((channel = get_muc(server, from)) == NULL)
+		goto out;
+
+	switch (type) {
+	case LM_MESSAGE_SUB_TYPE_ERROR:
+		error = lm_message_node_get_child(lmsg->node, "error");
+		if (error == NULL)
+			goto out;
+		code = lm_message_node_get_attribute(error, "code");
+
+		query = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_MUC_OWNER);
+		if (query == NULL)
+			goto out;
+		for (node = query->children; node != NULL; node = node->next) {
+			if (strcmp(node->name, "destroy") == 0) {
+				text = lm_message_node_get_child(error, "text");
+				reason = xmpp_recode_in(text->value);
+				error_destroy(channel, code, reason);
+				g_free(reason);
+			}
+		}
+		break;
+	case LM_MESSAGE_SUB_TYPE_RESULT:
+		admin(channel, lmsg);
+		break;
+	}
+
+out:
+	g_free(reason);
+}
+
 void
 muc_events_init(void)
 {
 	signal_add("xmpp recv message", sig_recv_message);
 	signal_add("xmpp recv presence", sig_recv_presence);
+	signal_add("xmpp recv iq", sig_recv_iq);
 }
 
 void
@@ -542,4 +657,5 @@ muc_events_deinit(void)
 {
 	signal_remove("xmpp recv message", sig_recv_message);
 	signal_remove("xmpp recv presence", sig_recv_presence);
+	signal_remove("xmpp recv iq", sig_recv_iq);
 }

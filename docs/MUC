@@ -29,4 +29,32 @@ MUC commands:
 Administration commands:
 ========================
 
-Currently, you cannot manage a room with irssi-xmpp.
+/DESTROY [<channel>] [<alternate>] [<reason>]
+    Destroy a room, if you have the right to do it.
+
+/ROLE [<channel>] <type>
+    List all user having a specific role, if you have the right to do it.
+
+/ROLE [<channel>] <type> <nick> [<reason>]
+    Give nick a specific role, if you have the right to do it.
+
+/KICK [<channel>] <nick> [<reason>]
+    Kick a specific nick, if you have the right to do it.
+    Equivalent to /ROLE none <nick>.
+
+/AFFILIATION [<channel>] <type>
+    List all user having a specific affiliation, if you have the right to do it.
+
+/AFFILIATION [<channel>] <type> <jid> [<reason>]
+    Give jid a specific affiliation, if you have the right to do it.
+
+/BAN [<channel>] <jid> [<reason>]
+    Ban a specific jid, if you have the right to do it.
+    Equivalent to /AFFILIATION outcast <jid>.
+
+/MODE [<channel>] <mode>
+    Set channel mode.
+    Available mode are Mmkpu.
+
+/MODE [<channel>] [<mode>]
+    Get channel mode.

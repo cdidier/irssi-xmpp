@@ -27,6 +27,7 @@
 #include "tools.h"
 #include "rosters-tools.h"
 #include "muc.h"
+#include "disco.h"
 
 /* SYNTAX: INVITE <jid>[/<resource>]|<name> [<channame>] */
 static void
@@ -149,6 +150,146 @@ cmd_topic(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: AFFILIATION [<channel>] <type> [<jid>] [<reason>] */
+static void
+cmd_affiliation(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *type, *jid, *reason;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 4 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &type, &jid, &reason))
+		return;
+	if (*channame == '\0' || *type == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*jid == '\0') {
+		muc_get_affiliation(server, channel, type);
+	} else {
+		if (*reason == '\0')
+			reason = NULL;
+		muc_set_affiliation(server, channel, type, jid, reason);
+	}
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: BAN [<channel>] <jid> [<reason>] */
+static void
+cmd_ban(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *jid, *reason;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 3 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &jid, &reason))
+		return;
+	if (*channame == '\0' || *jid == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*reason == '\0')
+		reason = NULL;
+
+	muc_set_affiliation(server, channel, "outcast", jid, reason);
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: ROLE [<channel>] <type> [<nick>] [<reason>] */
+static void
+cmd_role(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *type, *nick, *reason;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 4 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &type, &nick, &reason))
+		return;
+	if (*channame == '\0' || *type == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*nick == '\0') {
+		muc_get_role(server, channel, type);
+	} else {
+		if (*reason == '\0')
+			reason = NULL;
+		muc_set_role(server, channel, type, nick, reason);
+	}
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: kick [<channel>] <nick> [<reason>] */
+static void
+cmd_kick(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *nick, *reason;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 3 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &nick, &reason))
+		return;
+	if (*channame == '\0' || *nick == '\0')
+		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*reason == '\0')
+		reason = NULL;
+	muc_set_role(server, channel, "none", nick, reason);
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: MODE [<channel>] [<mode>] */
+static void
+cmd_mode(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *mode;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &mode))
+		return;
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*mode == '\0')
+		disco_request(server, channel->name);
+	else
+		muc_set_mode(server, channel, mode);
+	cmd_params_free(free_arg);
+}
+
+/* SYNTAX: DESTROY [<channel>] [<alternate>] [<reason>]*/
+static void
+cmd_destroy(const char *data, XMPP_SERVER_REC *server, WI_ITEM_REC *item)
+{
+	MUC_REC *channel;
+	char *channame, *reason, *alternate;
+	void *free_arg;
+
+	CMD_XMPP_SERVER(server);
+	if (!cmd_get_params(data, &free_arg, 3 | PARAM_FLAG_OPTCHAN |
+	    PARAM_FLAG_GETREST, item, &channame, &alternate, &reason))
+		return;
+	if ((channel = muc_find(server, channame)) == NULL)
+		cmd_param_error(CMDERR_NOT_JOINED);
+	if (*alternate == '\0')
+		alternate = NULL;
+	if (*reason == '\0')
+		reason = NULL;
+	muc_destroy(server, channel, alternate, reason);
+	cmd_params_free(free_arg);
+}
+
 void
 muc_commands_init(void)
 {
@@ -157,6 +298,12 @@ muc_commands_init(void)
 	command_bind_xmpp("part", NULL, (SIGNAL_FUNC)cmd_part);
 	command_bind_xmpp("nick", NULL, (SIGNAL_FUNC)cmd_nick);
 	command_bind_xmpp("topic", NULL, (SIGNAL_FUNC)cmd_topic);
+	command_bind_xmpp("affiliation", NULL, (SIGNAL_FUNC)cmd_affiliation);
+	command_bind_xmpp("ban", NULL, (SIGNAL_FUNC)cmd_ban);
+	command_bind_xmpp("role", NULL, (SIGNAL_FUNC)cmd_role);
+	command_bind_xmpp("kick", NULL, (SIGNAL_FUNC)cmd_kick);
+	command_bind_xmpp("mode", NULL, (SIGNAL_FUNC)cmd_mode);
+	command_bind_xmpp("destroy", NULL, (SIGNAL_FUNC)cmd_destroy);
 }
 
 void
@@ -166,4 +313,10 @@ muc_commands_deinit(void)
 	command_unbind("part", (SIGNAL_FUNC)cmd_part);
 	command_unbind("nick", (SIGNAL_FUNC)cmd_nick);
 	command_unbind("topic", (SIGNAL_FUNC)cmd_topic);
+	command_unbind("affiliation", (SIGNAL_FUNC)cmd_affiliation);
+	command_unbind("ban", (SIGNAL_FUNC)cmd_ban);
+	command_unbind("role", (SIGNAL_FUNC)cmd_role);
+	command_unbind("kick", (SIGNAL_FUNC)cmd_kick);
+	command_unbind("mode", (SIGNAL_FUNC)cmd_mode);
+	command_unbind("destroy", (SIGNAL_FUNC)cmd_destroy);
 }

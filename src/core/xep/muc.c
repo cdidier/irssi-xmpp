@@ -33,7 +33,12 @@
 #include "muc-commands.h"
 #include "muc-events.h"
 #include "muc-nicklist.h"
+#include "muc-affiliation.h"
+#include "muc-role.h"
 #include "muc-reconnect.h"
+
+#define XMLNS_DATA_X "jabber:x:data"
+#define XMLNS_MUC_CONFIG "http://jabber.org/protocol/muc#roomconfig"
 
 static char *
 get_join_data(MUC_REC *channel)
@@ -184,6 +189,221 @@ muc_part(MUC_REC *channel, const char *reason)
 		signal_emit("message part", 5, channel->server, channel->name,
 		    channel->ownnick->nick, channel->ownnick->host, reason);
 	channel_destroy(CHANNEL(channel));
+}
+
+void
+muc_get_affiliation(XMPP_SERVER_REC *server, MUC_REC *channel, const char *type)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *item;
+	char *recoded;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_GET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_ADMIN);
+	item = lm_message_node_add_child(query, "item", NULL);
+	recoded = xmpp_recode_out(type);
+	lm_message_node_set_attribute(item, "affiliation", recoded);
+	g_free(recoded);
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_set_affiliation(XMPP_SERVER_REC *server, MUC_REC *channel, const char *type,
+		const char *jid, const char *reason)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *item;
+	char *recoded;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_ADMIN);
+	item = lm_message_node_add_child(query, "item", NULL);
+	recoded = xmpp_recode_out(type);
+	lm_message_node_set_attribute(item, "affiliation", recoded);
+	g_free(recoded);
+	recoded = xmpp_recode_out(jid);
+	lm_message_node_set_attribute(item, "jid", recoded);
+	g_free(recoded);
+	if (reason != NULL) {
+		recoded = xmpp_recode_out(reason);
+		lm_message_node_add_child(item, "reason", recoded);
+		g_free(recoded);
+	}
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_get_role(XMPP_SERVER_REC *server, MUC_REC *channel, const char *type)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *item;
+	char *recoded;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_GET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_ADMIN);
+	item = lm_message_node_add_child(query, "item", NULL);
+	recoded = xmpp_recode_out(type);
+	lm_message_node_set_attribute(item, "role", recoded);
+	g_free(recoded);
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_set_role(XMPP_SERVER_REC *server, MUC_REC *channel, const char *type,
+		const char *nick, const char *reason)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *item;
+	char *recoded;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_ADMIN);
+	item = lm_message_node_add_child(query, "item", NULL);
+	recoded = xmpp_recode_out(type);
+	lm_message_node_set_attribute(item, "role", recoded);
+	g_free(recoded);
+	recoded = xmpp_recode_out(nick);
+	lm_message_node_set_attribute(item, "nick", recoded);
+	g_free(recoded);
+	if (reason != NULL) {
+		recoded = xmpp_recode_out(reason);
+		lm_message_node_add_child(item, "reason", recoded);
+		g_free(recoded);
+	}
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_set_mode(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *mode)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *x, *field, *value;
+	char *recoded, *new_value, *feature;
+	unsigned int i;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(channel->server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+	x = lm_message_node_add_child(query, "x", NULL);
+	lm_message_node_set_attribute(x, XMLNS, XMLNS_DATA_X);
+	lm_message_node_set_attribute(x, "type", "submit");
+
+	field = lm_message_node_add_child(x, "field", NULL);
+	lm_message_node_set_attribute(field, "var", "FORM_TYPE");
+	value = lm_message_node_add_child(field, "value", XMLNS_MUC_CONFIG);
+
+	new_value = mode[0] == '+' ? "1" : "0";
+
+	for (i = 1; i < strlen(mode); ++i) {
+		field = lm_message_node_add_child(x, "field", NULL);
+		switch (mode[i]) {
+		case 'm':
+			feature = "muc#roomconfig_membersonly";
+			break;
+		case 'M':
+			feature = "muc#roomconfig_moderatedroom";
+			break;
+		case 'k':
+			feature = "muc#roomconfig_passwordprotectedroom";
+			break;
+		case 'p':
+			feature = "muc#roomconfig_persistentroom";
+			break;
+		case 'u':
+			feature = "muc#roomconfig_publicroom";
+			break;
+		default:
+			continue;
+		}
+		lm_message_node_set_attribute(field, "var", feature);
+		value = lm_message_node_add_child(field, "value", new_value);
+	}
+
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
+}
+
+void
+muc_destroy(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *alternate,
+		const char *reason)
+{
+	LmMessage *lmsg;
+	LmMessageNode *query, *destroy;
+	char *recoded;
+
+	g_return_if_fail(IS_MUC(channel));
+	g_return_if_fail(IS_XMPP_SERVER(server));
+	if (!channel->server->connected)
+		return;
+
+	lmsg = lm_message_new_with_sub_type(channel->name, LM_MESSAGE_TYPE_IQ,
+	    LM_MESSAGE_SUB_TYPE_SET);
+	recoded = xmpp_recode_out(server->jid);
+	lm_message_node_set_attribute(lmsg->node, "from", recoded);
+	g_free(recoded);
+	query = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(query, XMLNS, XMLNS_MUC_OWNER);
+	destroy = lm_message_node_add_child(query, "destroy", NULL);
+	if (alternate != NULL) {
+		recoded = xmpp_recode_out(alternate);
+		lm_message_node_set_attribute(destroy, "jid", recoded);
+		g_free(recoded);
+	}
+	if (reason != NULL) {
+		recoded = xmpp_recode_out(reason);
+		lm_message_node_add_child(destroy, "reason", recoded);
+		g_free(recoded);
+	}
+	signal_emit("xmpp send iq", 2, channel->server, lmsg);
+	lm_message_unref(lmsg);
 }
 
 static void
