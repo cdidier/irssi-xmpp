@@ -33,7 +33,7 @@ update_nick_statusbar(XMPP_SERVER_REC *server, MUC_REC *channel,
 	newnick = IS_MUC(channel) ? channel->nick
 	    : settings_get_bool("xmpp_set_nick_as_username") ?
 	    server->user : server->jid;
-	if (!newnick)
+	if (newnick == NULL)
 		return;
 	if (strcmp(server->nick, newnick) == 0)
 		return;
