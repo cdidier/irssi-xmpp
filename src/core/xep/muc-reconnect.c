@@ -47,8 +47,11 @@ sig_conn_remove(RECONNECT_REC *rec)
 	if (!IS_XMPP_SERVER_CONNECT(rec->conn))
 		return;
 	conn = XMPP_SERVER_CONNECT(rec->conn);
-	g_slist_foreach(conn->channels_list, (GFunc)g_free, NULL);
-	g_slist_free(conn->channels_list);
+	if (conn->channels_list != NULL) {
+		g_slist_foreach(conn->channels_list, (GFunc)g_free, NULL);
+		g_slist_free(conn->channels_list);
+		conn->channels_list = NULL;
+	}
 }
 
 static void
