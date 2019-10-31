@@ -28,6 +28,8 @@ LDFLAGS += -shared
 
 # debug
 #CFLAGS += -std=c99 -W -g -Wall -Wno-unused-parameter
+#CFLAGS += -Wno-deprecated-declarations
+#CFLAGS += -Wno-cast-function-type
 
 # compiler and linker
 CC ?= cc
