@@ -94,20 +94,21 @@ handle_stanza(LmMessageHandler *handler, LmConnection *connection,
 }
 
 static void
+free_message_handler(LmMessageHandler *h)
+{
+	if (lm_message_handler_is_valid(h))
+		lm_message_handler_invalidate(h);
+	lm_message_handler_unref(h);
+}
+
+static void
 unregister_stanzas(XMPP_SERVER_REC *server)
 {
-	GSList *tmp, *next;
-
 	if (!IS_XMPP_SERVER(server))
 		return;
-	for (tmp = server->msg_handlers; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		if (lm_message_handler_is_valid(tmp->data))
-			lm_message_handler_invalidate(tmp->data);
-		lm_message_handler_unref(tmp->data);
-		server->msg_handlers =
-		    g_slist_remove(server->msg_handlers, tmp->data);
-	}
+	g_slist_free_full(server->msg_handlers,
+	    (GDestroyNotify)free_message_handler);
+	server->msg_handlers = NULL;
 }
 
 static void

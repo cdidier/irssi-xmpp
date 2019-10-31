@@ -52,13 +52,7 @@ disco_have_feature(GSList *list, const char *feature)
 static void
 cleanup_features(GSList *list)
 {
-	GSList *tmp, *next;
-
-	for (tmp = list; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		g_free(tmp->data);
-		list = g_slist_remove(list, tmp->data);
-	}
+	g_slist_free_full(list, g_free);
 }
 
 void
