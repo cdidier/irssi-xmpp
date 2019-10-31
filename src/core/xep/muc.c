@@ -321,7 +321,7 @@ void
 muc_set_mode(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *mode)
 {
 	LmMessage *lmsg;
-	LmMessageNode *query, *x, *field, *value;
+	LmMessageNode *query, *x, *field;
 	char *recoded, *new_value, *feature;
 	unsigned int i;
 
@@ -338,7 +338,7 @@ muc_set_mode(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *mode)
 
 	field = lm_message_node_add_child(x, "field", NULL);
 	lm_message_node_set_attribute(field, "var", "FORM_TYPE");
-	value = lm_message_node_add_child(field, "value", XMLNS_MUC_CONFIG);
+	lm_message_node_add_child(field, "value", XMLNS_MUC_CONFIG);
 
 	new_value = mode[0] == '+' ? "1" : "0";
 
@@ -364,7 +364,7 @@ muc_set_mode(XMPP_SERVER_REC *server ,MUC_REC *channel, const char *mode)
 			continue;
 		}
 		lm_message_node_set_attribute(field, "var", feature);
-		value = lm_message_node_add_child(field, "value", new_value);
+		lm_message_node_add_child(field, "value", new_value);
 	}
 
 	signal_emit("xmpp send iq", 2, channel->server, lmsg);
