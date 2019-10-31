@@ -37,6 +37,18 @@
 #  define use_tls use_ssl
 #endif
 
+#define XMPP_SERVERS_ERROR xmpp_servers_error_quark ()
+
+static GQuark
+xmpp_servers_error_quark (void)
+{
+	static GQuark q;
+
+	if (G_UNLIKELY (q == 0))
+		q = g_quark_from_static_string ("xmpp-server-error-quark");
+	return q;
+}
+
 static void
 channels_join(SERVER_REC *server, const char *data, int automatic)
 {
@@ -390,9 +402,9 @@ set_ssl(LmConnection *lmconn, GError **error, gpointer user_data,
 	LmSSL *ssl;
 
 	if (!lm_ssl_is_supported() && error != NULL) {
-		*error = g_new(GError, 1);
-		(*error)->message =
-		    g_strdup("SSL is not supported in this build");
+		if (error != NULL)
+			*error = g_error_new_literal(XMPP_SERVERS_ERROR, 1,
+			    "SSL is not supported in this build");
 		return FALSE;
 	}
 	ssl = lm_ssl_new(NULL, lm_ssl_cb, user_data, NULL);
@@ -415,28 +427,23 @@ set_proxy(LmConnection *lmconn, GError **error)
 	if (str != NULL && g_ascii_strcasecmp(str, XMPP_PROXY_HTTP) == 0)
 		type = LM_PROXY_TYPE_HTTP;
 	else {
-		if (error != NULL) {
-			*error = g_new(GError, 1);
-			(*error)->message = g_strdup("Invalid proxy type");
-		}
+		if (error != NULL)
+			*error = g_error_new_literal(XMPP_SERVERS_ERROR, 1,
+			    "Invalid proxy type");
 		return FALSE;
 	}
 	str = settings_get_str("xmpp_proxy_address");
 	if (str == NULL || *str == '\0') {
-		if (error != NULL) {
-			*error = g_new(GError, 1);
-			(*error)->message =
-			    g_strdup("Proxy address not specified");
-		}
+		if (error != NULL)
+			*error = g_error_new_literal(XMPP_SERVERS_ERROR, 1,
+			    "Proxy address not specified");
 		return FALSE;
 	}
 	int port = settings_get_int("xmpp_proxy_port");
 	if (port <= 0) {
-		if (error != NULL) {
-			*error = g_new(GError, 1);
-			(*error)->message =
-			    g_strdup("Invalid proxy port range");
-		}
+		if (error != NULL)
+			*error = g_error_new_literal(XMPP_SERVERS_ERROR, 1,
+			    "Invalid proxy port range");
 		return FALSE;
 	}
 	proxy = lm_proxy_new_with_server(type, str, port);
@@ -489,10 +496,11 @@ xmpp_server_connect(XMPP_SERVER_REC *server)
 		}
 	} else
 		set_ssl(server->lmconn, &error, server, TRUE);
-	if (settings_get_bool("xmpp_use_proxy")
-	    && !set_proxy(server->lmconn, &error)) {
-		err_msg = "Cannot set proxy";
-		goto err;
+	if (settings_get_bool("xmpp_use_proxy")) {
+		if (!set_proxy(server->lmconn, &error)) {
+			err_msg = "Cannot set proxy";
+			goto err;
+		}
 	}
 	lm_connection_set_disconnect_function(server->lmconn,
 	    lm_close_cb, server, NULL);
