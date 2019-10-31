@@ -18,6 +18,7 @@ INCS =	${LIB_INCS} \
 	-I${IRSSI_INCLUDE}/src/core \
 	-I$(IRSSI_INCLUDE)/src/fe-common/core \
 	-I$(IRSSI_INCLUDE)/src/fe-text \
+	`pkg-config --cflags glib-2.0` \
 	`pkg-config --cflags loudmouth-1.0`
 LIBS =	${LIB_LIBS}
 
