@@ -611,21 +611,21 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 	MUC_REC *channel;
 	LmMessageNode *node, *error, *text, *query;
 	const char *code;
-	char *reason = NULL;
+	char *reason;
 
 	if ((channel = get_muc(server, from)) == NULL)
-		goto out;
+		return;
 
 	switch (type) {
 	case LM_MESSAGE_SUB_TYPE_ERROR:
 		error = lm_message_node_get_child(lmsg->node, "error");
 		if (error == NULL)
-			goto out;
+			return;
 		code = lm_message_node_get_attribute(error, "code");
 
 		query = lm_find_node(lmsg->node, "query", XMLNS, XMLNS_MUC_OWNER);
 		if (query == NULL)
-			goto out;
+			return;
 		for (node = query->children; node != NULL; node = node->next) {
 			if (strcmp(node->name, "destroy") == 0) {
 				text = lm_message_node_get_child(error, "text");
@@ -639,9 +639,6 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		admin(channel, lmsg);
 		break;
 	}
-
-out:
-	g_free(reason);
 }
 
 void
