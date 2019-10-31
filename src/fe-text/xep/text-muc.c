@@ -30,9 +30,9 @@ update_nick_statusbar(XMPP_SERVER_REC *server, MUC_REC *channel,
 {
 	char *newnick;
 
-	newnick = IS_MUC(channel) ? channel->nick
-	    : settings_get_bool("xmpp_set_nick_as_username") ?
-	    server->user : server->jid;
+	newnick = (channel != NULL && IS_MUC(channel)) ? channel->nick
+	    : (settings_get_bool("xmpp_set_nick_as_username") ?
+	    server->user : server->jid);
 	if (newnick == NULL)
 		return;
 	if (strcmp(server->nick, newnick) == 0)
@@ -71,6 +71,8 @@ sig_window_destroyed(WINDOW_REC *window)
 static void
 sig_nick_changed(MUC_REC *channel)
 {
+	g_return_if_fail(channel != NULL);
+
 	if (!IS_MUC(channel))
 		return;
 	if (MUC(active_win->active) == channel)
