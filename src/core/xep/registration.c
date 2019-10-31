@@ -239,13 +239,8 @@ start_registration(struct register_data *rd)
 	lm_connection_set_disconnect_function(lmconn, register_lm_close_cb,
 	    rd, NULL);
 	if (!lm_connection_open(lmconn, register_lm_open_cb, rd, NULL,
-	    &error)) {
-		rd_cleanup(rd);
-		signal_emit("xmpp register error", 3, rd->username, rd->domain,
-		    error != NULL ? error->message : NULL);
-		if (error != NULL)
-			g_error_free(error);
-	}
+	    &error))
+		goto err;
 	return;
 
 err:
@@ -254,6 +249,7 @@ err:
 	if (error != NULL)
 		g_error_free(error);
 	lm_connection_unref(lmconn);
+	rd_cleanup(rd);
 }
 
 /* SYNTAX: XMPPREGISTER [-ssl] [-host <server>] [-port <port>]
