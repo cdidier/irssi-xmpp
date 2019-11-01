@@ -93,13 +93,9 @@ connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
 		lmsg_starttls = lm_message_new(NULL, LM_MESSAGE_TYPE_STARTTLS);
 
 		lm_message_node_set_attributes(lmsg_starttls->node, "xmlns",
-		    XMPP_NS_STARTTLS, NULL);
+			XMPP_NS_STARTTLS, NULL);
 
-		if (!lm_connection_send(connection, lmsg_starttls, NULL)) {
-			signal_emit("xmpp registration failed", 3, rd->username,
-			    rd->domain, REGISTRATION_ERROR_STARTTLS);
-			rd_cleanup(rd);
-		}
+		lm_connection_send(connection, lmsg_starttls, NULL);
 		lm_message_unref(lmsg_starttls);
 
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
@@ -113,7 +109,7 @@ connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
 		char *recoded;
 
 		lmsg = lm_message_new_with_sub_type(rd->domain,
-		    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
+			LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
 		node = lm_message_node_add_child(lmsg->node, "query", NULL);
 		lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
 		recoded = xmpp_recode_out(rd->username);
@@ -124,11 +120,12 @@ connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
 		g_free(recoded);
 		rd->id = g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
 		if (!lm_connection_send_with_reply(rd->lmconn, lmsg, rd->handler,
-		    NULL)) {
+			NULL)) {
 			signal_emit("xmpp registration failed", 3, rd->username,
-			    rd->domain, REGISTRATION_ERROR_INFO);
+				rd->domain, REGISTRATION_ERROR_INFO);
 			rd_cleanup(rd);
 		}
+
 		lm_message_unref(lmsg);
 
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
@@ -156,7 +153,7 @@ handle_register(LmMessageHandler *handler, LmConnection *connection,
 		error = lm_message_node_get_attribute(node, "code");
 		code = error == NULL ? -1 : atoi(error);
 		signal_emit("xmpp registration failed", 3, rd->username,
-		    rd->domain, GINT_TO_POINTER(code));
+			rd->domain, GINT_TO_POINTER(code));
 	} else {
 		signal_emit("xmpp registration succeed", 2, rd->username,
 		    rd->domain);
@@ -200,7 +197,7 @@ register_lm_open_cb(LmConnection *connection, gboolean success,
 
 	features_cb = lm_message_handler_new(connection_features_cb, rd, NULL);
 	lm_connection_register_message_handler(connection, features_cb,
-	    LM_MESSAGE_TYPE_STREAM_FEATURES, LM_HANDLER_PRIORITY_FIRST);
+		LM_MESSAGE_TYPE_STREAM_FEATURES, LM_HANDLER_PRIORITY_FIRST);
 
 	return;
 

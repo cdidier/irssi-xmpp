@@ -48,9 +48,6 @@ sig_failed(const char *username, const char *domain, gpointer error)
 	case REGISTRATION_ERROR_TIMEOUT_SERVER:
 		reason = "Connection times out";
 		break;
-	case REGISTRATION_ERROR_STARTTLS:
-		reason = "Cannot initialize StartTLS connection";
-		break;
 	case REGISTRATION_ERROR_CONNECTION:
 		reason = "Cannot open connection";
 		break;
