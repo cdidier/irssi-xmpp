@@ -36,8 +36,6 @@
 #define XMLNS_REGISTRATION "http://jabber.org/features/iq-register"
 #define XMLNS_REGISTER "jabber:iq:register"
 
-#define XMPP_NS_STARTTLS "urn:ietf:params:xml:ns:xmpp-tls"
-
 gboolean set_ssl(LmConnection *, GError **, gpointer, gboolean);
 gboolean set_proxy(LmConnection *, GError **);
 
@@ -76,84 +74,23 @@ rd_cleanup(struct register_data *rd)
 }
 
 static LmHandlerResult
-connection_features_cb(LmMessageHandler *handler, LmConnection *connection,
-    LmMessage *message, gpointer user_data)
-{
-	struct register_data *rd;
-	LmMessageNode *starttls_node;
-	LmMessageNode *register_node;
-
-	rd = user_data;
-
-	starttls_node = lm_message_node_find_child(message->node, "starttls");
-
-	if (!rd->use_ssl && starttls_node) {
-		LmMessage *lmsg_starttls;
-
-		lmsg_starttls = lm_message_new(NULL, LM_MESSAGE_TYPE_STARTTLS);
-
-		lm_message_node_set_attributes(lmsg_starttls->node, "xmlns",
-			XMPP_NS_STARTTLS, NULL);
-
-		lm_connection_send(connection, lmsg_starttls, NULL);
-		lm_message_unref(lmsg_starttls);
-
-		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
-	}
-
-	register_node = lm_message_node_find_child(message->node, "register");
-
-	if (register_node) {
-		LmMessage *lmsg;
-		LmMessageNode *node;
-		char *recoded;
-
-		lmsg = lm_message_new_with_sub_type(rd->domain,
-			LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
-		node = lm_message_node_add_child(lmsg->node, "query", NULL);
-		lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
-		recoded = xmpp_recode_out(rd->username);
-		lm_message_node_add_child(node, "username", recoded);
-		g_free(recoded);
-		recoded = xmpp_recode_out(rd->password);
-		lm_message_node_add_child(node, "password", recoded);
-		g_free(recoded);
-		rd->id = g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
-		if (!lm_connection_send_with_reply(rd->lmconn, lmsg, rd->handler,
-			NULL)) {
-			signal_emit("xmpp registration failed", 3, rd->username,
-				rd->domain, REGISTRATION_ERROR_INFO);
-			rd_cleanup(rd);
-		}
-
-		lm_message_unref(lmsg);
-
-		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
-	}
-
-	return LM_HANDLER_RESULT_ALLOW_MORE_HANDLERS;
-}
-
-static LmHandlerResult
 handle_register(LmMessageHandler *handler, LmConnection *connection,
     LmMessage *lmsg, gpointer user_data)
 {
 	LmMessageNode *node;
 	struct register_data *rd;
 	const char *id;
-	const char *error;
 	char *cmd;
-	int code;
+	int error;
 
 	rd = user_data;
 	id = lm_message_node_get_attribute(lmsg->node, "id");
 	if (id == NULL || (id != NULL && strcmp(id, rd->id) != 0))
 		return LM_HANDLER_RESULT_REMOVE_MESSAGE;
 	if ((node = lm_message_node_get_child(lmsg->node, "error")) != NULL) {
-		error = lm_message_node_get_attribute(node, "code");
-		code = error == NULL ? -1 : atoi(error);
+		error = atoi(lm_message_node_get_attribute(node, "code"));
 		signal_emit("xmpp registration failed", 3, rd->username,
-			rd->domain, GINT_TO_POINTER(code));
+		    rd->domain, GINT_TO_POINTER(error));
 	} else {
 		signal_emit("xmpp registration succeed", 2, rd->username,
 		    rd->domain);
@@ -167,6 +104,33 @@ handle_register(LmMessageHandler *handler, LmConnection *connection,
 	}
 	rd_cleanup(rd);
 	return LM_HANDLER_RESULT_REMOVE_MESSAGE;
+}
+
+static void
+send_register(struct register_data *rd)
+{
+	LmMessage *lmsg;
+	LmMessageNode *node;
+	char *recoded;
+
+	lmsg = lm_message_new_with_sub_type(rd->domain,
+	    LM_MESSAGE_TYPE_IQ, LM_MESSAGE_SUB_TYPE_SET);
+	node = lm_message_node_add_child(lmsg->node, "query", NULL);
+	lm_message_node_set_attribute(node, XMLNS, XMLNS_REGISTER);
+	recoded = xmpp_recode_out(rd->username);
+	lm_message_node_add_child(node, "username", recoded);
+	g_free(recoded);
+	recoded = xmpp_recode_out(rd->password);
+	lm_message_node_add_child(node, "password", recoded);
+	g_free(recoded);
+	rd->id = g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
+	if (!lm_connection_send_with_reply(rd->lmconn, lmsg, rd->handler,
+	    NULL)) {
+		signal_emit("xmpp registration failed", 3, rd->username,
+		    rd->domain, REGISTRATION_ERROR_INFO);
+		rd_cleanup(rd);
+	}
+	lm_message_unref(lmsg);
 }
 
 static void
@@ -188,17 +152,12 @@ register_lm_open_cb(LmConnection *connection, gboolean success,
     gpointer user_data)
 {
 	struct register_data *rd;
-	LmMessageHandler *features_cb;
-
+	
 	rd = user_data;
 	if (!success)
 		goto err;
 	rd->handler = lm_message_handler_new(handle_register, rd, NULL);
-
-	features_cb = lm_message_handler_new(connection_features_cb, rd, NULL);
-	lm_connection_register_message_handler(connection, features_cb,
-		LM_MESSAGE_TYPE_STREAM_FEATURES, LM_HANDLER_PRIORITY_FIRST);
-
+	send_register(rd);
 	return;
 
 err:
