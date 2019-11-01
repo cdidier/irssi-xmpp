@@ -7,7 +7,6 @@ Next release(s):
 - Handle errors and print errors messages (many errors are not handled
   yet, specially in MUC)
 - Rewrite completion (src/fe-common/xmpp-completion.c)
-- Add the commands /KICK and /BAN in MUCs
 - Implement the commands /SERVICES DISCOVER/LOGON/LOGOFF to
   print info/activate/deactivate a service (like a gateway)
         <presence to="<<service>>" id="1"></presence>
