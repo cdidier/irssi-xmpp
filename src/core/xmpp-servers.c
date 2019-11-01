@@ -196,7 +196,6 @@ xmpp_server_init_connect(SERVER_CONNECT_REC *connrec)
 
 	server->timeout_tag = 0;
 	server_connect_init((SERVER_REC *)server);
-	server->connect_tag = 1;
 	return (SERVER_REC *)server;
 }
 
@@ -269,8 +268,6 @@ lm_auth_cb(LmConnection *connection, gboolean success,
 
 	/* finnish connection process */
 	lookup_servers = g_slist_remove(lookup_servers, server);
-	g_source_remove(server->connect_tag);
-	server->connect_tag = -1;
 	server->show = XMPP_PRESENCE_AVAILABLE;
 	server->connected = TRUE;
 	if (server->timeout_tag) {
