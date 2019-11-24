@@ -3,7 +3,9 @@
 
 #include "rosters.h"
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 XMPP_ROSTER_USER_REC	 *rosters_find_user(GSList *, const char *,
 			     XMPP_ROSTER_GROUP_REC **,
 			     XMPP_ROSTER_RESOURCE_REC **);
@@ -12,6 +14,8 @@ void		 rosters_reorder(XMPP_ROSTER_GROUP_REC *);
 char		*rosters_resolve_name(XMPP_SERVER_REC *, const char *);
 char		*rosters_get_name(XMPP_SERVER_REC *, const char *);
 int		 xmpp_get_show(const char *);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

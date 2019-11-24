@@ -54,12 +54,16 @@ struct _XMPP_SERVER_REC {
 	GSList		*msg_handlers;
 };
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 SERVER_REC	*xmpp_server_init_connect(SERVER_CONNECT_REC *);
 void		 xmpp_server_connect(XMPP_SERVER_REC *);
 
 void        	xmpp_servers_init(void);
 void		xmpp_servers_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

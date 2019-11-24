@@ -15,9 +15,13 @@ enum {
 	REGISTRATION_ERROR_UNKNOWN		= -1,
 };
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void registration_init(void);
 void registration_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

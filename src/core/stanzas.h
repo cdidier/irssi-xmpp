@@ -1,9 +1,13 @@
 #ifndef __STANZAS_H
 #define __STANZAS_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void	stanzas_init(void);
 void	stanzas_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

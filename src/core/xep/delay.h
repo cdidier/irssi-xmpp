@@ -1,9 +1,13 @@
 #ifndef __DELAY_H
 #define __DELAY_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void delay_init(void);
 void delay_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

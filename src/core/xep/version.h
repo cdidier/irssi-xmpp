@@ -1,9 +1,13 @@
 #ifndef __VERSION_H
 #define __VERSION_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void version_init(void);
 void version_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

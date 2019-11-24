@@ -1,9 +1,13 @@
 #ifndef __TEXT_MUC_H
 #define __TEXT_MUC_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void text_muc_init(void);
 void text_muc_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

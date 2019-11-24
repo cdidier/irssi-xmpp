@@ -1,9 +1,13 @@
 #ifndef __MUC_COMMANDS_H
 #define __MUC_COMMANDS_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void muc_commands_init(void);
 void muc_commands_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

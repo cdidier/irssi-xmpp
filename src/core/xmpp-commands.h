@@ -50,11 +50,15 @@ extern const char *xmpp_command_presence[];
 		}							\
 	} G_STMT_END
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 char	*xmpp_get_dest(const char *, XMPP_SERVER_REC *, WI_ITEM_REC *);
 
 void	xmpp_commands_init(void);
 void	xmpp_commands_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

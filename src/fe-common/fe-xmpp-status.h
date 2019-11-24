@@ -4,12 +4,16 @@
 extern const char *fe_xmpp_presence_show[];
 extern const int   fe_xmpp_presence_show_format[];
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 char		*fe_xmpp_status_get_window_name(XMPP_SERVER_REC *);
 WINDOW_REC	*fe_xmpp_status_get_window(XMPP_SERVER_REC *);
 
 void fe_xmpp_status_init(void);
 void fe_xmpp_status_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

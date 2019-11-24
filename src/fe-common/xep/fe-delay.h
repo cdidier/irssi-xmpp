@@ -1,9 +1,13 @@
 #ifndef __FE_DELAY_H
 #define __FE_DELAY_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void fe_delay_init(void);
 void fe_delay_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif
