@@ -68,6 +68,8 @@ MUC_REC	*get_muc(XMPP_SERVER_REC *, const char *);
 
 void muc_init(void);
 void muc_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

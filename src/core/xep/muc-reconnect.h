@@ -1,9 +1,13 @@
 #ifndef __MUC_RECONNECT_H
 #define __MUC_RECONNECT_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void muc_reconnect_init(void);
 void muc_reconnect_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

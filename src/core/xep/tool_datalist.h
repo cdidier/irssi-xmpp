@@ -14,7 +14,9 @@ typedef struct datalist_first {
 	void (*freedata_func)(DATALIST_REC *);
 } DATALIST;
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 DATALIST	*datalist_new(void (*)(DATALIST_REC *));
 void		 datalist_destroy(DATALIST *);
 DATALIST_REC	*datalist_find(DATALIST *, XMPP_SERVER_REC *, const char *);
@@ -23,6 +25,8 @@ DATALIST_REC	*datalist_add(DATALIST *, XMPP_SERVER_REC *, const char *,
 void		 datalist_free(DATALIST *, DATALIST_REC *);
 void		 datalist_remove(DATALIST *, XMPP_SERVER_REC *, const char *);
 void		 datalist_cleanup(DATALIST *, XMPP_SERVER_REC *);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -25,7 +25,9 @@ struct _XMPP_NICK_REC {
 	int 	 role;
 };
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 XMPP_NICK_REC	*xmpp_nicklist_insert(MUC_REC *, const char *, const char *);
 void		 xmpp_nicklist_rename(MUC_REC *, XMPP_NICK_REC *, const char *,
 		     const char *);
@@ -36,6 +38,8 @@ void		 xmpp_nicklist_set_presence(XMPP_NICK_REC *, int,
 
 void muc_nicklist_init(void);
 void muc_nicklist_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

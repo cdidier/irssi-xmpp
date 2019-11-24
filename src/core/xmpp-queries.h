@@ -22,8 +22,12 @@ struct _XMPP_QUERY_REC {
 	gboolean	composing_visible;
 };
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 QUERY_REC	*xmpp_query_create(const char *, const char *, int);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

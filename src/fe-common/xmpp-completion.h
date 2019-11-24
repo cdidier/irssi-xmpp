@@ -1,9 +1,13 @@
 #ifndef __XMPP_COMPLETION_H
 #define __XMPP_COMPLETION_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void xmpp_completion_init(void);
 void xmpp_completion_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

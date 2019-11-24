@@ -45,9 +45,13 @@ typedef struct _XMPP_ROSTER_GROUP_REC {
 	GSList	*users;
 } XMPP_ROSTER_GROUP_REC;
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void rosters_init(void);
 void rosters_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

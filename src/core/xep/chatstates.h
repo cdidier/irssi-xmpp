@@ -1,9 +1,13 @@
 #ifndef __CHATSTATES_H
 #define __CHATSTATES_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void chatstates_init(void);
 void chatstates_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

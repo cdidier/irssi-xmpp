@@ -3,9 +3,13 @@
 
 #include "xmpp-servers.h"
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 void	protocol_init(void);
 void	protocol_deinit(void);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif

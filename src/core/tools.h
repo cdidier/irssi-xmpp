@@ -1,7 +1,9 @@
 #ifndef __TOOLS_H
 #define __TOOLS_H
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 char	*xmpp_recode_out(const char *);
 char	*xmpp_recode_in(const char *);
 
@@ -15,6 +17,8 @@ gboolean xmpp_have_resource(const char *);
 gboolean xmpp_priority_out_of_bound(const int);
 gboolean xmpp_presence_changed(const int, const int, const char *,
 	     const char *, const int, const int);
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif
