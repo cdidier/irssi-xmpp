@@ -18,12 +18,12 @@
 #include <stdlib.h>
 
 #include "module.h"
-#include "channels.h"
-#include "nicklist.h"
-#include "recode.h"
-#include "settings.h"
-#include "signals.h"
-#include "window-item-def.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/nicklist.h>
+#include <irssi/src/core/recode.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/core/window-item-def.h>
 
 #include "xmpp-commands.h"
 #include "xmpp-queries.h"

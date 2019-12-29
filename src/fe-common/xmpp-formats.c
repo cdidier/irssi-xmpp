@@ -16,8 +16,8 @@
  */
 
 #include "module.h"
-#include "formats.h"
-#include "signals.h"
+#include <irssi/src/fe-common/core/formats.h>
+#include <irssi/src/core/signals.h>
 
 static void
 sig_strip_codes(const char *in, const char **out)

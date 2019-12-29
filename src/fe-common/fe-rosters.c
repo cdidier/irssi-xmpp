@@ -18,11 +18,11 @@
 #include <string.h>
 
 #include "module.h"
-#include "levels.h"
+#include <irssi/src/core/levels.h>
 #include "module-formats.h"
-#include "printtext.h"
-#include "settings.h"
-#include "signals.h"
+#include <irssi/src/fe-common/core/printtext.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "rosters-tools.h"

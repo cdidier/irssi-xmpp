@@ -16,8 +16,8 @@
  */
 
 #include "module.h"
-#include "servers-reconnect.h"
-#include "signals.h"
+#include <irssi/src/core/servers-reconnect.h>
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "muc.h"

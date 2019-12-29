@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "module.h"
-#include "signals.h"
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "tools.h"

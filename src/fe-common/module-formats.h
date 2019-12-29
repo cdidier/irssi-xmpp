@@ -1,4 +1,4 @@
-#include "formats.h"
+#include <irssi/src/fe-common/core/formats.h>
 
 enum {
 	XMPPTXT_MODULE_NAME,
