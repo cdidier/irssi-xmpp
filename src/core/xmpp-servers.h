@@ -1,8 +1,8 @@
 #ifndef __XMPP_SERVERS_H
 #define __XMPP_SERVERS_H
 
-#include "chat-protocols.h"
-#include "servers.h"
+#include <irssi/src/core/chat-protocols.h>
+#include <irssi/src/core/servers.h>
 
 #include "loudmouth/loudmouth.h"
 #include "loudmouth-tools.h"
@@ -24,7 +24,7 @@
 	(XMPP_SERVER_CONNECT(conn) ? TRUE : FALSE) 
 
 struct _XMPP_SERVER_CONNECT_REC {
-	#include "server-connect-rec.h"
+	#include <irssi/src/core/server-connect-rec.h>
 
 	GSList		*channels_list;
 	int		 show;
@@ -35,7 +35,7 @@ struct _XMPP_SERVER_CONNECT_REC {
 
 #define STRUCT_SERVER_CONNECT_REC XMPP_SERVER_CONNECT_REC
 struct _XMPP_SERVER_REC {
-	#include "server-rec.h"
+	#include <irssi/src/core/server-rec.h>
 
 	char		*jid;
 	char		*user;

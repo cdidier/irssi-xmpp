@@ -23,8 +23,8 @@
 #include <string.h>
 
 #include "module.h"
-#include "settings.h"
-#include "signals.h"
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
 #include "tools.h"
 
 #include "xmpp-servers.h"

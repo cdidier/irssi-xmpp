@@ -18,12 +18,12 @@
 #include <string.h>
 
 #include "module.h"
-#include "channels.h"
-#include "channels-setup.h"
-#include "misc.h"
-#include "settings.h"
-#include "signals.h"
-#include "window-items.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/channels-setup.h>
+#include <irssi/src/core/misc.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-common/core/window-items.h>
 
 #include "xmpp-servers.h"
 #include "xmpp-commands.h"

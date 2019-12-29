@@ -9,6 +9,7 @@ irssi_incdirs = ${IRSSI_INCLUDE}
 else
 IRSSI_INCLUDE ?= ${PREFIX}/include/irssi
 irssi_incdirs = \
+	-I${IRSSI_INCLUDE}/.. \
 	-I${IRSSI_INCLUDE} \
 	-I${IRSSI_INCLUDE}/src \
 	-I${IRSSI_INCLUDE}/src/core \

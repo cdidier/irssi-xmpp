@@ -16,7 +16,7 @@
  */
 
 #include "module.h"
-#include "modules.h"
+#include <irssi/src/core/modules.h>
 
 #include "xep/text-xep.h"
 
