@@ -32,6 +32,7 @@ void
 xep_init(void)
 {
 	disco_init(); /* init sevice discovery first */
+	caps_init();
 	chatstates_init();
 	composing_init();
 	delay_init();

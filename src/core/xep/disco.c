@@ -38,6 +38,12 @@ disco_add_feature(char *feature)
 	    (GCompareFunc)strcmp);
 }
 
+GSList *
+disco_my_features(void)
+{
+	return my_features;
+}
+
 gboolean
 disco_have_feature(GSList *list, const char *feature)
 {
