@@ -1,8 +1,8 @@
 #ifndef __MUC_H
 #define __MUC_H
 
-#include "channels.h"
-#include "channels-setup.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/channels-setup.h>
 #include "xmpp-servers.h"
 #include "tools.h"
 
@@ -34,7 +34,7 @@
 
 #define STRUCT_SERVER_REC XMPP_SERVER_REC
 struct _MUC_REC {
-	#include "channel-rec.h"
+	#include <irssi/src/core/channel-rec.h>
 
 	char	*nick;
 };

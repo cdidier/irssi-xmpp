@@ -16,10 +16,10 @@
  */		 
 
 #include "module.h"
-#include "levels.h"
-#include "printtext.h"
-#include "signals.h"
-#include "fe-common/irc/module-formats.h"
+#include <irssi/src/core/levels.h>
+#include <irssi/src/fe-common/core/printtext.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-common/irc/module-formats.h>
 
 #include "xmpp-servers.h"
 #include "rosters-tools.h"

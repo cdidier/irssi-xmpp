@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "module.h"
-#include "signals.h"
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "tools.h"
@@ -36,6 +36,12 @@ disco_add_feature(char *feature)
 	g_return_if_fail(feature != NULL && *feature != '\0');
 	my_features = g_slist_insert_sorted(my_features, feature,
 	    (GCompareFunc)strcmp);
+}
+
+GSList *
+disco_my_features(void)
+{
+	return my_features;
 }
 
 gboolean

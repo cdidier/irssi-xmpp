@@ -22,9 +22,9 @@
 #include <string.h>
 
 #include "module.h"
-#include "commands.h"
-#include "settings.h"
-#include "signals.h"
+#include <irssi/src/core/commands.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
 
 #include "rosters-tools.h"
 #include "tools.h"
