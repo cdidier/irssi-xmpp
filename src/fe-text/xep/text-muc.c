@@ -16,10 +16,10 @@
  */
 
 #include "module.h"
-#include "settings.h"
-#include "signals.h"
-#include "statusbar-item.h"
-#include "window-items.h"
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-text/statusbar-item.h>
+#include <irssi/src/fe-common/core/window-items.h>
 
 #include "xmpp-servers.h"
 #include "xep/muc.h"

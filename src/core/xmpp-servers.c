@@ -22,10 +22,10 @@
 #include <termios.h>
 
 #include "module.h"
-#include "network.h"
-#include "recode.h"
-#include "settings.h"
-#include "signals.h"
+#include <irssi/src/core/network.h>
+#include <irssi/src/core/recode.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "protocol.h"

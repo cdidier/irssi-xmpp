@@ -1,7 +1,7 @@
 #ifndef __XMPP_QUERIES_H
 #define __XMPP_QUERIES_H
 
-#include "queries.h"
+#include <irssi/src/core/queries.h>
 #include "xmpp-servers.h"
 
 /* Returns XMPP_QUERY_REC if it's XMPP query, NULL if it isn't. */
@@ -16,7 +16,7 @@
 
 #define STRUCT_SERVER_REC XMPP_SERVER_REC
 struct _XMPP_QUERY_REC {
-	#include "query-rec.h"
+	#include <irssi/src/core/query-rec.h>
 
 	time_t		composing_time;
 	gboolean	composing_visible;

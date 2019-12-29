@@ -16,8 +16,8 @@
  */
 
 #include "module.h"
-#include "queries.h"
-#include "signals.h"
+#include <irssi/src/core/queries.h>
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-servers.h"
 #include "xmpp-commands.h"

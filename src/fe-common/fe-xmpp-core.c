@@ -16,14 +16,14 @@
  */
 
 #include "module.h"
-#include "core.h"
-#include "levels.h"
+#include <irssi/src/core/core.h>
+#include <irssi/src/core/levels.h>
 #include "module-formats.h"
-#include "printtext.h"
-#include "servers-setup.h"
-#include "settings.h"
-#include "signals.h"
-#include "themes.h"
+#include <irssi/src/fe-common/core/printtext.h>
+#include <irssi/src/core/servers-setup.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-common/core/themes.h>
 
 #include "fe-xmpp-messages.h"
 #include "fe-xmpp-queries.h"
