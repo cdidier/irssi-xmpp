@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "module.h"
-#include "signals.h"
+#include <irssi/src/core/signals.h>
 
 #include "rosters.h"
 #include "muc-affiliation.h"

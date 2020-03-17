@@ -16,9 +16,9 @@
  */		 
 
 #include "module.h"
-#include "channels.h"
-#include "signals.h"
-#include "window-items.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-common/core/window-items.h>
 
 #include "xmpp-servers.h"
 

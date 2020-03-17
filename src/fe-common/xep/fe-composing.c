@@ -18,10 +18,10 @@
 #include <string.h>
 
 #include "module.h"
-#include "settings.h"
-#include "signals.h"
-#include "special-vars.h"
-#include "window-items.h"
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/core/special-vars.h>
+#include <irssi/src/fe-common/core/window-items.h>
 
 #include "xmpp-servers.h"
 #include "xmpp-queries.h"

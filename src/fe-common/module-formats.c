@@ -16,7 +16,7 @@
  */
 
 #include "module.h"
-#include "formats.h"
+#include <irssi/src/fe-common/core/formats.h>
 
 FORMAT_REC fecommon_xmpp_formats[] = {
 	{ MODULE_NAME, "XMPP", 0, { 0 } },

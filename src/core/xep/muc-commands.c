@@ -18,9 +18,9 @@
 #include <stdlib.h>
 
 #include "module.h"
-#include "settings.h"
-#include "signals.h"
-#include "window-item-def.h"
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/core/window-item-def.h>
 
 #include "xmpp-servers.h"
 #include "xmpp-commands.h"

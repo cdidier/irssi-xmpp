@@ -1,7 +1,7 @@
 #ifndef __XMPP_COMMANDS_H
 #define __XMPP_COMMANDS_H
 
-#include "commands.h"
+#include <irssi/src/core/commands.h>
 
 enum {
 	XMPP_COMMAND_AWAY,

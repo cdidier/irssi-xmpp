@@ -18,9 +18,9 @@
 #include <string.h>
 
 #include "module.h"
-#include "channels.h"
-#include "nicklist.h"
-#include "signals.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/nicklist.h>
+#include <irssi/src/core/signals.h>
 
 #include "xmpp-queries.h"
 #include "rosters-tools.h"

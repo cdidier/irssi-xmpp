@@ -18,20 +18,20 @@
 #include <string.h>
 
 #include "module.h"
-#include "channels.h"
-#include "levels.h"
+#include <irssi/src/core/channels.h>
+#include <irssi/src/core/levels.h>
 #include "module-formats.h"
-#include "nicklist.h"
-#include "printtext.h"
-#include "recode.h"
-#include "settings.h"
-#include "signals.h"
-#include "window-items.h"
-#include "fe-queries.h"
-#include "fe-common/core/module-formats.h"
-#include "fe-common/core/fe-messages.h"
-#include "fe-common/irc/module-formats.h"
-#include "irssi-version.h"
+#include <irssi/src/core/nicklist.h>
+#include <irssi/src/fe-common/core/printtext.h>
+#include <irssi/src/core/recode.h>
+#include <irssi/src/core/settings.h>
+#include <irssi/src/core/signals.h>
+#include <irssi/src/fe-common/core/window-items.h>
+#include <irssi/src/fe-common/core/fe-queries.h>
+#include <irssi/src/fe-common/core/module-formats.h>
+#include <irssi/src/fe-common/core/fe-messages.h>
+#include <irssi/src/fe-common/irc/module-formats.h>
+#include <irssi/irssi-version.h>
 
 #include "xmpp-servers.h"
 

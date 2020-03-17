@@ -1,7 +1,7 @@
 #ifndef __MUC_NICKLIST_H
 #define __MUC_NICKLIST_H
 
-#include "nicklist.h"
+#include <irssi/src/core/nicklist.h>
 #include "muc.h"
 
 /* Returns XMPP_NICK_REC if it's XMPP channel, NULL if it isn't. */
@@ -16,7 +16,7 @@
 
 
 struct _XMPP_NICK_REC {
-	#include "nick-rec.h"
+	#include <irssi/src/core/nick-rec.h>
 
 	int 	 show;
 	char 	*status;
