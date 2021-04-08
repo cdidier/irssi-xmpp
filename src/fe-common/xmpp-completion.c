@@ -30,6 +30,10 @@
 #include "rosters-tools.h"
 #include "tools.h"
 
+#if !defined(IRSSI_ABI_VERSION) || IRSSI_ABI_VERSION < 33
+#  define i_list_find_string glist_find_string
+#endif
+
 static char *
 quoted_if_space(const char *name, const char *res)
 {
@@ -287,7 +291,7 @@ get_channels(XMPP_SERVER_REC *server, const char *word)
 		    chat_type, XMPP_PROTOCOL_NAME)
 		    || *channel_setup->name != '#')
 		    && g_ascii_strncasecmp(channel_setup->name, word, len) == 0
-		    && glist_find_string(list, channel_setup->name) == NULL)
+		    && i_list_find_string(list, channel_setup->name) == NULL)
 			list = g_list_append(list,
 			    g_strdup(channel_setup->name));
 	}
