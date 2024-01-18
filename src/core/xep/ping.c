@@ -63,7 +63,8 @@ request_ping(XMPP_SERVER_REC *server, const char *dest)
 		g_free(server->ping_id);
 		server->ping_id =
 		    g_strdup(lm_message_node_get_attribute(lmsg->node, "id"));
-		g_get_current_time(&server->lag_sent);
+		gint64 tv = g_get_real_time();
+		server->lag_sent = tv;
 		server->lag_last_check = time(NULL);
 	} else {
 		pd = g_new0(struct ping_data, 1);
@@ -107,8 +108,7 @@ sig_recv_iq(XMPP_SERVER_REC *server, LmMessage *lmsg, const int type,
 		    && (*from == '\0' || strcmp(from, server->domain) == 0)
 	    	    && strcmp(id, server->ping_id) == 0) {
 			g_get_current_time(&now);
-			server->lag =
-			    (int)get_timeval_diff(&now, &server->lag_sent);
+			server->lag = now.tv_sec - (server->lag_sent / G_TIME_SPAN_SECOND);
 			memset(&server->lag_sent, 0, sizeof(server->lag_sent));
 			g_free_and_null(server->ping_id);
 			signal_emit("server lag", 1, server);
@@ -166,10 +166,10 @@ check_ping_func(void)
 	now = time(NULL);
 	for (tmp = supported_servers; tmp != NULL; tmp = tmp->next) {
 		server = XMPP_SERVER(tmp->data);
-		if (server->lag_sent.tv_sec != 0) {
+		if (server->lag_sent != 0) {
 			/* waiting for lag reply */
 			if (max_lag > 1 &&
-			    (now - server->lag_sent.tv_sec) > max_lag) {
+			    (now - server->lag_sent / G_TIME_SPAN_SECOND) > max_lag) {
 				/* too much lag - disconnect */
 				signal_emit("server lag disconnect", 1,
 				    server);
